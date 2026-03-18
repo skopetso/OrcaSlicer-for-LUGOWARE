@@ -474,6 +474,13 @@ private:
 		// For sequential print, the instance of the object to be printing has to be defined.
 		const size_t                     				 single_object_instance_idx);
 
+    // LUGOWARE: P-Point Generation helpers
+    static Point    compute_p_point(const Point& reference_point, const std::vector<ObjectByExtruder::Island::Region>& by_region, const Polygons& wall_polygons);
+    static Polygons collect_wall_polygons(const std::vector<ObjectByExtruder::Island::Region>& by_region);
+    static bool     island_has_internal_space(const std::vector<ObjectByExtruder::Island::Region>& by_region);
+    static Point    get_island_first_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);
+    static Point    get_island_last_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);
+
     std::string     extrude_perimeters(const Print& print, const std::vector<ObjectByExtruder::Island::Region>& by_region, bool is_first_layer, bool is_infill_first);
     std::string     extrude_infill(const Print& print, const std::vector<ObjectByExtruder::Island::Region>& by_region, bool ironing);
     std::string     extrude_support(const ExtrusionEntityCollection& support_fills, const ExtrusionRole support_extrusion_role);
