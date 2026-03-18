@@ -5954,7 +5954,7 @@ std::string GCode::extrude_path(ExtrusionPath path, std::string description, dou
 // LUGOWARE: P-Point Generation helpers (v2)
 // Builds the outer contour polygon of the island from perimeter extrusions.
 // Uses the outermost perimeter loops to form the island boundary.
-static Polygons build_island_contour(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
+Polygons GCode::build_island_contour(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
 {
     Polygons contours;
     for (const auto& region : by_region) {

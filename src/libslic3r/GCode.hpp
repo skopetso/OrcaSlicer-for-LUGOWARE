@@ -480,6 +480,7 @@ private:
     static bool     island_has_internal_space(const std::vector<ObjectByExtruder::Island::Region>& by_region);
     static Point    get_island_first_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);
     static Point    get_island_last_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);
+    static Polygons build_island_contour(const std::vector<ObjectByExtruder::Island::Region>& by_region);
 
     std::string     extrude_perimeters(const Print& print, const std::vector<ObjectByExtruder::Island::Region>& by_region, bool is_first_layer, bool is_infill_first);
     std::string     extrude_infill(const Print& print, const std::vector<ObjectByExtruder::Island::Region>& by_region, bool ironing);
