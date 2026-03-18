@@ -5941,7 +5941,7 @@ std::string GCode::extrude_path(ExtrusionPath path, std::string description, dou
 // Computes a P-point inside infill regions, farthest from outer walls,
 // within 1-30mm distance from the reference point.
 static Point compute_p_point(const Point& reference_point,
-                             const std::vector<ObjectByExtruder::Island::Region>& by_region,
+                             const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region,
                              const Polygons& wall_polygons)
 {
     // Collect all infill extrusion points as candidates for P-point location
@@ -6037,7 +6037,7 @@ static Point compute_p_point(const Point& reference_point,
 }
 
 // Collect wall (perimeter) polygons from island regions for P-point distance calculation
-static Polygons collect_wall_polygons(const std::vector<ObjectByExtruder::Island::Region>& by_region)
+static Polygons collect_wall_polygons(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
 {
     Polygons walls;
     for (const auto& region : by_region) {
@@ -6063,7 +6063,7 @@ static Polygons collect_wall_polygons(const std::vector<ObjectByExtruder::Island
 }
 
 // Check if island has any internal infill space (needed for P-point generation)
-static bool island_has_internal_space(const std::vector<ObjectByExtruder::Island::Region>& by_region)
+static bool island_has_internal_space(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
 {
     for (const auto& region : by_region) {
         for (const ExtrusionEntity* ee : region.infills) {
@@ -6079,7 +6079,7 @@ static bool island_has_internal_space(const std::vector<ObjectByExtruder::Island
 }
 
 // Get first extrusion point of an island
-static Point get_island_first_point(const std::vector<ObjectByExtruder::Island::Region>& by_region)
+static Point get_island_first_point(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
 {
     // Check perimeters first
     for (const auto& region : by_region) {
@@ -6095,7 +6095,7 @@ static Point get_island_first_point(const std::vector<ObjectByExtruder::Island::
 }
 
 // Get last extrusion point of an island
-static Point get_island_last_point(const std::vector<ObjectByExtruder::Island::Region>& by_region)
+static Point get_island_last_point(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
 {
     // Check infills last (they are printed after perimeters typically)
     for (int i = (int)by_region.size() - 1; i >= 0; --i) {
