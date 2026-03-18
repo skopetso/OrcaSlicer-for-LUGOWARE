@@ -1222,7 +1222,9 @@ void PrintObject::slice_volumes()
         const auto   xy_hole_scaled = (num_extruders > 1 && this->is_mm_painted()) ? scaled<float>(0.f) : scaled<float>(m_config.xy_hole_compensation.value);
         const auto   xy_contour_scaled            = (num_extruders > 1 && this->is_mm_painted()) ? scaled<float>(0.f) : scaled<float>(m_config.xy_contour_compensation.value);
         const int    xy_hole_layer_step    = m_config.xy_hole_compensation_layer_step.value;
+        const int    xy_hole_layer_step_thickness = m_config.xy_hole_compensation_layer_step_thickness.value;
         const int    xy_contour_layer_step = m_config.xy_contour_compensation_layer_step.value;
+        const int    xy_contour_layer_step_thickness = m_config.xy_contour_compensation_layer_step_thickness.value;
         const float  elephant_foot_compensation_scaled = (m_config.raft_layers == 0) ?
         	// Only enable Elephant foot compensation if printing directly on the print bed.
             float(scale_(m_config.elefant_foot_compensation.value)) :
@@ -1233,13 +1235,22 @@ void PrintObject::slice_volumes()
         //BBS: this part has been changed a lot to support seperated contour and hole size compensation
 	    tbb::parallel_for(
 	        tbb::blocked_range<size_t>(0, m_layers.size()),
-			[this, xy_hole_scaled, xy_contour_scaled, xy_hole_layer_step, xy_contour_layer_step, elephant_foot_compensation_scaled, &lslices_elfoot_uncompensated](const tbb::blocked_range<size_t>& range) {
+			[this, xy_hole_scaled, xy_contour_scaled, xy_hole_layer_step, xy_hole_layer_step_thickness, xy_contour_layer_step, xy_contour_layer_step_thickness, elephant_foot_compensation_scaled, &lslices_elfoot_uncompensated](const tbb::blocked_range<size_t>& range) {
 	            for (size_t layer_id = range.begin(); layer_id < range.end(); ++ layer_id) {
 	                m_print->throw_if_canceled();
 	                Layer *layer = m_layers[layer_id];
-	                // Apply layer step for XY compensation: 0 = disabled, 1 = every layer, N = every Nth layer
-	                const float effective_xy_hole_scaled = (xy_hole_layer_step == 0 || (xy_hole_layer_step > 1 && (int)layer_id % xy_hole_layer_step != 0)) ? 0.f : xy_hole_scaled;
-	                const float effective_xy_contour_scaled = (xy_contour_layer_step == 0 || (xy_contour_layer_step > 1 && (int)layer_id % xy_contour_layer_step != 0)) ? 0.f : xy_contour_scaled;
+	                // Apply layer step + thickness for XY compensation:
+	                // step=0: disabled, step=1: every layer, step=N: every Nth layer
+	                // thickness: how many consecutive layers within each step to apply
+	                auto should_apply_step = [](int step, int thickness, size_t lid) -> bool {
+	                    if (step == 0) return false;
+	                    if (step == 1) return true;
+	                    int pos_in_step = (int)lid % step;
+	                    int t = std::min(std::max(thickness, 1), step);
+	                    return pos_in_step < t;
+	                };
+	                const float effective_xy_hole_scaled = should_apply_step(xy_hole_layer_step, xy_hole_layer_step_thickness, layer_id) ? xy_hole_scaled : 0.f;
+	                const float effective_xy_contour_scaled = should_apply_step(xy_contour_layer_step, xy_contour_layer_step_thickness, layer_id) ? xy_contour_scaled : 0.f;
 	                // Apply size compensation and perform clipping of multi-part objects.
 	                float elfoot = elephant_foot_compensation_scaled > 0 && layer_id < m_config.elefant_foot_compensation_layers.value ?
                         elephant_foot_compensation_scaled - (elephant_foot_compensation_scaled / m_config.elefant_foot_compensation_layers.value) * layer_id :

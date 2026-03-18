@@ -22,6 +22,7 @@ struct FuzzySkinConfig
     double        noise_persistence;
     FuzzySkinMode mode;
     int           layer_step;
+    int           layer_step_thickness;
 
     bool operator==(const FuzzySkinConfig& r) const
     {
@@ -34,7 +35,8 @@ struct FuzzySkinConfig
             && noise_octaves == r.noise_octaves
             && noise_persistence == r.noise_persistence
             && mode == r.mode
-            && layer_step == r.layer_step;
+            && layer_step == r.layer_step
+            && layer_step_thickness == r.layer_step_thickness;
     }
 
     bool operator!=(const FuzzySkinConfig& r) const { return !(*this == r); }
@@ -56,6 +58,7 @@ template<> struct hash<Slic3r::FuzzySkinConfig>
         boost::hash_combine(seed, std::hash<double>{}(c.noise_persistence));
         boost::hash_combine(seed, std::hash<Slic3r::FuzzySkinMode>{}(c.mode));
         boost::hash_combine(seed, std::hash<int>{}(c.layer_step));
+        boost::hash_combine(seed, std::hash<int>{}(c.layer_step_thickness));
         return seed;
     }
 };

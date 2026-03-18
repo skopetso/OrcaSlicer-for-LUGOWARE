@@ -3417,6 +3417,18 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionInt(1));
 
+    def = this->add("fuzzy_skin_layer_step_thickness", coInt);
+    def->label = L("Fuzzy skin layer step thickness");
+    def->category = L("Others");
+    def->tooltip = L("Number of consecutive layers to apply fuzzy skin within each step. "
+                     "For example, step=5 and thickness=2 means apply on layers 0,1, 5,6, 10,11... "
+                     "Value 1 means apply on one layer per step (default). "
+                     "Maximum value is limited by the layer step value.");
+    def->min = 1;
+    def->max = 200;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(1));
+
     def = this->add("filter_out_gap_fill", coFloat);
     def->label = L("Filter out tiny gaps");
     def->category = L("Layers and Perimeters");
@@ -6601,12 +6613,34 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionInt(1));
 
+    def = this->add("xy_hole_compensation_layer_step_thickness", coInt);
+    def->label = L("X-Y hole compensation layer step thickness");
+    def->category = L("Quality");
+    def->tooltip = L("Number of consecutive layers to apply X-Y hole compensation within each step. "
+                     "For example, step=5 and thickness=2 means apply on layers 0,1, 5,6, 10,11... "
+                     "Maximum value is limited by the layer step value.");
+    def->min = 1;
+    def->max = 200;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(1));
+
     def = this->add("xy_contour_compensation_layer_step", coInt);
     def->label = L("X-Y contour compensation layer step");
     def->category = L("Quality");
     def->tooltip = L("Apply X-Y contour compensation every N layers. Value 1 means every layer (default behavior). "
                      "Value 5 means compensation is applied every 5th layer. Value 0 disables compensation.");
     def->min = 0;
+    def->max = 200;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(1));
+
+    def = this->add("xy_contour_compensation_layer_step_thickness", coInt);
+    def->label = L("X-Y contour compensation layer step thickness");
+    def->category = L("Quality");
+    def->tooltip = L("Number of consecutive layers to apply X-Y contour compensation within each step. "
+                     "For example, step=5 and thickness=2 means apply on layers 0,1, 5,6, 10,11... "
+                     "Maximum value is limited by the layer step value.");
+    def->min = 1;
     def->max = 200;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionInt(1));

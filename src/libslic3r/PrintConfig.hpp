@@ -970,7 +970,9 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat,               xy_hole_compensation))
     ((ConfigOptionFloat,               xy_contour_compensation))
     ((ConfigOptionInt,                 xy_hole_compensation_layer_step))
+    ((ConfigOptionInt,                 xy_hole_compensation_layer_step_thickness))
     ((ConfigOptionInt,                 xy_contour_compensation_layer_step))
+    ((ConfigOptionInt,                 xy_contour_compensation_layer_step_thickness))
     ((ConfigOptionBool,                p_point_generation))
     ((ConfigOptionBool,                flush_into_objects))
     // BBS
@@ -1085,6 +1087,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionInt,                  fuzzy_skin_octaves))
     ((ConfigOptionFloat,                fuzzy_skin_persistence))
     ((ConfigOptionInt,                  fuzzy_skin_layer_step))
+    ((ConfigOptionInt,                  fuzzy_skin_layer_step_thickness))
     ((ConfigOptionFloat,                gap_infill_speed))
     ((ConfigOptionInt,                  sparse_infill_filament))
     ((ConfigOptionFloatOrPercent,       sparse_infill_line_width))
