@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/Huhn/OrcaSlicer-for-LUGOWARE -name *.cpp -path */GUI/*Tab* -o -name *Tab.h -path */GUI/*)",
+      "Bash(find /c/Users/Huhn/OrcaSlicer-for-LUGOWARE -name *.ico -o -name *.icns)",
+      "Bash(grep -rn special_mode /c/Users/Huhn/OrcaSlicer-for-LUGOWARE/src/libslic3r/*.hpp /c/Users/Huhn/OrcaSlicer-for-LUGOWARE/src/libslic3r/*.cpp)",
+      "Bash(ls -d \"C:\\\\Users\\\\Huhn\\\\OrcaSlicer-for-LUGOWARE\\\\build\"*/)",
+      "Bash(xargs grep:*)",
+      "Bash(find /c/Users/Huhn/OrcaSlicer-for-LUGOWARE -name *Info* -type f)",
+      "Bash(grep -E \"\\\\.\\(ico|icns|png|svg\\)$\")",
+      "Bash(where magick:*)",
+      "Bash(where convert:*)",
+      "Bash(where ffmpeg:*)",
+      "Bash(where npm:*)",
+      "Bash(where node:*)",
+      "Bash(\"C:/Program Files/OrcaSlicer/scripts/python/python.exe\" --version)",
+      "Bash(\"C:/Program Files/OrcaSlicer/scripts/python/python.exe\" -c \"from PIL import Image; print\\(''Pillow OK''\\)\")",
+      "Bash(\"C:/Program Files/OrcaSlicer/scripts/python/python.exe\" -m pip install Pillow)",
+      "Bash(ls \"C:/Program Files/OrcaSlicer/scripts/python/\"*.pyd)",
+      "Bash(\"C:/Program Files/OrcaSlicer/scripts/python/python.exe\" -c \"import struct, zlib; print\\(''OK''\\)\")",
+      "Bash(\"C:/Program Files/OrcaSlicer/scripts/python/python.exe\" \"C:/Users/Huhn/OrcaSlicer-for-LUGOWARE/scripts/convert_icons.py\")",
+      "Bash(cmd //c \"build_release_vs2022.bat\")",
+      "Bash(cmd //c \"where cmake\")",
+      "Read(//c/Program Files/CMake/bin/**)",
+      "Read(//c/Program Files \\(x86\\)/Microsoft Visual Studio/**)",
+      "Read(//c/Program Files/Microsoft Visual Studio/**)",
+      "Bash(cmd //c \"dir /s /b \"\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\*cmake.exe\"\"\")",
+      "Bash(cmd //c \"dir /s /b \"\"C:\\\\Program Files \\(x86\\)\\\\Microsoft Visual Studio\\\\*cmake.exe\"\"\")",
+      "Bash(cmd //c \"dir /s /b \"\"C:\\\\Program Files\\\\CMake*\"\" 2>nul\")",
+      "Bash(cmd //c \"dir /s /b \"\"C:\\\\Program Files\\\\Microsoft Visual Studio\"\" 2>nul\")"
+    ]
+  }
+}
