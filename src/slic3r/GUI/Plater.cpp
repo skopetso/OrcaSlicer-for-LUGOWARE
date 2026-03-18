@@ -3658,8 +3658,9 @@ void Sidebar::show_SEMM_buttons(bool bshow)
         p->m_bpButton_add_filament->Show(bshow);
     if (p->m_bpButton_del_filament && p->combos_filament.size() > 1) // ORCA add filament count as condition to prevent showing Flushing volumes and Del Filament icon visible while only 1 filament exist
         p->m_bpButton_del_filament->Show(bshow);
-    if (p->m_flushing_volume_btn && p->combos_filament.size() > 1) // ORCA add filament count as condition to prevent showing Flushing volumes and Del Filament icon visible while only 1 filament exist
-        p->m_flushing_volume_btn->Show(bshow);
+    // LUGOWARE: Flushing volumes button permanently hidden
+    // if (p->m_flushing_volume_btn && p->combos_filament.size() > 1)
+    //     p->m_flushing_volume_btn->Show(bshow);
     Layout();
 }
 
