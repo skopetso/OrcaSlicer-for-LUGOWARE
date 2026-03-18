@@ -5945,23 +5945,22 @@ Point GCode::compute_p_point(const Point& reference_point,
                              const Polygons& wall_polygons)
 {
     // Collect all infill extrusion points as candidates for P-point location
+    // Internal space includes: internal infill, solid infill, bridge infill, internal bridge, gap fill
     Points infill_points;
     for (const auto& region : by_region) {
         for (const ExtrusionEntity* ee : region.infills) {
             if (!ee) continue;
             ExtrusionRole role = ee->role();
-            // Only internal space: internal infill, solid infill, bridge infill, internal bridge
             if (role == erInternalInfill || role == erSolidInfill ||
-                role == erBridgeInfill || role == erInternalBridgeInfill) {
-                // Collect sampled points from polylines (every 10th point for performance)
+                role == erBridgeInfill || role == erInternalBridgeInfill ||
+                role == erGapFill) {
                 Polylines polylines = ee->as_polylines();
                 for (const auto& pl : polylines) {
-                    for (size_t i = 0; i < pl.points.size(); i += 10) {
-                        infill_points.push_back(pl.points[i]);
+                    // Collect midpoints of segments for better interior coverage
+                    for (size_t i = 0; i + 1 < pl.points.size(); i += 5) {
+                        Point mid = (pl.points[i] + pl.points[std::min(i + 1, pl.points.size() - 1)]) / 2;
+                        infill_points.push_back(mid);
                     }
-                    // Always include last point
-                    if (!pl.points.empty())
-                        infill_points.push_back(pl.points.back());
                 }
             }
         }
@@ -6007,9 +6006,9 @@ Point GCode::compute_p_point(const Point& reference_point,
     }
 
     // Among candidates, find the one farthest from wall polygons
-    // Limit to 100 candidates max for performance
-    if (candidates.size() > 100) {
-        size_t step = candidates.size() / 100;
+    // Limit to 200 candidates max for performance
+    if (candidates.size() > 200) {
+        size_t step = candidates.size() / 200;
         Points sampled;
         for (size_t i = 0; i < candidates.size(); i += step)
             sampled.push_back(candidates[i]);
@@ -6070,7 +6069,8 @@ bool GCode::island_has_internal_space(const std::vector<GCode::ObjectByExtruder:
             if (!ee) continue;
             ExtrusionRole role = ee->role();
             if (role == erInternalInfill || role == erSolidInfill ||
-                role == erBridgeInfill || role == erInternalBridgeInfill) {
+                role == erBridgeInfill || role == erInternalBridgeInfill ||
+                role == erGapFill) {
                 return true;
             }
         }

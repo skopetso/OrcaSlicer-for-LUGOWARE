@@ -3614,92 +3614,7 @@ void TabFilament::add_filament_overrides_page()
                                      })
         append_retraction_option(opt_key, extruder_idx);
 
-    ConfigOptionsGroupShp ironing_optgroup = page->new_optgroup(L("Ironing"), L"param_ironing");
-    auto append_ironing_option = [this, ironing_optgroup](const std::string& opt_key, int opt_index)
-    {
-        Line line {"",""};
-        line = ironing_optgroup->create_single_option_line(ironing_optgroup->get_option(opt_key, opt_index));
-
-        line.near_label_widget = [this, optgroup_wk = ConfigOptionsGroupWkp(ironing_optgroup), opt_key, opt_index](wxWindow* parent) {
-            auto check_box = new ::CheckBox(parent); // ORCA modernize checkboxes
-            check_box->Bind(wxEVT_TOGGLEBUTTON, [this, optgroup_wk, opt_key, opt_index](wxCommandEvent& evt) {
-                const bool is_checked = evt.IsChecked();
-                if (auto optgroup_sh = optgroup_wk.lock(); optgroup_sh) {
-                    if (Field *field = optgroup_sh->get_fieldc(opt_key, opt_index); field != nullptr) {
-                        field->toggle(is_checked);
-
-                        const std::string process_opt_key = opt_key.substr(strlen("filament_"));
-                        const auto process_config = m_preset_bundle->prints.get_edited_preset().config;
-                        const ConfigOption *process_option = process_config.option(process_opt_key);
-                        const auto *process_vector = dynamic_cast<const ConfigOptionVectorBase*>(process_option);
-                        const size_t target_index = opt_index < 0 ? 0 : static_cast<size_t>(opt_index);
-                        bool has_process_value = process_option != nullptr;
-                        if (has_process_value) {
-                            if (process_vector != nullptr) {
-                                has_process_value = target_index < process_vector->size() && !process_vector->is_nil(target_index);
-                            } else {
-                                has_process_value = !process_option->is_nil();
-                            }
-                        }
-
-                        if (is_checked) {
-                            bool applied_value = false;
-                            if (has_process_value && process_option != nullptr) {
-                                if (ConfigOption *filament_option = m_config->option(opt_key)) {
-                                    if (auto filament_vector = dynamic_cast<ConfigOptionVectorBase*>(filament_option)) {
-                                        std::unique_ptr<ConfigOption> process_clone(process_option->clone());
-                                        size_t source_index = 0;
-                                        if (process_vector != nullptr)
-                                            source_index = target_index;
-
-                                        filament_vector->set_at(process_clone.get(), target_index, source_index);
-
-                                        const boost::any filament_config_value = optgroup_sh->get_config_value(*m_config, opt_key, opt_index);
-                                        field->set_value(filament_config_value, false);
-                                        field->update_na_value(_(L("N/A")));
-                                        applied_value = true;
-                                    }
-                                }
-                            }
-
-                            if (applied_value)
-                                field->set_last_meaningful_value();
-                            else {
-                                field->update_na_value(_(L("N/A")));
-                                field->set_na_value();
-                            }
-                        } else {
-                            if (has_process_value) {
-                                const boost::any process_config_value = optgroup_sh->get_config_value(process_config, process_opt_key, opt_index);
-                                field->update_na_value(process_config_value);
-                            } else {
-                                field->update_na_value(_(L("N/A")));
-                            }
-                            field->set_na_value();
-
-                            if (ConfigOption *filament_option = m_config->option(opt_key)) {
-                                if (auto filament_vector = dynamic_cast<ConfigOptionVectorBase*>(filament_option))
-                                    filament_vector->set_at_to_nil(target_index);
-                            }
-                        }
-                    }
-                }
-                evt.Skip();
-            }, check_box->GetId());
-
-            m_overrides_options[opt_key] = check_box;
-            return check_box;
-        };
-
-        ironing_optgroup->append_line(line);
-    };
-
-    for (const std::string opt_key : {  "filament_ironing_flow",
-                                        "filament_ironing_spacing",
-                                        "filament_ironing_inset",
-                                        "filament_ironing_speed"
-                                     })
-        append_ironing_option(opt_key, extruder_idx);
+    // LUGOWARE: Ironing overrides removed from Material Settings
 }
 
 void TabFilament::update_filament_overrides_page(const DynamicPrintConfig* printers_config)
@@ -3782,43 +3697,7 @@ void TabFilament::update_filament_overrides_page(const DynamicPrintConfig* print
         }
     }
 
-    // Handle ironing overrides
-    const auto og_ironing_it = std::find_if(page->m_optgroups.begin(), page->m_optgroups.end(), [](const ConfigOptionsGroupShp og) { return og->title == "Ironing"; });
-    if (og_ironing_it != page->m_optgroups.end())
-    {
-        ConfigOptionsGroupShp ironing_optgroup = *og_ironing_it;
-        
-        std::vector<std::string> ironing_opt_keys = {
-            "filament_ironing_flow",
-            "filament_ironing_spacing",
-            "filament_ironing_inset",
-            "filament_ironing_speed"
-        };
-
-        for (const std::string& opt_key : ironing_opt_keys)
-        {
-            if (m_overrides_options.find(opt_key) == m_overrides_options.end())
-                continue;
-                
-            bool is_checked = !dynamic_cast<ConfigOptionVectorBase*>(m_config->option(opt_key))->is_nil(extruder_idx);
-            m_overrides_options[opt_key]->Enable(true);
-            m_overrides_options[opt_key]->SetValue(is_checked);
-
-            Field* field = ironing_optgroup->get_fieldc(opt_key, 0);
-            if (field == nullptr) continue;
-
-            if (!is_checked) {
-                // Get the default value from the process config (ironing_* without filament_ prefix)
-                const std::string process_opt_key = opt_key.substr(strlen("filament_"));
-                const auto process_config = m_preset_bundle->prints.get_edited_preset().config;
-                const boost::any process_config_value = ironing_optgroup->get_config_value(process_config, process_opt_key, 0);
-                field->update_na_value(process_config_value);
-                field->set_value(process_config_value, false);
-            }
-
-            field->toggle(is_checked);
-        }
-    }
+    // LUGOWARE: Ironing overrides handling removed
 }
 
 void TabFilament::build()

@@ -2054,8 +2054,9 @@ Sidebar::Sidebar(Plater *parent)
             p->plater->update();
         }));
 
-    bSizer39->Add(p->m_flushing_volume_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(4));
-    bSizer39->Hide(p->m_flushing_volume_btn); // ORCA Ensure button is hidden on launch while 1 filament exist
+    // LUGOWARE: Flushing volumes button permanently hidden
+    // bSizer39->Add(p->m_flushing_volume_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(4));
+    bSizer39->Hide(p->m_flushing_volume_btn);
 
     ScalableButton* add_btn = new ScalableButton(p->m_panel_filament_title, wxID_ANY, "add_filament");
     add_btn->SetToolTip(_L("Add one filament"));
@@ -3029,11 +3030,11 @@ void Sidebar::on_filament_count_change(size_t num_filaments)
 
     auto sizer = p->m_panel_filament_title->GetSizer();
     if (p->m_flushing_volume_btn != nullptr && sizer != nullptr) {
+        // LUGOWARE: Flushing volumes button permanently hidden
+        sizer->Hide(p->m_flushing_volume_btn);
         if (num_filaments > 1) {
-            sizer->Show(p->m_flushing_volume_btn);
             sizer->Show(p->m_bpButton_del_filament); // ORCA: Show delete filament button if multiple filaments
         } else {
-            sizer->Hide(p->m_flushing_volume_btn);
             sizer->Hide(p->m_bpButton_del_filament); // ORCA: Hide delete filament button if there is only one filament
         }
     }
@@ -3085,11 +3086,11 @@ void Sidebar::on_filaments_delete(size_t filament_id)
 
     auto sizer = p->m_panel_filament_title->GetSizer();
     if (p->m_flushing_volume_btn != nullptr && sizer != nullptr) {
+        // LUGOWARE: Flushing volumes button permanently hidden
+        sizer->Hide(p->m_flushing_volume_btn);
         if (p->combos_filament.size() > 1) {
-            sizer->Show(p->m_flushing_volume_btn);
             sizer->Show(p->m_bpButton_del_filament); // ORCA: Show delete filament button if multiple filaments
         } else {
-            sizer->Hide(p->m_flushing_volume_btn);
             sizer->Hide(p->m_bpButton_del_filament); // ORCA: Hide delete filament button if there is only one filament
         }
     }
