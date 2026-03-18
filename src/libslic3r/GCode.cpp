@@ -5274,11 +5274,14 @@ LayerResult GCode::process_layer(
                         p1_point = compute_p_point(start_pt, by_region_specific, walls);
                         p2_point = compute_p_point(end_pt, by_region_specific, walls);
 
-                        // Travel to P1 (still lifted from previous island)
+                        // Travel to P1 in straight line (disable avoid_crossing_perimeters)
+                        m_avoid_crossing_perimeters.disable_once();
                         gcode += this->travel_to(p1_point, erInternalInfill, "P-point P1 pre-move");
-                        // Lower Z (unlift) at P1
+                        // Lower Z (unlift) at P1 position
                         gcode += m_writer.unlift();
                         gcode += "; P-point: Z lowered at P1\n";
+                        // Travel from P1 to start point in straight line (internal space)
+                        m_avoid_crossing_perimeters.disable_once();
                     }
 
                     {
@@ -5300,8 +5303,9 @@ LayerResult GCode::process_layer(
                     gcode += this->extrude_infill(print,by_region_specific, true);
 
                     if (use_p_points) {
-                        // After finishing island, travel to P2 before Z-hop
+                        // After finishing island, travel to P2 in straight line before Z-hop
                         gcode += "; P-point: moving to P2 post-move\n";
+                        m_avoid_crossing_perimeters.disable_once();
                         gcode += this->travel_to(p2_point, erInternalInfill, "P-point P2 post-move");
                         // Z-hop will happen naturally on retract/next travel
                     }
@@ -5938,8 +5942,9 @@ std::string GCode::extrude_path(ExtrusionPath path, std::string description, dou
 }
 
 // LUGOWARE: P-Point Generation helper
-// Computes a P-point inside infill regions, farthest from outer walls,
-// within 1-30mm distance from the reference point.
+// Computes a P-point inside infill regions, farthest from outer walls (OFFSET),
+// within 1-30mm distance from the reference point, choosing the farthest point in that range.
+// P-point must be in internal space so travel from P-point to start/end is through interior.
 Point GCode::compute_p_point(const Point& reference_point,
                              const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region,
                              const Polygons& wall_polygons)
@@ -5956,10 +5961,9 @@ Point GCode::compute_p_point(const Point& reference_point,
                 role == erGapFill) {
                 Polylines polylines = ee->as_polylines();
                 for (const auto& pl : polylines) {
-                    // Collect midpoints of segments for better interior coverage
-                    for (size_t i = 0; i + 1 < pl.points.size(); i += 5) {
-                        Point mid = (pl.points[i] + pl.points[std::min(i + 1, pl.points.size() - 1)]) / 2;
-                        infill_points.push_back(mid);
+                    // Collect every other point for good interior coverage
+                    for (size_t i = 0; i < pl.points.size(); i += 2) {
+                        infill_points.push_back(pl.points[i]);
                     }
                 }
             }
@@ -5973,62 +5977,74 @@ Point GCode::compute_p_point(const Point& reference_point,
     const coord_t min_dist = scale_(1.0);  // 1mm
     const coord_t max_dist = scale_(30.0); // 30mm
 
-    Points candidates;
+    // Compute minimum distance to walls for each infill point, and filter by range
+    struct Candidate {
+        Point pt;
+        double ref_dist;   // distance from reference point
+        double wall_dist;  // minimum distance from walls
+    };
+    std::vector<Candidate> candidates;
+
     for (const Point& pt : infill_points) {
-        double d = (pt - reference_point).cast<double>().norm();
-        if (d >= min_dist && d <= max_dist)
-            candidates.push_back(pt);
+        double ref_d = (pt - reference_point).cast<double>().norm();
+        if (ref_d < min_dist || ref_d > max_dist)
+            continue;
+
+        // Compute min distance to walls
+        double min_wall_d = std::numeric_limits<double>::max();
+        for (const Polygon& wall : wall_polygons) {
+            for (const auto& line : wall.lines()) {
+                double d = line_alg::distance_to(line, pt);
+                min_wall_d = std::min(min_wall_d, d);
+            }
+        }
+
+        // Only consider points that are at least 0.5mm away from walls (inside internal space)
+        if (min_wall_d >= scale_(0.5))
+            candidates.push_back({pt, ref_d, min_wall_d});
     }
 
-    // If no points in 1-30mm range, try the farthest point up to 30mm
+    // If no candidates with wall offset, try without offset constraint
+    if (candidates.empty()) {
+        for (const Point& pt : infill_points) {
+            double ref_d = (pt - reference_point).cast<double>().norm();
+            if (ref_d < min_dist || ref_d > max_dist)
+                continue;
+            double min_wall_d = std::numeric_limits<double>::max();
+            for (const Polygon& wall : wall_polygons) {
+                for (const auto& line : wall.lines()) {
+                    double d = line_alg::distance_to(line, pt);
+                    min_wall_d = std::min(min_wall_d, d);
+                }
+            }
+            candidates.push_back({pt, ref_d, min_wall_d});
+        }
+    }
+
+    // If still no candidates in range, use any infill point
     if (candidates.empty()) {
         Point best = infill_points.front();
         double best_dist = 0;
         for (const Point& pt : infill_points) {
             double d = (pt - reference_point).cast<double>().norm();
-            if (d <= max_dist && d > best_dist) {
+            if (d > best_dist) {
                 best = pt;
                 best_dist = d;
-            }
-        }
-        if (best_dist > 0)
-            return best;
-        // All infill points are beyond 30mm, just use the closest infill point
-        double closest = std::numeric_limits<double>::max();
-        for (const Point& pt : infill_points) {
-            double d = (pt - reference_point).cast<double>().norm();
-            if (d < closest) {
-                closest = d;
-                best = pt;
             }
         }
         return best;
     }
 
-    // Among candidates, find the one farthest from wall polygons
-    // Limit to 200 candidates max for performance
-    if (candidates.size() > 200) {
-        size_t step = candidates.size() / 200;
-        Points sampled;
-        for (size_t i = 0; i < candidates.size(); i += step)
-            sampled.push_back(candidates[i]);
-        candidates = std::move(sampled);
-    }
-
-    Point best_p = candidates.front();
+    // Among candidates, find the one farthest from wall polygons (OFFSET)
+    // OFFSET = shrink walls inward, the point farthest from walls is deepest inside
+    // This ensures P-point is deep inside internal space
+    Point best_p = candidates.front().pt;
     double best_wall_dist = 0;
 
-    for (const Point& pt : candidates) {
-        double min_wall_dist = std::numeric_limits<double>::max();
-        for (const Polygon& wall : wall_polygons) {
-            for (const auto& line : wall.lines()) {
-                double d = line_alg::distance_to(line, pt);
-                min_wall_dist = std::min(min_wall_dist, d);
-            }
-        }
-        if (min_wall_dist > best_wall_dist) {
-            best_wall_dist = min_wall_dist;
-            best_p = pt;
+    for (const auto& c : candidates) {
+        if (c.wall_dist > best_wall_dist) {
+            best_wall_dist = c.wall_dist;
+            best_p = c.pt;
         }
     }
 
