@@ -475,7 +475,8 @@ private:
 		const size_t                     				 single_object_instance_idx);
 
     // LUGOWARE: P-Point Generation helpers (using lslices virtual wall)
-    Point           compute_p_point(const Point& reference_point, const std::vector<ObjectByExtruder::Island::Region>& by_region, const Polygons& cell_boundary);
+    Point           compute_p1_point(const Point& start_point, const std::vector<ObjectByExtruder::Island::Region>& by_region, const Polygons& cell_boundary);
+    Point           compute_p2_point(const Point& end_point, const std::vector<ObjectByExtruder::Island::Region>& by_region, const Polygons& cell_boundary);
     static Point    get_island_first_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);
     static Point    get_island_last_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);
 

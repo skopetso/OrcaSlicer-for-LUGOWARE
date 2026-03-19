@@ -5262,49 +5262,61 @@ LayerResult GCode::process_layer(
                         }
                         return false;
                     };
-                    // LUGOWARE: P-Point Generation using lslices (virtual wall)
+                    // LUGOWARE: P-Point Generation v5 using lslices (virtual wall)
                     const bool p_point_enabled = instance_to_print.print_object.config().p_point_generation.value;
                     bool use_p_points = false;
                     Point p1_point, p2_point;
 
+                    // Check if this island contains only support extrusions — skip P-point for supports
+                    auto is_support_only_island = [](const std::vector<ObjectByExtruder::Island::Region>& regions) {
+                        for (const auto& region : regions) {
+                            for (const ExtrusionEntity* ee : region.perimeters) {
+                                if (ee && ee->role() != erSupportMaterial && ee->role() != erSupportMaterialInterface && ee->role() != erSupportTransition)
+                                    return false;
+                            }
+                            for (const ExtrusionEntity* ee : region.infills) {
+                                if (ee && ee->role() != erSupportMaterial && ee->role() != erSupportMaterialInterface && ee->role() != erSupportTransition)
+                                    return false;
+                            }
+                        }
+                        return true;
+                    };
+
                     if (p_point_enabled && m_layer != nullptr &&
                         island_idx < m_layer->lslices.size() &&
-                        !by_region_specific.empty()) {
-                        // Use lslices contour as the virtual wall (already computed during slicing)
-                        Polygons cell_boundary = to_polygons(m_layer->lslices[island_idx]);
+                        !by_region_specific.empty() &&
+                        !is_support_only_island(by_region_specific)) {
+                        // Create virtual wall: offset lslices contour inward by pw*2
+                        double nozzle_d = m_config.nozzle_diameter.get_at(0);
+                        if (nozzle_d <= 0) nozzle_d = 0.4;
+                        double pw = m_config.line_width.get_abs_value(nozzle_d);
+                        if (pw <= 0) pw = nozzle_d;
+
+                        Polygons outer_contour;
+                        outer_contour.push_back(m_layer->lslices[island_idx].contour);
+                        Polygons cell_boundary = Slic3r::offset(outer_contour, float(-scale_(pw * 2.0)));
 
                         if (!cell_boundary.empty()) {
-                            double nozzle_d = m_config.nozzle_diameter.get_at(0);
-                            if (nozzle_d <= 0) nozzle_d = 0.4;
-                            double pw = m_config.line_width.get_abs_value(nozzle_d);
-                            if (pw <= 0) pw = nozzle_d;
-
                             Point start_pt = get_island_first_point(by_region_specific);
                             Point end_pt = get_island_last_point(by_region_specific);
-                            p1_point = compute_p_point(start_pt, by_region_specific, cell_boundary);
-                            p2_point = compute_p_point(end_pt, by_region_specific, cell_boundary);
+                            p1_point = compute_p1_point(start_pt, by_region_specific, cell_boundary);
+                            p2_point = compute_p2_point(end_pt, by_region_specific, cell_boundary);
 
-                            use_p_points = !(p1_point == start_pt && p2_point == end_pt);
+                            // P-point generated if distance > 0 (common condition #1)
+                            use_p_points = (p1_point != start_pt) || (p2_point != end_pt);
                         }
                     }
                     if (use_p_points) {
-                        // Step 1: Direct G1 travel to P1 (at Z-hop height)
-                        {
-                            Vec2d p1_unscaled = unscale(p1_point);
-                            Vec2d origin = this->origin();
-                            gcode += m_writer.travel_to_xy(Vec2d(p1_unscaled.x() + origin.x(), p1_unscaled.y() + origin.y()), "P-point P1 pre-move");
-                            this->set_last_pos(p1_point);
-                        }
-                        // Step 2: Lower Z (unlift/Z-hop down) at P1 position
-                        gcode += m_writer.unlift();
-                        gcode += "; P-point: Z lowered at P1\n";
-                        // Step 3: Direct travel from P1 to start point
-                        {
-                            Point start_pt = get_island_first_point(by_region_specific);
-                            Vec2d pt_unscaled = unscale(start_pt);
-                            Vec2d origin = this->origin();
-                            gcode += m_writer.travel_to_xy(Vec2d(pt_unscaled.x() + origin.x(), pt_unscaled.y() + origin.y()), "P-point travel to start");
-                            this->set_last_pos(start_pt);
+                        Point start_pt = get_island_first_point(by_region_specific);
+                        if (p1_point != start_pt) {
+                            // Step 1: Travel to P1 (arrive at cell interior)
+                            gcode += this->travel_to(p1_point, erInternalInfill, "P-point: travel to P1");
+                            // Step 2: Z-hop down at P1
+                            gcode += m_writer.unlift();
+                            gcode += "; P-point: Z lowered at P1\n";
+                            // Step 3: Travel from P1 to start using avoid_crossing_perimeters
+                            // (internal→external crossing allowed once if start is outside boundary)
+                            gcode += this->travel_to(start_pt, erInternalInfill, "P-point: P1 to start");
                         }
                     }
 
@@ -5327,12 +5339,19 @@ LayerResult GCode::process_layer(
                     gcode += this->extrude_infill(print,by_region_specific, true);
 
                     if (use_p_points) {
-                        // After finishing island extrusion, direct travel to P2
-                        Vec2d p2_unscaled = unscale(p2_point);
-                        Vec2d origin = this->origin();
-                        gcode += m_writer.travel_to_xy(Vec2d(p2_unscaled.x() + origin.x(), p2_unscaled.y() + origin.y()), "P-point travel to P2");
-                        this->set_last_pos(p2_point);
-                        gcode += "; P-point: at P2, Z-hop up next\n";
+                        Point end_pt = get_island_last_point(by_region_specific);
+                        if (p2_point != end_pt) {
+                            // Step 1: Straight line travel from end to P2
+                            // (external→internal crossing allowed once if end is outside boundary)
+                            Vec2d p2_unscaled = unscale(p2_point);
+                            Vec2d origin = this->origin();
+                            gcode += m_writer.travel_to_xy(
+                                Vec2d(p2_unscaled.x() + origin.x(), p2_unscaled.y() + origin.y()),
+                                "P-point: end to P2 (straight)");
+                            this->set_last_pos(p2_point);
+                            // Step 2: Z-hop up at P2, then travel to next cell
+                            gcode += "; P-point: at P2, Z-hop up next\n";
+                        }
                     }
                 }
 
@@ -5966,132 +5985,198 @@ std::string GCode::extrude_path(ExtrusionPath path, std::string description, dou
     return gcode;
 }
 
-// LUGOWARE P-point algorithm (using lslices virtual wall):
-// Computes a P-point based on cell boundary offset zones.
-// - Cell boundary = convex hull of ALL extrusion points (perimeters + infill)
-// - Zone 1: offset from cell boundary by print_width*3 (min) to print_width*50 (max) inward
-// - Zone 2: distance from reference point (start/end) between 2mm and 30mm
-// - P-point = intersection of Zone1 & Zone2, max offset first, then max distance from reference
-// - print_width: nozzle diameter or configured line width
-Point GCode::compute_p_point(const Point& reference_point,
-                             const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region,
-                             const Polygons& cell_boundary)
+// LUGOWARE: Compute minimum distance from point to boundary polygon edges
+static double min_dist_to_boundary(const Point& pt, const Polygons& boundary)
 {
-    // Get print width (line width or nozzle diameter)
-    double nozzle_diam = m_config.nozzle_diameter.get_at(0);
-    if (nozzle_diam <= 0) nozzle_diam = 0.4;
-    double print_width = m_config.line_width.get_abs_value(nozzle_diam);
-    if (print_width <= 0)
-        print_width = nozzle_diam;
-
-    const coord_t min_offset = scale_(print_width * 3.0);
-    const coord_t max_offset = scale_(print_width * 50.0);
-    const coord_t min_ref_dist = scale_(2.0);
-    const coord_t max_ref_dist = scale_(30.0);
-
-    // Collect ALL extrusion points as candidates (perimeters + infill, line type irrelevant)
-    Points all_points;
-    for (const auto& region : by_region) {
-        for (const ExtrusionEntity* ee : region.perimeters) {
-            if (!ee) continue;
-            Polylines pls = ee->as_polylines();
-            for (const auto& pl : pls) {
-                // Sample every few points for performance
-                for (size_t i = 0; i < pl.points.size(); i += 3)
-                    all_points.push_back(pl.points[i]);
-            }
-        }
-        for (const ExtrusionEntity* ee : region.infills) {
-            if (!ee) continue;
-            Polylines pls = ee->as_polylines();
-            for (const auto& pl : pls) {
-                for (size_t i = 0; i < pl.points.size(); i += 3)
-                    all_points.push_back(pl.points[i]);
-            }
-        }
-    }
-
-    if (all_points.empty() || cell_boundary.empty())
-        return reference_point;
-
-    // Pre-compute all boundary lines for distance checks
-    std::vector<Line> boundary_lines;
-    for (const Polygon& pg : cell_boundary) {
+    double min_d = std::numeric_limits<double>::max();
+    for (const Polygon& pg : boundary) {
         Lines lns = pg.lines();
-        boundary_lines.insert(boundary_lines.end(), lns.begin(), lns.end());
-    }
-
-    // Helper: compute minimum distance from a point to cell boundary
-    auto min_dist_to_boundary = [&boundary_lines](const Point& pt) -> double {
-        double min_d = std::numeric_limits<double>::max();
-        for (const Line& ln : boundary_lines) {
+        for (const Line& ln : lns) {
             double d = line_alg::distance_to(ln, pt);
             min_d = std::min(min_d, d);
         }
-        return min_d;
-    };
-
-    // Find candidates: intersection of Zone1 (offset) and Zone2 (ref distance)
-    struct Candidate {
-        Point pt;
-        double offset_dist;  // distance from cell boundary (inward offset)
-        double ref_dist;     // distance from reference point
-    };
-    std::vector<Candidate> candidates;
-
-    for (const Point& pt : all_points) {
-        double offset_d = min_dist_to_boundary(pt);
-        if (offset_d < min_offset || offset_d > max_offset)
-            continue;
-
-        double ref_d = (pt - reference_point).cast<double>().norm();
-        if (ref_d < min_ref_dist || ref_d > max_ref_dist)
-            continue;
-
-        candidates.push_back({pt, offset_d, ref_d});
     }
+    return min_d;
+}
 
-    // Fallback 1: relax offset to print_width*1.5 minimum
-    if (candidates.empty()) {
-        const coord_t relaxed_offset = scale_(print_width * 1.5);
-        for (const Point& pt : all_points) {
-            double offset_d = min_dist_to_boundary(pt);
-            if (offset_d < relaxed_offset) continue;
-            double ref_d = (pt - reference_point).cast<double>().norm();
-            if (ref_d < min_ref_dist || ref_d > max_ref_dist) continue;
-            candidates.push_back({pt, offset_d, ref_d});
+// LUGOWARE: Check if point is inside any of the boundary polygons
+static bool point_inside_boundary(const Point& pt, const Polygons& boundary)
+{
+    for (const Polygon& pg : boundary)
+        if (pg.contains(pt)) return true;
+    return false;
+}
+
+// LUGOWARE: Find the inward normal direction from a point toward cell interior.
+// Returns normalized Vec2d pointing from the nearest boundary edge inward.
+static Vec2d compute_inward_normal(const Point& pt, const Polygons& boundary)
+{
+    double min_d = std::numeric_limits<double>::max();
+    Line closest_line;
+    for (const Polygon& pg : boundary) {
+        Lines lns = pg.lines();
+        for (const Line& ln : lns) {
+            double d = line_alg::distance_to(ln, pt);
+            if (d < min_d) {
+                min_d = d;
+                closest_line = ln;
+            }
+        }
+    }
+    // Edge direction
+    Vec2d edge_dir = (closest_line.b - closest_line.a).cast<double>();
+    // Normal (rotate 90 degrees CCW for polygon wound CCW -> inward)
+    Vec2d normal(-edge_dir.y(), edge_dir.x());
+    normal.normalize();
+    // Check if normal points inward (toward interior)
+    Point test_pt = pt + (normal * scale_(0.1)).cast<coord_t>();
+    if (!point_inside_boundary(test_pt, boundary)) {
+        normal = -normal;
+    }
+    return normal;
+}
+
+// LUGOWARE: Find intersection of a ray with boundary polygons.
+// Returns the first intersection point along direction from origin.
+// Returns false if no intersection found.
+static bool ray_boundary_intersection(const Point& origin, const Vec2d& direction,
+                                       const Polygons& boundary, double max_dist,
+                                       Point& intersection)
+{
+    double best_t = max_dist + 1.0;
+    bool found = false;
+
+    for (const Polygon& pg : boundary) {
+        Lines lns = pg.lines();
+        for (const Line& ln : lns) {
+            // Ray-segment intersection
+            Vec2d p = origin.cast<double>();
+            Vec2d d = direction;
+            Vec2d a = ln.a.cast<double>();
+            Vec2d b = ln.b.cast<double>();
+            Vec2d seg = b - a;
+
+            double denom = d.x() * seg.y() - d.y() * seg.x();
+            if (std::abs(denom) < 1e-10) continue;
+
+            Vec2d diff = a - p;
+            double t = (diff.x() * seg.y() - diff.y() * seg.x()) / denom;
+            double u = (diff.x() * d.y() - diff.y() * d.x()) / denom;
+
+            if (t > scale_(0.1) && t < best_t && u >= 0.0 && u <= 1.0) {
+                best_t = t;
+                intersection = (p + d * t).cast<coord_t>();
+                found = true;
+            }
+        }
+    }
+    return found;
+}
+
+// LUGOWARE P1-point v5: Geometrically find the deepest interior point within 10mm of start.
+// Uses progressive inward offset of cell_boundary to find deepest reachable point.
+Point GCode::compute_p1_point(const Point& start_point,
+                              const std::vector<GCode::ObjectByExtruder::Island::Region>& /* by_region */,
+                              const Polygons& cell_boundary)
+{
+    if (cell_boundary.empty()) return start_point;
+
+    const double max_dist = scale_(10.0);    // 10mm search radius
+    const double offset_step = scale_(0.3);  // 0.3mm incremental offset steps
+
+    // Progressively offset inward to find the deepest interior point
+    Point best_point = start_point;
+    double best_offset_depth = 0;
+
+    for (double current_offset = offset_step; current_offset < scale_(5.0); current_offset += offset_step) {
+        Polygons shrunk = Slic3r::offset(cell_boundary, float(-current_offset));
+        if (shrunk.empty()) break;
+
+        // Find the closest point on the shrunk boundary to start_point
+        Point closest_on_shrunk;
+        double closest_dist = std::numeric_limits<double>::max();
+        for (const Polygon& pg : shrunk) {
+            for (const Point& pt : pg.points) {
+                double d = (pt - start_point).cast<double>().norm();
+                if (d < closest_dist) {
+                    closest_dist = d;
+                    closest_on_shrunk = pt;
+                }
+            }
+            // Also check edge projections
+            Lines lns = pg.lines();
+            for (const Line& ln : lns) {
+                Point proj = ln.closest_point(start_point);
+                double d = (proj - start_point).cast<double>().norm();
+                if (d < closest_dist) {
+                    closest_dist = d;
+                    closest_on_shrunk = proj;
+                }
+            }
+        }
+
+        if (closest_dist <= max_dist && closest_dist > 0) {
+            // This point is deeper inside and within range
+            best_point = closest_on_shrunk;
+            best_offset_depth = current_offset;
         }
     }
 
-    // Fallback 2: relax distance to 1-50mm range, any offset > 0
-    if (candidates.empty()) {
-        for (const Point& pt : all_points) {
-            double ref_d = (pt - reference_point).cast<double>().norm();
-            if (ref_d < scale_(1.0) || ref_d > scale_(50.0)) continue;
-            double offset_d = min_dist_to_boundary(pt);
-            if (offset_d > 0)
-                candidates.push_back({pt, offset_d, ref_d});
+    // If we found a deeper point, use it; otherwise return start_point (distance=0, no P-point)
+    if (best_offset_depth > 0)
+        return best_point;
+    return start_point;
+}
+
+// LUGOWARE P2-point v5: From end point, shoot ray inward up to 5mm.
+// If ray hits opposite wall before 5mm, that intersection is P2.
+// Otherwise, the point at 5mm along the ray is P2.
+Point GCode::compute_p2_point(const Point& end_point,
+                              const std::vector<GCode::ObjectByExtruder::Island::Region>& /* by_region */,
+                              const Polygons& cell_boundary)
+{
+    if (cell_boundary.empty()) return end_point;
+
+    const double max_dist = scale_(5.0);  // 5mm max travel
+
+    // Determine inward direction from end_point
+    Vec2d inward = compute_inward_normal(end_point, cell_boundary);
+
+    // If end_point is outside boundary, first find the entry point
+    bool end_inside = point_inside_boundary(end_point, cell_boundary);
+    Point ray_origin = end_point;
+
+    if (!end_inside) {
+        // Outside→inside crossing allowed once: find entry intersection
+        Point entry;
+        if (ray_boundary_intersection(end_point, inward, cell_boundary, max_dist, entry)) {
+            ray_origin = entry;
+            // Remaining distance after entry
+            double used = (entry - end_point).cast<double>().norm();
+            if (used >= max_dist) return entry;
+            // Continue ray from entry point
+            double remaining = max_dist - used;
+            Point exit_pt;
+            if (ray_boundary_intersection(entry, inward, cell_boundary, remaining, exit_pt)) {
+                // Hit opposite wall
+                return exit_pt;
+            } else {
+                // No opposite wall within remaining distance
+                return (entry.cast<double>() + inward * remaining).cast<coord_t>();
+            }
         }
+        return end_point;  // Can't find entry, no P2
     }
 
-    if (candidates.empty())
-        return reference_point;
-
-    // Select: 1st priority = max offset (deepest inside), 2nd priority = max ref distance
-    Point best_p = candidates.front().pt;
-    double best_offset = -1;
-    double best_ref = 0;
-
-    for (const auto& c : candidates) {
-        if (c.offset_dist > best_offset ||
-            (c.offset_dist == best_offset && c.ref_dist > best_ref)) {
-            best_offset = c.offset_dist;
-            best_ref = c.ref_dist;
-            best_p = c.pt;
-        }
+    // End point is inside: shoot ray inward, look for opposite wall hit
+    Point hit_pt;
+    if (ray_boundary_intersection(end_point, inward, cell_boundary, max_dist, hit_pt)) {
+        // Hit opposite wall before 5mm — that's P2
+        return hit_pt;
     }
 
-    return best_p;
+    // No wall hit within 5mm — P2 is at 5mm along the ray
+    return (end_point.cast<double>() + inward * max_dist).cast<coord_t>();
 }
 
 // Get first extrusion point of an island

@@ -1,9 +1,0 @@
-{
-    "type": "filament",
-    "name": "eSUN PLA-Marble @System",
-    "inherits": "eSUN PLA-Marble @base",
-    "from": "system",
-    "setting_id": "OGFSL06_00",
-    "instantiation": "true",
-    "compatible_printers": []
-}
