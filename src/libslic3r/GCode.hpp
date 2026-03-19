@@ -474,14 +474,10 @@ private:
 		// For sequential print, the instance of the object to be printing has to be defined.
 		const size_t                     				 single_object_instance_idx);
 
-    // LUGOWARE: P-Point Generation helpers
+    // LUGOWARE: P-Point Generation helpers (using lslices virtual wall)
     Point           compute_p_point(const Point& reference_point, const std::vector<ObjectByExtruder::Island::Region>& by_region, const Polygons& cell_boundary);
-    static Polyline compute_safe_travel(const Point& from, const Point& to, const Polygons& safe_zone);
-    static Polygons collect_wall_polygons(const std::vector<ObjectByExtruder::Island::Region>& by_region);
-    static bool     island_has_internal_space(const std::vector<ObjectByExtruder::Island::Region>& by_region);
     static Point    get_island_first_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);
     static Point    get_island_last_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);
-    static Polygons build_island_contour(const std::vector<ObjectByExtruder::Island::Region>& by_region);
 
     std::string     extrude_perimeters(const Print& print, const std::vector<ObjectByExtruder::Island::Region>& by_region, bool is_first_layer, bool is_infill_first);
     std::string     extrude_infill(const Print& print, const std::vector<ObjectByExtruder::Island::Region>& by_region, bool ironing);

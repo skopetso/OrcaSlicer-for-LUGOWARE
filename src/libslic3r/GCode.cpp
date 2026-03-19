@@ -5229,7 +5229,8 @@ LayerResult GCode::process_layer(
                 }
                 //FIXME order islands?
                 // Sequential tool path ordering of multiple parts within the same object, aka. perimeter tracking (#5511)
-                for (ObjectByExtruder::Island &island : instance_to_print.object_by_extruder.islands) {
+                for (size_t island_idx = 0; island_idx < instance_to_print.object_by_extruder.islands.size(); ++island_idx) {
+                    ObjectByExtruder::Island &island = instance_to_print.object_by_extruder.islands[island_idx];
                     const auto& by_region_specific = is_anything_overridden ? island.by_region_per_copy(by_region_per_copy_cache, static_cast<unsigned int>(instance_to_print.instance_id), extruder_id, print_wipe_extrusions != 0) : island.by_region;
                     //BBS: add brim by obj by extruder
                     if (first_layer) {
@@ -5261,30 +5262,30 @@ LayerResult GCode::process_layer(
                         }
                         return false;
                     };
-                    // LUGOWARE: P-Point Generation
+                    // LUGOWARE: P-Point Generation using lslices (virtual wall)
                     const bool p_point_enabled = instance_to_print.print_object.config().p_point_generation.value;
-                    bool use_p_points = p_point_enabled && island_has_internal_space(by_region_specific);
+                    bool use_p_points = false;
                     Point p1_point, p2_point;
 
-                    Polygons cell_boundary;
-                    Polygons safe_zone;
-                    if (use_p_points) {
-                        // Compute cell boundary and safe zone (offset inward by print_width*3)
-                        cell_boundary = build_island_contour(by_region_specific);
-                        double nozzle_d = m_config.nozzle_diameter.get_at(0);
-                        if (nozzle_d <= 0) nozzle_d = 0.4;
-                        double pw = m_config.line_width.get_abs_value(nozzle_d);
-                        if (pw <= 0) pw = nozzle_d;
-                        safe_zone = Slic3r::offset(cell_boundary, float(-scale_(pw * 3.0)));
+                    if (p_point_enabled && m_layer != nullptr &&
+                        island_idx < m_layer->lslices.size() &&
+                        !by_region_specific.empty()) {
+                        // Use lslices contour as the virtual wall (already computed during slicing)
+                        Polygons cell_boundary = to_polygons(m_layer->lslices[island_idx]);
 
-                        Point start_pt = get_island_first_point(by_region_specific);
-                        Point end_pt = get_island_last_point(by_region_specific);
-                        p1_point = compute_p_point(start_pt, by_region_specific, cell_boundary);
-                        p2_point = compute_p_point(end_pt, by_region_specific, cell_boundary);
+                        if (!cell_boundary.empty()) {
+                            double nozzle_d = m_config.nozzle_diameter.get_at(0);
+                            if (nozzle_d <= 0) nozzle_d = 0.4;
+                            double pw = m_config.line_width.get_abs_value(nozzle_d);
+                            if (pw <= 0) pw = nozzle_d;
 
-                        // Skip P-points if they equal the reference (no valid P found)
-                        if (p1_point == start_pt && p2_point == end_pt)
-                            use_p_points = false;
+                            Point start_pt = get_island_first_point(by_region_specific);
+                            Point end_pt = get_island_last_point(by_region_specific);
+                            p1_point = compute_p_point(start_pt, by_region_specific, cell_boundary);
+                            p2_point = compute_p_point(end_pt, by_region_specific, cell_boundary);
+
+                            use_p_points = !(p1_point == start_pt && p2_point == end_pt);
+                        }
                     }
                     if (use_p_points) {
                         // Step 1: Direct G1 travel to P1 (at Z-hop height)
@@ -5297,15 +5298,12 @@ LayerResult GCode::process_layer(
                         // Step 2: Lower Z (unlift/Z-hop down) at P1 position
                         gcode += m_writer.unlift();
                         gcode += "; P-point: Z lowered at P1\n";
-                        // Step 3: Travel from P1 to start point, staying inside safe zone
+                        // Step 3: Direct travel from P1 to start point
                         {
                             Point start_pt = get_island_first_point(by_region_specific);
-                            Polyline safe_path = compute_safe_travel(p1_point, start_pt, safe_zone);
-                            for (size_t i = 1; i < safe_path.points.size(); ++i) {
-                                Vec2d pt_unscaled = unscale(safe_path.points[i]);
-                                Vec2d origin = this->origin();
-                                gcode += m_writer.travel_to_xy(Vec2d(pt_unscaled.x() + origin.x(), pt_unscaled.y() + origin.y()), "P-point travel to start");
-                            }
+                            Vec2d pt_unscaled = unscale(start_pt);
+                            Vec2d origin = this->origin();
+                            gcode += m_writer.travel_to_xy(Vec2d(pt_unscaled.x() + origin.x(), pt_unscaled.y() + origin.y()), "P-point travel to start");
                             this->set_last_pos(start_pt);
                         }
                     }
@@ -5329,17 +5327,12 @@ LayerResult GCode::process_layer(
                     gcode += this->extrude_infill(print,by_region_specific, true);
 
                     if (use_p_points) {
-                        // After finishing island extrusion, travel to P2 inside safe zone
-                        Point end_pt = get_island_last_point(by_region_specific);
-                        Polyline safe_path = compute_safe_travel(end_pt, p2_point, safe_zone);
-                        for (size_t i = 1; i < safe_path.points.size(); ++i) {
-                            Vec2d pt_unscaled = unscale(safe_path.points[i]);
-                            Vec2d origin = this->origin();
-                            gcode += m_writer.travel_to_xy(Vec2d(pt_unscaled.x() + origin.x(), pt_unscaled.y() + origin.y()), "P-point travel to P2");
-                        }
+                        // After finishing island extrusion, direct travel to P2
+                        Vec2d p2_unscaled = unscale(p2_point);
+                        Vec2d origin = this->origin();
+                        gcode += m_writer.travel_to_xy(Vec2d(p2_unscaled.x() + origin.x(), p2_unscaled.y() + origin.y()), "P-point travel to P2");
                         this->set_last_pos(p2_point);
                         gcode += "; P-point: at P2, Z-hop up next\n";
-                        // Z-hop up will happen on next retract/travel to next island
                     }
                 }
 
@@ -5973,41 +5966,7 @@ std::string GCode::extrude_path(ExtrusionPath path, std::string description, dou
     return gcode;
 }
 
-// LUGOWARE: P-Point Generation helpers (v3)
-// Build island contour from ALL extrusion paths (perimeters + infill).
-// Uses offset-union of all polylines to create a tight contour that follows
-// concave shapes (not convex hull).
-Polygons GCode::build_island_contour(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
-{
-    // Collect all extrusion points (perimeters + infill)
-    Points all_points;
-    for (const auto& region : by_region) {
-        for (const ExtrusionEntity* ee : region.perimeters) {
-            if (!ee) continue;
-            Polylines pls = ee->as_polylines();
-            for (const auto& pl : pls) {
-                // Sample every 5th point for performance
-                for (size_t i = 0; i < pl.points.size(); i += 5)
-                    all_points.push_back(pl.points[i]);
-            }
-        }
-        for (const ExtrusionEntity* ee : region.infills) {
-            if (!ee) continue;
-            Polylines pls = ee->as_polylines();
-            for (const auto& pl : pls) {
-                for (size_t i = 0; i < pl.points.size(); i += 5)
-                    all_points.push_back(pl.points[i]);
-            }
-        }
-    }
-    if (all_points.size() < 3) return {};
-
-    // Use convex hull for fast contour computation
-    Polygon hull = Geometry::convex_hull(all_points);
-    return {hull};
-}
-
-// LUGOWARE P-point algorithm v2:
+// LUGOWARE P-point algorithm (using lslices virtual wall):
 // Computes a P-point based on cell boundary offset zones.
 // - Cell boundary = convex hull of ALL extrusion points (perimeters + infill)
 // - Zone 1: offset from cell boundary by print_width*3 (min) to print_width*50 (max) inward
@@ -6133,102 +6092,6 @@ Point GCode::compute_p_point(const Point& reference_point,
     }
 
     return best_p;
-}
-
-// LUGOWARE: Generate a travel path from 'from' to 'to' that stays inside the safe_zone.
-// safe_zone = cell_boundary offset inward by print_width*3 (the minimum offset zone).
-// If direct line stays inside, returns just {from, to}.
-// If not, finds waypoints along the safe_zone boundary to route around obstacles.
-Polyline GCode::compute_safe_travel(const Point& from, const Point& to, const Polygons& safe_zone)
-{
-    // Check if direct line stays inside safe_zone
-    // Sample points along the line and verify they are inside
-    bool direct_ok = true;
-    int num_samples = 10;
-    for (int i = 1; i < num_samples; ++i) {
-        double t = (double)i / num_samples;
-        Point sample(
-            from.x() + (coord_t)(t * (to.x() - from.x())),
-            from.y() + (coord_t)(t * (to.y() - from.y()))
-        );
-        bool inside = false;
-        for (const Polygon& pg : safe_zone) {
-            if (pg.contains(sample)) { inside = true; break; }
-        }
-        if (!inside) { direct_ok = false; break; }
-    }
-
-    if (direct_ok) {
-        Polyline result;
-        result.points = {from, to};
-        return result;
-    }
-
-    // Direct line goes outside safe_zone. Find a waypoint inside.
-    // Strategy: find the point in safe_zone closest to the midpoint of from-to,
-    // then route from -> waypoint -> to.
-    Point midpoint(
-        (from.x() + to.x()) / 2,
-        (from.y() + to.y()) / 2
-    );
-
-    // Find nearest point on safe_zone boundary to midpoint, then offset inward
-    Point best_wp = midpoint;
-    double best_dist = std::numeric_limits<double>::max();
-    for (const Polygon& pg : safe_zone) {
-        for (const Point& pt : pg.points) {
-            bool pt_inside = false;
-            for (const Polygon& pg2 : safe_zone) {
-                if (pg2.contains(pt)) { pt_inside = true; break; }
-            }
-            if (!pt_inside) continue;
-            double d = (pt - midpoint).cast<double>().norm();
-            if (d < best_dist) {
-                best_dist = d;
-                best_wp = pt;
-            }
-        }
-    }
-
-    Polyline result;
-    result.points = {from, best_wp, to};
-    return result;
-}
-
-// Collect wall (perimeter) polygons from island regions for distance calculation
-Polygons GCode::collect_wall_polygons(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
-{
-    Polygons walls;
-    for (const auto& region : by_region) {
-        for (const ExtrusionEntity* ee : region.perimeters) {
-            if (!ee) continue;
-            Polylines pls = ee->as_polylines();
-            for (const auto& pl : pls) {
-                if (pl.points.size() >= 3) {
-                    Polygon pg;
-                    pg.points = pl.points;
-                    walls.push_back(pg);
-                } else if (pl.points.size() >= 2) {
-                    Polygon pg;
-                    pg.points = pl.points;
-                    pg.points.push_back(pl.points.front());
-                    walls.push_back(pg);
-                }
-            }
-        }
-    }
-    return walls;
-}
-
-// Check if island has any extrusions (perimeters or infill) for P-point generation.
-// P-points are generated for any island with printable content, regardless of type.
-bool GCode::island_has_internal_space(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
-{
-    for (const auto& region : by_region) {
-        if (!region.perimeters.empty() || !region.infills.empty())
-            return true;
-    }
-    return false;
 }
 
 // Get first extrusion point of an island
