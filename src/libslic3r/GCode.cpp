@@ -6073,64 +6073,55 @@ static bool ray_boundary_intersection(const Point& origin, const Vec2d& directio
     return found;
 }
 
-// LUGOWARE P1-point v5: Geometrically find the deepest interior point within 10mm of start.
-// Uses progressive inward offset of cell_boundary to find deepest reachable point.
+// LUGOWARE P1-point v5: Search along the line from start_point toward cell centroid.
+// Find the point along that direction with maximum depth from boundary, within 10mm.
 Point GCode::compute_p1_point(const Point& start_point,
                               const std::vector<GCode::ObjectByExtruder::Island::Region>& /* by_region */,
                               const Polygons& cell_boundary)
 {
     if (cell_boundary.empty()) return start_point;
 
-    const double max_dist = scale_(10.0);    // 10mm search radius
-    const double offset_step = scale_(0.3);  // 0.3mm incremental offset steps
+    const double max_dist = scale_(10.0);    // 10mm max from start
+    const double step = scale_(0.3);         // 0.3mm steps along direction
 
-    // Progressively offset inward to find the deepest interior point
-    Point best_point = start_point;
-    double best_offset_depth = 0;
-
-    for (double current_offset = offset_step; current_offset < scale_(5.0); current_offset += offset_step) {
-        Polygons shrunk = Slic3r::offset(cell_boundary, float(-current_offset));
-        if (shrunk.empty()) break;
-
-        // Find the closest point on the shrunk boundary to start_point
-        Point closest_on_shrunk;
-        double closest_dist = std::numeric_limits<double>::max();
-        for (const Polygon& pg : shrunk) {
-            for (const Point& pt : pg.points) {
-                double d = (pt - start_point).cast<double>().norm();
-                if (d < closest_dist) {
-                    closest_dist = d;
-                    closest_on_shrunk = pt;
-                }
-            }
-            // Also check edge projections
-            Lines lns = pg.lines();
-            for (const Line& ln : lns) {
-                // Project start_point onto line segment ln
-                Vec2d a = ln.a.cast<double>();
-                Vec2d b = ln.b.cast<double>();
-                Vec2d p = start_point.cast<double>();
-                Vec2d ab = b - a;
-                double t = (p - a).dot(ab) / ab.squaredNorm();
-                t = std::max(0.0, std::min(1.0, t));
-                Point proj = (a + ab * t).cast<coord_t>();
-                double d = (proj - start_point).cast<double>().norm();
-                if (d < closest_dist) {
-                    closest_dist = d;
-                    closest_on_shrunk = proj;
-                }
-            }
+    // Compute cell centroid
+    Vec2d centroid(0, 0);
+    int total_pts = 0;
+    for (const Polygon& pg : cell_boundary) {
+        for (const Point& pt : pg.points) {
+            centroid += pt.cast<double>();
+            total_pts++;
         }
+    }
+    if (total_pts == 0) return start_point;
+    centroid /= (double)total_pts;
 
-        if (closest_dist <= max_dist && closest_dist > 0) {
-            // This point is deeper inside and within range
-            best_point = closest_on_shrunk;
-            best_offset_depth = current_offset;
+    // Direction from start toward centroid
+    Vec2d dir = centroid - start_point.cast<double>();
+    double dir_len = dir.norm();
+    if (dir_len < scale_(0.1)) return start_point;  // start is already at centroid
+    dir /= dir_len;  // normalize
+
+    // Walk along direction, find point with maximum depth
+    Point best_point = start_point;
+    double best_depth = 0;
+
+    for (double t = step; t <= std::min(max_dist, dir_len); t += step) {
+        Point candidate = (start_point.cast<double>() + dir * t).cast<coord_t>();
+
+        // Must be inside cell boundary
+        if (!point_inside_boundary(candidate, cell_boundary)) continue;
+
+        // Compute depth (min distance to boundary)
+        double depth = min_dist_to_boundary(candidate, cell_boundary);
+
+        if (depth > best_depth) {
+            best_depth = depth;
+            best_point = candidate;
         }
     }
 
-    // If we found a deeper point, use it; otherwise return start_point (distance=0, no P-point)
-    if (best_offset_depth > 0)
+    if (best_depth > 0)
         return best_point;
     return start_point;
 }

@@ -629,6 +629,7 @@ find_package(TBB REQUIRED)
 # add_definitions(-DTBB_USE_CAPTURED_EXCEPTION=0)
 
 find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
 find_package(CURL REQUIRED)
 find_package(Freetype REQUIRED)
 

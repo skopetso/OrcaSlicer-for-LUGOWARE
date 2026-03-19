@@ -23,6 +23,7 @@ struct FuzzySkinConfig
     FuzzySkinMode mode;
     int           layer_step;
     int           layer_step_thickness;
+    bool          layer_step_start_on;
 
     bool operator==(const FuzzySkinConfig& r) const
     {
@@ -36,7 +37,8 @@ struct FuzzySkinConfig
             && noise_persistence == r.noise_persistence
             && mode == r.mode
             && layer_step == r.layer_step
-            && layer_step_thickness == r.layer_step_thickness;
+            && layer_step_thickness == r.layer_step_thickness
+            && layer_step_start_on == r.layer_step_start_on;
     }
 
     bool operator!=(const FuzzySkinConfig& r) const { return !(*this == r); }

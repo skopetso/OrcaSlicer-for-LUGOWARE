@@ -3429,6 +3429,14 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionInt(1));
 
+    def = this->add("fuzzy_skin_layer_step_start_on", coBool);
+    def->label = L("Fuzzy skin layer step start on");
+    def->category = L("Others");
+    def->tooltip = L("When enabled, the first layer starts with fuzzy skin applied. "
+                     "When disabled, the first layer starts without fuzzy skin (applied layer comes later in the step cycle).");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
     def = this->add("filter_out_gap_fill", coFloat);
     def->label = L("Filter out tiny gaps");
     def->category = L("Layers and Perimeters");
@@ -6644,6 +6652,22 @@ void PrintConfigDef::init_fff_params()
     def->max = 200;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionInt(1));
+
+    def = this->add("xy_hole_compensation_layer_step_start_on", coBool);
+    def->label = L("X-Y hole compensation layer step start on");
+    def->category = L("Quality");
+    def->tooltip = L("When enabled, the first layer starts with hole compensation applied. "
+                     "When disabled, the first layer starts without compensation (applied layer comes later in the step cycle).");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
+    def = this->add("xy_contour_compensation_layer_step_start_on", coBool);
+    def->label = L("X-Y contour compensation layer step start on");
+    def->category = L("Quality");
+    def->tooltip = L("When enabled, the first layer starts with contour compensation applied. "
+                     "When disabled, the first layer starts without compensation (applied layer comes later in the step cycle).");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
 
     def = this->add("p_point_generation", coBool);
     def->label = L("P-point generation");

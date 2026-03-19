@@ -192,7 +192,8 @@ void group_region_by_fuzzify(PerimeterGenerator& g)
                                   region_config.fuzzy_skin_persistence,
                                   region_config.fuzzy_skin_mode,
                                   region_config.fuzzy_skin_layer_step,
-                                  region_config.fuzzy_skin_layer_step_thickness};
+                                  region_config.fuzzy_skin_layer_step_thickness,
+                                  region_config.fuzzy_skin_layer_step_start_on};
         auto&                 surfaces = regions[cfg];
         for (const auto& surface : region->slices.surfaces) {
             surfaces.push_back(&surface);
@@ -232,8 +233,12 @@ bool should_fuzzify(const FuzzySkinConfig& config, const int layer_id, const siz
         int pos_in_step = layer_id % config.layer_step;
         int thickness = std::min(config.layer_step_thickness, config.layer_step);
         if (thickness < 1) thickness = 1;
-        if (pos_in_step >= thickness) {
-            return false;
+        if (config.layer_step_start_on) {
+            // Applied layers first: 0..t-1 = on, t..step-1 = off
+            if (pos_in_step >= thickness) return false;
+        } else {
+            // Non-applied layers first: 0..step-t-1 = off, step-t..step-1 = on
+            if (pos_in_step < (config.layer_step - thickness)) return false;
         }
     }
     if (!config.fuzzy_first_layer && layer_id <= 0) {
