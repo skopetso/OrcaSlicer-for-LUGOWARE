@@ -5,6 +5,14 @@
     "description": "LUGOWARE printer configurations",
     "machine_model_list": [
         {
+            "name": "FLEX4 M",
+            "sub_path": "machine/FLEX4 M.json"
+        },
+        {
+            "name": "FLEX4 L",
+            "sub_path": "machine/FLEX4 L.json"
+        },
+        {
             "name": "FLEX4 W",
             "sub_path": "machine/FLEX4 W.json"
         }
@@ -13,6 +21,22 @@
         {
             "name": "fdm_lugoware_common",
             "sub_path": "machine/fdm_lugoware_common.json"
+        },
+        {
+            "name": "FLEX4 M 0.4 nozzle",
+            "sub_path": "machine/FLEX4 M 0.4 nozzle.json"
+        },
+        {
+            "name": "FLEX4 M 0.6 nozzle",
+            "sub_path": "machine/FLEX4 M 0.6 nozzle.json"
+        },
+        {
+            "name": "FLEX4 L 0.4 nozzle",
+            "sub_path": "machine/FLEX4 L 0.4 nozzle.json"
+        },
+        {
+            "name": "FLEX4 L 0.6 nozzle",
+            "sub_path": "machine/FLEX4 L 0.6 nozzle.json"
         },
         {
             "name": "FLEX4 W 0.4 nozzle",
@@ -27,6 +51,14 @@
         {
             "name": "fdm_process_lugoware_common",
             "sub_path": "process/fdm_process_lugoware_common.json"
+        },
+        {
+            "name": "FLEXIBLE 0.6 @LUGOWARE FLEX4 M",
+            "sub_path": "process/FLEXIBLE 0.6 @LUGOWARE FLEX4 M.json"
+        },
+        {
+            "name": "FLEXIBLE 0.6 @LUGOWARE FLEX4 L",
+            "sub_path": "process/FLEXIBLE 0.6 @LUGOWARE FLEX4 L.json"
         },
         {
             "name": "FLEXIBLE 0.6 @LUGOWARE FLEX4 W",

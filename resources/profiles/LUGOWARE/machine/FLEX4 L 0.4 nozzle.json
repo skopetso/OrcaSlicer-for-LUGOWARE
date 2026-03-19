@@ -1,11 +1,11 @@
 {
     "type": "machine",
-    "name": "FLEX4 W 0.4 nozzle",
+    "name": "FLEX4 L 0.4 nozzle",
     "inherits": "fdm_lugoware_common",
     "from": "system",
-    "setting_id": "LUGW001",
+    "setting_id": "LUGL001",
     "instantiation": "true",
-    "printer_model": "FLEX4 W",
+    "printer_model": "FLEX4 L",
     "nozzle_diameter": [
         "0.4"
     ],
@@ -14,12 +14,6 @@
     ],
     "min_layer_height": [
         "0.15"
-    ],
-    "printable_area": [
-        "0x0",
-        "330x0",
-        "330x255",
-        "0x255"
     ],
     "printable_height": "370"
 }

@@ -1,13 +1,13 @@
 {
     "type": "machine_model",
-    "name": "FLEX4 W",
-    "model_id": "lugoware_flex4w_01",
+    "name": "FLEX4 L",
+    "model_id": "lugoware_flex4l_01",
     "nozzle_diameter": "0.4;0.6",
     "machine_tech": "FFF",
     "family": "LUGOWARE",
     "bed_model": "",
     "bed_texture": "flex4-w-texture.png",
-    "cover_img": "FLEX4 W_cover.png",
+    "cover_img": "FLEX4 L_cover.png",
     "hotend_model": "",
     "default_materials": "Generic PLA;Generic TPU"
 }

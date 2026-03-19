@@ -8,13 +8,17 @@
     "gcode_flavor": "klipper",
     "printable_area": [
         "0x0",
-        "331x0",
-        "331x255",
+        "230x0",
+        "230x255",
         "0x255"
     ],
-    "printable_height": "370",
+    "printable_height": "270",
     "machine_max_acceleration_extruding": [
         "5000",
+        "20000"
+    ],
+    "machine_max_acceleration_travel": [
+        "16000",
         "20000"
     ],
     "machine_max_acceleration_x": [

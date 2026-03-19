@@ -6106,7 +6106,14 @@ Point GCode::compute_p1_point(const Point& start_point,
             // Also check edge projections
             Lines lns = pg.lines();
             for (const Line& ln : lns) {
-                Point proj = ln.closest_point(start_point);
+                // Project start_point onto line segment ln
+                Vec2d a = ln.a.cast<double>();
+                Vec2d b = ln.b.cast<double>();
+                Vec2d p = start_point.cast<double>();
+                Vec2d ab = b - a;
+                double t = (p - a).dot(ab) / ab.squaredNorm();
+                t = std::max(0.0, std::min(1.0, t));
+                Point proj = (a + ab * t).cast<coord_t>();
                 double d = (proj - start_point).cast<double>().norm();
                 if (d < closest_dist) {
                     closest_dist = d;
