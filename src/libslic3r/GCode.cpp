@@ -5275,7 +5275,7 @@ LayerResult GCode::process_layer(
                         if (nozzle_d <= 0) nozzle_d = 0.4;
                         double pw = m_config.line_width.get_abs_value(nozzle_d);
                         if (pw <= 0) pw = nozzle_d;
-                        safe_zone = offset(cell_boundary, -float(scale_(pw * 3.0)));
+                        safe_zone = Slic3r::offset(cell_boundary, float(-scale_(pw * 3.0)));
 
                         Point start_pt = get_island_first_point(by_region_specific);
                         Point end_pt = get_island_last_point(by_region_specific);
@@ -5998,7 +5998,7 @@ Polygons GCode::build_island_contour(const std::vector<GCode::ObjectByExtruder::
     // Expand all polylines by a small offset and union them to form the cell contour.
     // This creates a tight boundary that follows concave shapes.
     const float expansion = float(scale_(0.5)); // 0.5mm expansion to connect nearby paths
-    Polygons expanded = offset(all_polylines, expansion, ClipperLib::jtRound);
+    Polygons expanded = Slic3r::offset(all_polylines, expansion, ClipperLib::jtRound);
     return union_(expanded);
 }
 
