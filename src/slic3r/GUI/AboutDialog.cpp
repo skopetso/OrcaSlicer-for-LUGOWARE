@@ -333,7 +333,7 @@ AboutDialog::AboutDialog()
               (boost::format(
               "<html>"
               "<body>"
-              "<p style=\"text-align:left\"><a style=\"color:#009789\" href=\"https://github.com/skopetso/OrcaSlicer-for-LUGOWARE\">https://github.com/skopetso/OrcaSlicer-for-LUGOWARE</ a></p>"
+              "<p style=\"text-align:left\"><a style=\"color:#009789\" href=\"https://github.com/skopetso/OrcaSlicer-for-LUGOWARE\">https://github.com/skopetso/OrcaSlicer-for-LUGOWARE</a></p>"
               "</body>"
               "</html>")
             ).str());

@@ -5979,27 +5979,32 @@ std::string GCode::extrude_path(ExtrusionPath path, std::string description, dou
 // concave shapes (not convex hull).
 Polygons GCode::build_island_contour(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
 {
-    // Collect all extrusion polylines
-    Polylines all_polylines;
+    // Collect all extrusion points (perimeters + infill)
+    Points all_points;
     for (const auto& region : by_region) {
         for (const ExtrusionEntity* ee : region.perimeters) {
             if (!ee) continue;
             Polylines pls = ee->as_polylines();
-            all_polylines.insert(all_polylines.end(), pls.begin(), pls.end());
+            for (const auto& pl : pls) {
+                // Sample every 5th point for performance
+                for (size_t i = 0; i < pl.points.size(); i += 5)
+                    all_points.push_back(pl.points[i]);
+            }
         }
         for (const ExtrusionEntity* ee : region.infills) {
             if (!ee) continue;
             Polylines pls = ee->as_polylines();
-            all_polylines.insert(all_polylines.end(), pls.begin(), pls.end());
+            for (const auto& pl : pls) {
+                for (size_t i = 0; i < pl.points.size(); i += 5)
+                    all_points.push_back(pl.points[i]);
+            }
         }
     }
-    if (all_polylines.empty()) return {};
+    if (all_points.size() < 3) return {};
 
-    // Expand all polylines by a small offset and union them to form the cell contour.
-    // This creates a tight boundary that follows concave shapes.
-    const float expansion = float(scale_(0.5)); // 0.5mm expansion to connect nearby paths
-    Polygons expanded = Slic3r::offset(all_polylines, expansion, ClipperLib::jtRound);
-    return union_(expanded);
+    // Use convex hull for fast contour computation
+    Polygon hull = Geometry::convex_hull(all_points);
+    return {hull};
 }
 
 // LUGOWARE P-point algorithm v2:
