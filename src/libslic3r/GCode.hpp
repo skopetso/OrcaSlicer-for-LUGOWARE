@@ -475,7 +475,7 @@ private:
 		const size_t                     				 single_object_instance_idx);
 
     // LUGOWARE: P-Point Generation helpers
-    static Point    compute_p_point(const Point& reference_point, const std::vector<ObjectByExtruder::Island::Region>& by_region, const Polygons& wall_polygons);
+    Point           compute_p_point(const Point& reference_point, const std::vector<ObjectByExtruder::Island::Region>& by_region, const Polygons& cell_boundary);
     static Polygons collect_wall_polygons(const std::vector<ObjectByExtruder::Island::Region>& by_region);
     static bool     island_has_internal_space(const std::vector<ObjectByExtruder::Island::Region>& by_region);
     static Point    get_island_first_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);

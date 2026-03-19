@@ -5268,11 +5268,12 @@ LayerResult GCode::process_layer(
 
                     if (use_p_points) {
                         // Compute P1 (before start) and P2 (after end) points
-                        Polygons walls = collect_wall_polygons(by_region_specific);
+                        // Cell boundary = convex hull of ALL extrusion paths
+                        Polygons cell_boundary = build_island_contour(by_region_specific);
                         Point start_pt = get_island_first_point(by_region_specific);
                         Point end_pt = get_island_last_point(by_region_specific);
-                        p1_point = compute_p_point(start_pt, by_region_specific, walls);
-                        p2_point = compute_p_point(end_pt, by_region_specific, walls);
+                        p1_point = compute_p_point(start_pt, by_region_specific, cell_boundary);
+                        p2_point = compute_p_point(end_pt, by_region_specific, cell_boundary);
 
                         // Step 1: Travel to P1 (at Z-hop height, XY only)
                         // Use direct G1 move to avoid wall-following path planning
@@ -5954,131 +5955,156 @@ std::string GCode::extrude_path(ExtrusionPath path, std::string description, dou
 // LUGOWARE: P-Point Generation helpers (v2)
 // Builds the outer contour polygon of the island from perimeter extrusions.
 // Uses the outermost perimeter loops to form the island boundary.
+// Build island contour from ALL extrusion paths (perimeters + infill).
+// The cell boundary is defined by all printed material, not just walls.
 Polygons GCode::build_island_contour(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
 {
-    Polygons contours;
+    // Collect all extrusion points from perimeters and infills
+    Points all_points;
     for (const auto& region : by_region) {
         for (const ExtrusionEntity* ee : region.perimeters) {
             if (!ee) continue;
-            // Only use outer wall / external perimeters for the contour
-            ExtrusionRole role = ee->role();
-            if (role == erExternalPerimeter || role == erPerimeter || role == erOverhangPerimeter) {
-                Polylines pls = ee->as_polylines();
-                for (const auto& pl : pls) {
-                    if (pl.points.size() >= 3) {
-                        Polygon pg;
-                        pg.points = pl.points;
-                        contours.push_back(pg);
-                    }
-                }
-            }
+            Polylines pls = ee->as_polylines();
+            for (const auto& pl : pls)
+                all_points.insert(all_points.end(), pl.points.begin(), pl.points.end());
+        }
+        for (const ExtrusionEntity* ee : region.infills) {
+            if (!ee) continue;
+            Polylines pls = ee->as_polylines();
+            for (const auto& pl : pls)
+                all_points.insert(all_points.end(), pl.points.begin(), pl.points.end());
         }
     }
+    if (all_points.size() < 3) return {};
+
+    // Build convex hull as the cell boundary
+    Polygon hull = Geometry::convex_hull(all_points);
+    Polygons contours;
+    contours.push_back(hull);
     return contours;
 }
 
-// Computes a P-point inside infill regions:
-// - Must be inside the island contour offset inward by wall thickness
-// - Farthest from outer contour (maximum offset/distance from walls)
-// - Within 1-30mm distance from the reference point (start or end point)
-// - Travel from P-point to start/end stays inside internal space
+// LUGOWARE P-point algorithm v2:
+// Computes a P-point based on cell boundary offset zones.
+// - Cell boundary = convex hull of ALL extrusion points (perimeters + infill)
+// - Zone 1: offset from cell boundary by print_width*3 (min) to print_width*50 (max) inward
+// - Zone 2: distance from reference point (start/end) between 2mm and 30mm
+// - P-point = intersection of Zone1 & Zone2, max offset first, then max distance from reference
+// - print_width: nozzle diameter or configured line width
 Point GCode::compute_p_point(const Point& reference_point,
                              const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region,
-                             const Polygons& wall_polygons)
+                             const Polygons& cell_boundary)
 {
-    // Collect all infill extrusion points as candidates
-    Points infill_points;
+    // Get print width (line width or nozzle diameter)
+    double print_width = m_config.line_width.value;
+    if (print_width <= 0)
+        print_width = m_config.nozzle_diameter.get_at(0);
+    if (print_width <= 0)
+        print_width = 0.4; // fallback
+
+    const coord_t min_offset = scale_(print_width * 3.0);
+    const coord_t max_offset = scale_(print_width * 50.0);
+    const coord_t min_ref_dist = scale_(2.0);
+    const coord_t max_ref_dist = scale_(30.0);
+
+    // Collect ALL extrusion points as candidates (perimeters + infill, line type irrelevant)
+    Points all_points;
     for (const auto& region : by_region) {
+        for (const ExtrusionEntity* ee : region.perimeters) {
+            if (!ee) continue;
+            Polylines pls = ee->as_polylines();
+            for (const auto& pl : pls) {
+                // Sample every few points for performance
+                for (size_t i = 0; i < pl.points.size(); i += 3)
+                    all_points.push_back(pl.points[i]);
+            }
+        }
         for (const ExtrusionEntity* ee : region.infills) {
             if (!ee) continue;
-            ExtrusionRole role = ee->role();
-            if (role == erInternalInfill || role == erSolidInfill ||
-                role == erBridgeInfill || role == erInternalBridgeInfill ||
-                role == erGapFill) {
-                Polylines polylines = ee->as_polylines();
-                for (const auto& pl : polylines) {
-                    for (size_t i = 0; i < pl.points.size(); i += 2)
-                        infill_points.push_back(pl.points[i]);
-                }
+            Polylines pls = ee->as_polylines();
+            for (const auto& pl : pls) {
+                for (size_t i = 0; i < pl.points.size(); i += 3)
+                    all_points.push_back(pl.points[i]);
             }
         }
     }
 
-    if (infill_points.empty())
+    if (all_points.empty() || cell_boundary.empty())
         return reference_point;
 
-    const coord_t min_dist = scale_(1.0);
-    const coord_t max_dist = scale_(30.0);
+    // Pre-compute all boundary lines for distance checks
+    std::vector<Line> boundary_lines;
+    for (const Polygon& pg : cell_boundary) {
+        Lines lns = pg.lines();
+        boundary_lines.insert(boundary_lines.end(), lns.begin(), lns.end());
+    }
 
-    // Build contour and compute min distance to contour edges for each candidate
+    // Helper: compute minimum distance from a point to cell boundary
+    auto min_dist_to_boundary = [&boundary_lines](const Point& pt) -> double {
+        double min_d = std::numeric_limits<double>::max();
+        for (const Line& ln : boundary_lines) {
+            double d = line_alg::distance_to(ln, pt);
+            min_d = std::min(min_d, d);
+        }
+        return min_d;
+    };
+
+    // Find candidates: intersection of Zone1 (offset) and Zone2 (ref distance)
     struct Candidate {
         Point pt;
-        double ref_dist;
-        double wall_dist; // min distance to outer contour
+        double offset_dist;  // distance from cell boundary (inward offset)
+        double ref_dist;     // distance from reference point
     };
     std::vector<Candidate> candidates;
 
-    for (const Point& pt : infill_points) {
-        double ref_d = (pt - reference_point).cast<double>().norm();
-        if (ref_d < min_dist || ref_d > max_dist)
+    for (const Point& pt : all_points) {
+        double offset_d = min_dist_to_boundary(pt);
+        if (offset_d < min_offset || offset_d > max_offset)
             continue;
 
-        // Compute min distance to all wall/contour edges
-        double min_wall_d = std::numeric_limits<double>::max();
-        for (const Polygon& wall : wall_polygons) {
-            for (const auto& line : wall.lines()) {
-                double d = line_alg::distance_to(line, pt);
-                min_wall_d = std::min(min_wall_d, d);
-            }
-        }
+        double ref_d = (pt - reference_point).cast<double>().norm();
+        if (ref_d < min_ref_dist || ref_d > max_ref_dist)
+            continue;
 
-        // Must be at least 1mm inside walls (offset condition)
-        if (min_wall_d >= scale_(1.0))
-            candidates.push_back({pt, ref_d, min_wall_d});
+        candidates.push_back({pt, offset_d, ref_d});
     }
 
-    // Relax: try 0.5mm offset
+    // Fallback 1: relax offset to print_width*1.5 minimum
     if (candidates.empty()) {
-        for (const Point& pt : infill_points) {
+        const coord_t relaxed_offset = scale_(print_width * 1.5);
+        for (const Point& pt : all_points) {
+            double offset_d = min_dist_to_boundary(pt);
+            if (offset_d < relaxed_offset) continue;
             double ref_d = (pt - reference_point).cast<double>().norm();
-            if (ref_d < min_dist || ref_d > max_dist) continue;
-            double min_wall_d = std::numeric_limits<double>::max();
-            for (const Polygon& wall : wall_polygons) {
-                for (const auto& line : wall.lines())
-                    min_wall_d = std::min(min_wall_d, (double)line_alg::distance_to(line, pt));
-            }
-            if (min_wall_d >= scale_(0.5))
-                candidates.push_back({pt, ref_d, min_wall_d});
+            if (ref_d < min_ref_dist || ref_d > max_ref_dist) continue;
+            candidates.push_back({pt, offset_d, ref_d});
         }
     }
 
-    // Final fallback: any infill point in range
+    // Fallback 2: relax distance to 1-50mm range, any offset > 0
     if (candidates.empty()) {
-        for (const Point& pt : infill_points) {
+        for (const Point& pt : all_points) {
             double ref_d = (pt - reference_point).cast<double>().norm();
-            if (ref_d < min_dist || ref_d > max_dist) continue;
-            double min_wall_d = 0;
-            for (const Polygon& wall : wall_polygons) {
-                for (const auto& line : wall.lines())
-                    min_wall_d = std::min(min_wall_d, (double)line_alg::distance_to(line, pt));
-            }
-            candidates.push_back({pt, ref_d, min_wall_d});
+            if (ref_d < scale_(1.0) || ref_d > scale_(50.0)) continue;
+            double offset_d = min_dist_to_boundary(pt);
+            if (offset_d > 0)
+                candidates.push_back({pt, offset_d, ref_d});
         }
     }
 
     if (candidates.empty())
         return reference_point;
 
-    // Select: farthest from walls (deepest inside), break ties by farthest from reference
+    // Select: 1st priority = max offset (deepest inside), 2nd priority = max ref distance
     Point best_p = candidates.front().pt;
-    double best_wall_dist = -1;
-    double best_ref_dist = 0;
+    double best_offset = -1;
+    double best_ref = 0;
 
     for (const auto& c : candidates) {
-        if (c.wall_dist > best_wall_dist ||
-            (c.wall_dist == best_wall_dist && c.ref_dist > best_ref_dist)) {
-            best_wall_dist = c.wall_dist;
-            best_ref_dist = c.ref_dist;
+        if (c.offset_dist > best_offset ||
+            (c.offset_dist == best_offset && c.ref_dist > best_ref)) {
+            best_offset = c.offset_dist;
+            best_ref = c.ref_dist;
             best_p = c.pt;
         }
     }
@@ -6111,54 +6137,15 @@ Polygons GCode::collect_wall_polygons(const std::vector<GCode::ObjectByExtruder:
     return walls;
 }
 
-// Check if island has sufficient internal space for P-point generation.
-// If the island is too narrow (offsetting inward by wall thickness causes >50% area loss),
-// P-point generation is skipped.
+// Check if island has any extrusions (perimeters or infill) for P-point generation.
+// P-points are generated for any island with printable content, regardless of type.
 bool GCode::island_has_internal_space(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
 {
-    bool has_infill = false;
     for (const auto& region : by_region) {
-        for (const ExtrusionEntity* ee : region.infills) {
-            if (!ee) continue;
-            ExtrusionRole role = ee->role();
-            if (role == erInternalInfill || role == erSolidInfill ||
-                role == erBridgeInfill || role == erInternalBridgeInfill ||
-                role == erGapFill) {
-                has_infill = true;
-                break;
-            }
-        }
-        if (has_infill) break;
+        if (!region.perimeters.empty() || !region.infills.empty())
+            return true;
     }
-    if (!has_infill) return false;
-
-    // Build contour from outermost perimeters
-    Polygons contour = build_island_contour(by_region);
-    if (contour.empty()) return has_infill; // No perimeters, just check infill
-
-    // Compute original area
-    double original_area = 0;
-    for (const auto& pg : contour)
-        original_area += std::abs(pg.area());
-    if (original_area <= 0) return false;
-
-    // Estimate wall thickness: outer wall + inner wall ≈ 0.8mm typical (2 * 0.4mm nozzle)
-    // Use a conservative estimate
-    const coord_t wall_offset = scale_(0.8);
-
-    // Offset contour inward by wall thickness
-    Polygons shrunk = offset(contour, -wall_offset);
-
-    // Compute shrunk area
-    double shrunk_area = 0;
-    for (const auto& pg : shrunk)
-        shrunk_area += std::abs(pg.area());
-
-    // If >50% of area is lost after offset, cell is too narrow for P-point
-    if (shrunk_area < original_area * 0.5)
-        return false;
-
-    return true;
+    return false;
 }
 
 // Get first extrusion point of an island
