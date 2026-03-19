@@ -476,6 +476,7 @@ private:
 
     // LUGOWARE: P-Point Generation helpers
     Point           compute_p_point(const Point& reference_point, const std::vector<ObjectByExtruder::Island::Region>& by_region, const Polygons& cell_boundary);
+    static Polyline compute_safe_travel(const Point& from, const Point& to, const Polygons& safe_zone);
     static Polygons collect_wall_polygons(const std::vector<ObjectByExtruder::Island::Region>& by_region);
     static bool     island_has_internal_space(const std::vector<ObjectByExtruder::Island::Region>& by_region);
     static Point    get_island_first_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);

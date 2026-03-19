@@ -27,7 +27,32 @@
       "Bash(cmd //c \"dir /s /b \"\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\*cmake.exe\"\"\")",
       "Bash(cmd //c \"dir /s /b \"\"C:\\\\Program Files \\(x86\\)\\\\Microsoft Visual Studio\\\\*cmake.exe\"\"\")",
       "Bash(cmd //c \"dir /s /b \"\"C:\\\\Program Files\\\\CMake*\"\" 2>nul\")",
-      "Bash(cmd //c \"dir /s /b \"\"C:\\\\Program Files\\\\Microsoft Visual Studio\"\" 2>nul\")"
+      "Bash(cmd //c \"dir /s /b \"\"C:\\\\Program Files\\\\Microsoft Visual Studio\"\" 2>nul\")",
+      "Bash(gh run:*)",
+      "Bash(cp OrcaSlicer_192px.png LugowareOrcaSlicer_192px.png)",
+      "Bash(cp OrcaSlicer_192px_transparent.png LugowareOrcaSlicer_192px_transparent.png)",
+      "Bash(ls LugowareOrcaSlicer*)",
+      "Bash(cp OrcaSlicer_128px.png LugowareOrcaSlicer_128px.png)",
+      "Bash(cp OrcaSlicer_32px.png LugowareOrcaSlicer_32px.png)",
+      "Bash(cp OrcaSlicer_192px_grayscale.png LugowareOrcaSlicer_192px_grayscale.png)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/Huhn/OrcaSlicer-for-LUGOWARE/**)",
+      "Bash(done)",
+      "Bash(python -c \":*)",
+      "Bash(\"C:/Program Files/OrcaSlicer/scripts/python/python.exe\" -c \":*)",
+      "Bash(ls \"C:/Users/Huhn/OrcaSlicer-for-LUGOWARE/resources/images/OrcaSlicerTitle\"*)",
+      "Bash(cp \"C:/Users/Huhn/Pictures/lugoware orca/OrcaSlicer.ico\" .)",
+      "Bash(cp \"C:/Users/Huhn/Pictures/lugoware orca/OrcaSlicer.png\" .)",
+      "Bash(cp \"C:/Users/Huhn/Pictures/lugoware orca/OrcaSlicer.svg\" .)",
+      "Bash(cp \"C:/Users/Huhn/Pictures/lugoware orca/OrcaSlicer_128px.png\" .)",
+      "Bash(cp \"C:/Users/Huhn/Pictures/lugoware orca/OrcaSlicer_192px.png\" .)",
+      "Bash(cp \"C:/Users/Huhn/Pictures/lugoware orca/OrcaSlicer_32px.png\" .)",
+      "Bash(cp \"C:/Users/Huhn/Pictures/lugoware orca/Orcaslicer_about.svg\" OrcaSlicer_about.svg)",
+      "Bash(cp \"C:/Users/Huhn/Pictures/lugoware orca/Orcaslicer_about_dark.svg\" OrcaSlicer_about_dark.svg)",
+      "Bash(cp \"C:/Users/Huhn/Pictures/lugoware orca/splash_logo.svg\" .)",
+      "Bash(cp \"C:/Users/Huhn/Pictures/lugoware orca/splash_logo_dark.svg\" .)",
+      "Bash(cp OrcaSlicer_192px.png LugowareOrcaSlicer_192px_transparent.png)"
     ]
   }
 }

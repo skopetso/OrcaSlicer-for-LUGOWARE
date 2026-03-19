@@ -1,0 +1,71 @@
+{
+    "type": "filament",
+    "name": "2.85 FOAM TPU @LUGOWARE",
+    "inherits": "Generic TPU",
+    "from": "system",
+    "instantiation": "true",
+    "filament_diameter": [
+        "2.85"
+    ],
+    "filament_flow_ratio": [
+        "0.8"
+    ],
+    "filament_max_volumetric_speed": [
+        "8"
+    ],
+    "filament_retraction_length": [
+        "8"
+    ],
+    "filament_retraction_minimum_travel": [
+        "13"
+    ],
+    "filament_retraction_speed": [
+        "100"
+    ],
+    "filament_deretraction_speed": [
+        "80"
+    ],
+    "filament_retract_when_changing_layer": [
+        "0"
+    ],
+    "filament_z_hop": [
+        "0.15"
+    ],
+    "filament_z_hop_types": [
+        "Slope Lift"
+    ],
+    "fan_max_speed": [
+        "70"
+    ],
+    "fan_min_speed": [
+        "70"
+    ],
+    "overhang_fan_speed": [
+        "80"
+    ],
+    "overhang_fan_threshold": [
+        "75%"
+    ],
+    "slow_down_layer_time": [
+        "0"
+    ],
+    "hot_plate_temp": [
+        "60"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "60"
+    ],
+    "temperature_vitrification": [
+        "230"
+    ],
+    "filament_start_gcode": [
+        "; Filament gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=0.3"
+    ],
+    "filament_end_gcode": [
+        "; filament end gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=1"
+    ],
+    "compatible_printers": [
+        "FLEX4 W 0.4 nozzle",
+        "FLEX4 W 0.6 nozzle"
+    ]
+}
