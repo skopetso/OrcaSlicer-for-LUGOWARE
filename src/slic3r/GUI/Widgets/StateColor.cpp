@@ -14,7 +14,7 @@ static std::map<wxColour, wxColour> gDarkColors{
     {"#DFDFDF", "#3E3E45"}, // rgb(223, 223, 223)  Button Background color
     {"#D4D4D4", "#4D4D54"}, // rgb(212, 212, 212)  Button Background color on Hover
     {"#6B6A6A", "#909090"}, // rgb(107, 107, 106)  Button Dimmed text
-    {"#00ffff", "#008172"}, // rgb(0, 255, 255)    Button Confirm Color hover | ORCA Color Hover
+    {"#009789", "#008172"}, // rgb(0, 255, 255)    Button Confirm Color hover | ORCA Color Hover
     {"#6B6B6A", "#B3B3B5"}, // rgb(107, 107, 106)  Input box side text
     {"#2C2C2E", "#B3B3B4"}, // rgb(44, 44, 46)     ???
     {"#6B6B6B", "#818183"}, // rgb(107, 107, 107)  Disabled Text

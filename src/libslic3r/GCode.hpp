@@ -593,6 +593,7 @@ private:
 
     // P-point state
     bool                                m_p_point_enabled = false;
+    int                                 m_p_point_max_depth = 10;
     bool                                m_island_first_extrusion = false;
     int                                 m_current_island_lslice_idx = -1;
 

@@ -15,19 +15,19 @@
     "printable_height": "270",
     "machine_max_acceleration_extruding": [
         "5000",
-        "20000"
+        "16000"
     ],
     "machine_max_acceleration_travel": [
         "16000",
-        "20000"
+        "16000"
     ],
     "machine_max_acceleration_x": [
         "16000",
-        "20000"
+        "16000"
     ],
     "machine_max_acceleration_y": [
         "16000",
-        "20000"
+        "16000"
     ],
     "machine_max_acceleration_z": [
         "400",
