@@ -866,11 +866,21 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig *config, co
 
     toggle_line("support_interface_not_for_body",config->opt_int("support_interface_filament")&&!config->opt_int("support_filament"));
 
+    // LUGOWARE: Show layer step options only when parent compensation is active
+    bool has_hole_comp = config->option<ConfigOptionFloat>("xy_hole_compensation")->value != 0;
+    for (auto el : {"xy_hole_compensation_layer_step", "xy_hole_compensation_layer_step_thickness", "xy_hole_compensation_layer_step_start_on"})
+        toggle_line(el, has_hole_comp);
+
+    bool has_contour_comp = config->option<ConfigOptionFloat>("xy_contour_compensation")->value != 0;
+    for (auto el : {"xy_contour_compensation_layer_step", "xy_contour_compensation_layer_step_thickness", "xy_contour_compensation_layer_step_start_on"})
+        toggle_line(el, has_contour_comp);
+
     // Get the current fuzzy skin state
     bool has_fuzzy_skin = config->opt_enum<FuzzySkinType>("fuzzy_skin") != FuzzySkinType::Disabled_fuzzy;
-    
+
     // Show fuzzy skin options when fuzzy skin is not disabled
-    for (auto el : {"fuzzy_skin_mode", "fuzzy_skin_noise_type", "fuzzy_skin_point_distance", "fuzzy_skin_thickness", "fuzzy_skin_first_layer"})
+    for (auto el : {"fuzzy_skin_mode", "fuzzy_skin_noise_type", "fuzzy_skin_point_distance", "fuzzy_skin_thickness", "fuzzy_skin_first_layer",
+                    "fuzzy_skin_layer_step", "fuzzy_skin_layer_step_thickness", "fuzzy_skin_layer_step_start_on"})
         toggle_line(el, has_fuzzy_skin);
     
     // Show noise type specific options with the same logic

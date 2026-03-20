@@ -1,3 +1,4 @@
+#include <sstream>
 #include "BoundingBox.hpp"
 #include "Config.hpp"
 #include "Polygon.hpp"
@@ -5262,95 +5263,41 @@ LayerResult GCode::process_layer(
                         }
                         return false;
                     };
-                    // LUGOWARE: P-Point Generation v5 using lslices (virtual wall)
-                    const bool p_point_enabled = instance_to_print.print_object.config().p_point_generation.value;
-                    bool use_p_points = false;
-                    Point p1_point, p2_point;
 
-                    // Check if this island contains only support extrusions — skip P-point for supports
-                    auto is_support_only_island = [](const std::vector<ObjectByExtruder::Island::Region>& regions) {
-                        for (const auto& region : regions) {
-                            for (const ExtrusionEntity* ee : region.perimeters) {
-                                if (ee && ee->role() != erSupportMaterial && ee->role() != erSupportMaterialInterface && ee->role() != erSupportTransition)
-                                    return false;
+                    // P-point: initialize for this island
+                    m_p_point_enabled = m_config.p_point_generation.value && m_layer != nullptr;
+                    m_island_first_extrusion = true;
+                    m_current_island_lslice_idx = -1;
+
+                    gcode += this->extrude_perimeters(print, by_region_specific, first_layer, false);
+                    if (!has_wipe_tower && need_insert_timelapse_gcode_for_traditional && printer_structure == PrinterStructure::psI3
+                        && !has_insert_timelapse_gcode && has_infill(by_region_specific)) {
+                        gcode += this->retract(false, false, auto_lift_type, true);
+                        gcode += insert_timelapse_gcode();
+                        has_insert_timelapse_gcode = true;
+                    }
+                    gcode += this->extrude_infill(print, by_region_specific, false);
+                    gcode += this->extrude_perimeters(print, by_region_specific, first_layer, true);
+                    gcode += this->extrude_infill(print, by_region_specific, true);
+
+                    // P-point: P2 processing after island extrusion completes
+                    if (m_p_point_enabled && m_last_pos_defined && m_layer != nullptr) {
+                        // Try lslice from P1, fallback: find lslice using end point
+                        int p2_lslice_idx = m_current_island_lslice_idx;
+                        if (p2_lslice_idx < 0)
+                            p2_lslice_idx = find_lslice_index(m_last_pos, *m_layer);
+                        if (p2_lslice_idx >= 0 && should_generate_p_point(*m_layer, p2_lslice_idx)) {
+                            auto p2 = compute_p_point(m_last_pos, m_layer->lslices[p2_lslice_idx]);
+                            if (p2.has_value()) {
+                                // 1. Normal wipe + retract, but skip z-hop
+                                gcode += this->retract(false, false, LiftType::NormalLift, false, erNone, true);
+                                // 2. Move to P2 on bed (retracted, no extrusion)
+                                gcode += m_writer.travel_to_xy(this->point_to_gcode(*p2), "move to P2");
+                                this->set_last_pos(*p2);
+                                // 3. Z-hop up at P2
+                                gcode += m_writer.eager_lift(LiftType::NormalLift);
+                                gcode += "; P2 point\n";
                             }
-                            for (const ExtrusionEntity* ee : region.infills) {
-                                if (ee && ee->role() != erSupportMaterial && ee->role() != erSupportMaterialInterface && ee->role() != erSupportTransition)
-                                    return false;
-                            }
-                        }
-                        return true;
-                    };
-
-                    if (p_point_enabled && m_layer != nullptr &&
-                        island_idx < m_layer->lslices.size() &&
-                        !by_region_specific.empty() &&
-                        !is_support_only_island(by_region_specific)) {
-                        // Create virtual wall: offset lslices contour inward by pw*2
-                        double nozzle_d = m_config.nozzle_diameter.get_at(0);
-                        if (nozzle_d <= 0) nozzle_d = 0.4;
-                        double pw = m_config.line_width.get_abs_value(nozzle_d);
-                        if (pw <= 0) pw = nozzle_d;
-
-                        Polygons outer_contour;
-                        outer_contour.push_back(m_layer->lslices[island_idx].contour);
-                        Polygons cell_boundary = Slic3r::offset(outer_contour, float(-scale_(pw * 2.0)));
-
-                        if (!cell_boundary.empty()) {
-                            Point start_pt = get_island_first_point(by_region_specific);
-                            Point end_pt = get_island_last_point(by_region_specific);
-                            p1_point = compute_p1_point(start_pt, by_region_specific, cell_boundary);
-                            p2_point = compute_p2_point(end_pt, by_region_specific, cell_boundary);
-
-                            // P-point generated if distance > 0 (common condition #1)
-                            use_p_points = (p1_point != start_pt) || (p2_point != end_pt);
-                        }
-                    }
-                    if (use_p_points) {
-                        Point start_pt = get_island_first_point(by_region_specific);
-                        if (p1_point != start_pt) {
-                            // Step 1: Travel to P1 (arrive at cell interior)
-                            gcode += this->travel_to(p1_point, erInternalInfill, "P-point: travel to P1");
-                            // Step 2: Z-hop down at P1
-                            gcode += m_writer.unlift();
-                            gcode += "; P-point: Z lowered at P1\n";
-                            // Step 3: Travel from P1 to start using avoid_crossing_perimeters
-                            // (internal→external crossing allowed once if start is outside boundary)
-                            gcode += this->travel_to(start_pt, erInternalInfill, "P-point: P1 to start");
-                        }
-                    }
-
-                    {
-                        // Print perimeters of regions that has is_infill_first == false
-                        gcode += this->extrude_perimeters(print, by_region_specific, first_layer, false);
-                        if (!has_wipe_tower && need_insert_timelapse_gcode_for_traditional && printer_structure == PrinterStructure::psI3
-                            && !has_insert_timelapse_gcode && has_infill(by_region_specific)) {
-                            gcode += this->retract(false, false, auto_lift_type, true);
-
-                            gcode += insert_timelapse_gcode();
-                            has_insert_timelapse_gcode = true;
-                        }
-                        // Then print infill
-                        gcode += this->extrude_infill(print, by_region_specific, false);
-                        // Then print perimeters of regions that has is_infill_first == true
-                        gcode += this->extrude_perimeters(print, by_region_specific, first_layer, true);
-                    }
-                    // ironing
-                    gcode += this->extrude_infill(print,by_region_specific, true);
-
-                    if (use_p_points) {
-                        Point end_pt = get_island_last_point(by_region_specific);
-                        if (p2_point != end_pt) {
-                            // Step 1: Straight line travel from end to P2
-                            // (external→internal crossing allowed once if end is outside boundary)
-                            Vec2d p2_unscaled = unscale(p2_point);
-                            Vec2d origin = this->origin();
-                            gcode += m_writer.travel_to_xy(
-                                Vec2d(p2_unscaled.x() + origin.x(), p2_unscaled.y() + origin.y()),
-                                "P-point: end to P2 (straight)");
-                            this->set_last_pos(p2_point);
-                            // Step 2: Z-hop up at P2, then travel to next cell
-                            gcode += "; P-point: at P2, Z-hop up next\n";
                         }
                     }
                 }
@@ -5985,230 +5932,6 @@ std::string GCode::extrude_path(ExtrusionPath path, std::string description, dou
     return gcode;
 }
 
-// LUGOWARE: Compute minimum distance from point to boundary polygon edges
-static double min_dist_to_boundary(const Point& pt, const Polygons& boundary)
-{
-    double min_d = std::numeric_limits<double>::max();
-    for (const Polygon& pg : boundary) {
-        Lines lns = pg.lines();
-        for (const Line& ln : lns) {
-            double d = line_alg::distance_to(ln, pt);
-            min_d = std::min(min_d, d);
-        }
-    }
-    return min_d;
-}
-
-// LUGOWARE: Check if point is inside any of the boundary polygons
-static bool point_inside_boundary(const Point& pt, const Polygons& boundary)
-{
-    for (const Polygon& pg : boundary)
-        if (pg.contains(pt)) return true;
-    return false;
-}
-
-// LUGOWARE: Find the inward normal direction from a point toward cell interior.
-// Returns normalized Vec2d pointing from the nearest boundary edge inward.
-static Vec2d compute_inward_normal(const Point& pt, const Polygons& boundary)
-{
-    double min_d = std::numeric_limits<double>::max();
-    Line closest_line;
-    for (const Polygon& pg : boundary) {
-        Lines lns = pg.lines();
-        for (const Line& ln : lns) {
-            double d = line_alg::distance_to(ln, pt);
-            if (d < min_d) {
-                min_d = d;
-                closest_line = ln;
-            }
-        }
-    }
-    // Edge direction
-    Vec2d edge_dir = (closest_line.b - closest_line.a).cast<double>();
-    // Normal (rotate 90 degrees CCW for polygon wound CCW -> inward)
-    Vec2d normal(-edge_dir.y(), edge_dir.x());
-    normal.normalize();
-    // Check if normal points inward (toward interior)
-    Point test_pt = pt + (normal * scale_(0.1)).cast<coord_t>();
-    if (!point_inside_boundary(test_pt, boundary)) {
-        normal = -normal;
-    }
-    return normal;
-}
-
-// LUGOWARE: Find intersection of a ray with boundary polygons.
-// Returns the first intersection point along direction from origin.
-// Returns false if no intersection found.
-static bool ray_boundary_intersection(const Point& origin, const Vec2d& direction,
-                                       const Polygons& boundary, double max_dist,
-                                       Point& intersection)
-{
-    double best_t = max_dist + 1.0;
-    bool found = false;
-
-    for (const Polygon& pg : boundary) {
-        Lines lns = pg.lines();
-        for (const Line& ln : lns) {
-            // Ray-segment intersection
-            Vec2d p = origin.cast<double>();
-            Vec2d d = direction;
-            Vec2d a = ln.a.cast<double>();
-            Vec2d b = ln.b.cast<double>();
-            Vec2d seg = b - a;
-
-            double denom = d.x() * seg.y() - d.y() * seg.x();
-            if (std::abs(denom) < 1e-10) continue;
-
-            Vec2d diff = a - p;
-            double t = (diff.x() * seg.y() - diff.y() * seg.x()) / denom;
-            double u = (diff.x() * d.y() - diff.y() * d.x()) / denom;
-
-            if (t > scale_(0.1) && t < best_t && u >= 0.0 && u <= 1.0) {
-                best_t = t;
-                intersection = (p + d * t).cast<coord_t>();
-                found = true;
-            }
-        }
-    }
-    return found;
-}
-
-// LUGOWARE P1-point v5: Search along the line from start_point toward cell centroid.
-// Find the point along that direction with maximum depth from boundary, within 10mm.
-Point GCode::compute_p1_point(const Point& start_point,
-                              const std::vector<GCode::ObjectByExtruder::Island::Region>& /* by_region */,
-                              const Polygons& cell_boundary)
-{
-    if (cell_boundary.empty()) return start_point;
-
-    const double max_dist = scale_(10.0);    // 10mm max from start
-    const double step = scale_(0.3);         // 0.3mm steps along direction
-
-    // Compute cell centroid
-    Vec2d centroid(0, 0);
-    int total_pts = 0;
-    for (const Polygon& pg : cell_boundary) {
-        for (const Point& pt : pg.points) {
-            centroid += pt.cast<double>();
-            total_pts++;
-        }
-    }
-    if (total_pts == 0) return start_point;
-    centroid /= (double)total_pts;
-
-    // Direction from start toward centroid
-    Vec2d dir = centroid - start_point.cast<double>();
-    double dir_len = dir.norm();
-    if (dir_len < scale_(0.1)) return start_point;  // start is already at centroid
-    dir /= dir_len;  // normalize
-
-    // Walk along direction, find point with maximum depth
-    Point best_point = start_point;
-    double best_depth = 0;
-
-    for (double t = step; t <= std::min(max_dist, dir_len); t += step) {
-        Point candidate = (start_point.cast<double>() + dir * t).cast<coord_t>();
-
-        // Must be inside cell boundary
-        if (!point_inside_boundary(candidate, cell_boundary)) continue;
-
-        // Compute depth (min distance to boundary)
-        double depth = min_dist_to_boundary(candidate, cell_boundary);
-
-        if (depth > best_depth) {
-            best_depth = depth;
-            best_point = candidate;
-        }
-    }
-
-    if (best_depth > 0)
-        return best_point;
-    return start_point;
-}
-
-// LUGOWARE P2-point v5: From end point, shoot ray inward up to 5mm.
-// If ray hits opposite wall before 5mm, that intersection is P2.
-// Otherwise, the point at 5mm along the ray is P2.
-Point GCode::compute_p2_point(const Point& end_point,
-                              const std::vector<GCode::ObjectByExtruder::Island::Region>& /* by_region */,
-                              const Polygons& cell_boundary)
-{
-    if (cell_boundary.empty()) return end_point;
-
-    const double max_dist = scale_(5.0);  // 5mm max travel
-
-    // Determine inward direction from end_point
-    Vec2d inward = compute_inward_normal(end_point, cell_boundary);
-
-    // If end_point is outside boundary, first find the entry point
-    bool end_inside = point_inside_boundary(end_point, cell_boundary);
-    Point ray_origin = end_point;
-
-    if (!end_inside) {
-        // Outside→inside crossing allowed once: find entry intersection
-        Point entry;
-        if (ray_boundary_intersection(end_point, inward, cell_boundary, max_dist, entry)) {
-            ray_origin = entry;
-            // Remaining distance after entry
-            double used = (entry - end_point).cast<double>().norm();
-            if (used >= max_dist) return entry;
-            // Continue ray from entry point
-            double remaining = max_dist - used;
-            Point exit_pt;
-            if (ray_boundary_intersection(entry, inward, cell_boundary, remaining, exit_pt)) {
-                // Hit opposite wall
-                return exit_pt;
-            } else {
-                // No opposite wall within remaining distance
-                return (entry.cast<double>() + inward * remaining).cast<coord_t>();
-            }
-        }
-        return end_point;  // Can't find entry, no P2
-    }
-
-    // End point is inside: shoot ray inward, look for opposite wall hit
-    Point hit_pt;
-    if (ray_boundary_intersection(end_point, inward, cell_boundary, max_dist, hit_pt)) {
-        // Hit opposite wall before 5mm — that's P2
-        return hit_pt;
-    }
-
-    // No wall hit within 5mm — P2 is at 5mm along the ray
-    return (end_point.cast<double>() + inward * max_dist).cast<coord_t>();
-}
-
-// Get first extrusion point of an island
-Point GCode::get_island_first_point(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
-{
-    // Check perimeters first
-    for (const auto& region : by_region) {
-        if (!region.perimeters.empty() && region.perimeters.front())
-            return region.perimeters.front()->first_point();
-    }
-    // Then infills
-    for (const auto& region : by_region) {
-        if (!region.infills.empty() && region.infills.front())
-            return region.infills.front()->first_point();
-    }
-    return Point(0, 0);
-}
-
-// Get last extrusion point of an island
-Point GCode::get_island_last_point(const std::vector<GCode::ObjectByExtruder::Island::Region>& by_region)
-{
-    // Check infills last (they are printed after perimeters typically)
-    for (int i = (int)by_region.size() - 1; i >= 0; --i) {
-        if (!by_region[i].infills.empty() && by_region[i].infills.back())
-            return by_region[i].infills.back()->last_point();
-    }
-    // Then perimeters
-    for (int i = (int)by_region.size() - 1; i >= 0; --i) {
-        if (!by_region[i].perimeters.empty() && by_region[i].perimeters.back())
-            return by_region[i].perimeters.back()->last_point();
-    }
-    return Point(0, 0);
-}
-
 // Extrude perimeters: Decide where to put seams (hide or align seams).
 std::string GCode::extrude_perimeters(const Print &print, const std::vector<ObjectByExtruder::Island::Region> &by_region, bool is_first_layer, bool is_infill_first)
 {
@@ -6441,6 +6164,37 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
         auto target_z = get_sloped_z(sloped->slope_begin.z_ratio);
         slope_need_z_travel = m_writer.will_move_z(target_z);
     }
+    // P-point: P1 processing on first extrusion of island
+    if (m_island_first_extrusion && m_p_point_enabled && m_layer != nullptr) {
+        m_island_first_extrusion = false;
+
+        // Find which lslice this island belongs to
+        m_current_island_lslice_idx = find_lslice_index(path.first_point(), *m_layer);
+
+        if (m_current_island_lslice_idx >= 0 && should_generate_p_point(*m_layer, m_current_island_lslice_idx)) {
+            auto p1 = compute_p_point(path.first_point(), m_layer->lslices[m_current_island_lslice_idx]);
+            if (p1.has_value()) {
+                // 1. Retract + z-hop (retract() handles wipe, retract, and lift)
+                LiftType p1_lift_type = LiftType::NormalLift;
+                Polyline p1_travel{this->last_pos(), *p1};
+                this->needs_retraction(p1_travel, path.role(), p1_lift_type);
+                gcode += this->retract(false, false, p1_lift_type);
+                // 2. If not yet lifted, do lift now (eager because travel_to_xy won't trigger lazy lift)
+                if (m_writer.get_zhop() == 0)
+                    gcode += m_writer.eager_lift(p1_lift_type);
+                // 3. Travel to P1 XY (at z-hop height)
+                gcode += m_writer.travel_to_xy(this->point_to_gcode(*p1), "move to P1");
+                this->set_last_pos(*p1);
+                // 4. Z-hop down at P1 (use unlift_to with explicit layer Z to avoid layer-change Z bugs)
+                gcode += m_writer.unlift_to(m_layer->print_z);
+                gcode += "; P1 point used\n";
+                // 5. Move from P1 to start point on the bed (no extrusion, still retracted)
+                gcode += m_writer.travel_to_xy(this->point_to_gcode(path.first_point()), "P1 to start point");
+                this->set_last_pos(path.first_point());
+            }
+        }
+    }
+
     // Move to first point of extrusion path
     // path is 2D. But in slope lift case, lift z is done in travel_to function.
     // Add m_need_change_layer_lift_z when change_layer in case of no lift if m_last_pos is equal to path.first_point() by chance
@@ -7473,6 +7227,56 @@ std::string GCode::travel_to(const Point& point, ExtrusionRole role, std::string
     return gcode;
 }
 
+// P-point: find which lslice contains the given point
+int GCode::find_lslice_index(const Point& point, const Layer& layer)
+{
+    for (int i = 0; i < (int)layer.lslices.size(); ++i)
+        if (layer.lslices[i].contour.contains(point))
+            return i;
+    return -1;
+}
+
+// P-point: check if P-point should be generated for this island
+bool GCode::should_generate_p_point(const Layer& layer, int lslice_idx)
+{
+    if (lslice_idx < 0 || lslice_idx >= (int)layer.lslices.size())
+        return false;
+    // Skip support layers
+    if (dynamic_cast<const SupportLayer*>(&layer) != nullptr)
+        return false;
+    // Skip small islands (area < 3mm²)
+    double area_mm2 = unscale<double>(unscale<double>(layer.lslices[lslice_idx].area()));
+    if (area_mm2 < 3.0)
+        return false;
+    return true;
+}
+
+// P-point: compute a P-point on the virtual wall closest to ref_point
+// Returns std::nullopt if no valid P-point can be generated
+std::optional<Point> GCode::compute_p_point(const Point& ref_point, const ExPolygon& lslice)
+{
+    // 1. Generate virtual wall: lslice offset inward 3mm (1st try), 2mm (fallback)
+    ExPolygons virtual_walls = offset_ex(lslice, -scale_(3.0));
+    if (virtual_walls.empty())
+        virtual_walls = offset_ex(lslice, -scale_(2.0));
+    if (virtual_walls.empty())
+        return std::nullopt;
+
+    // 2. Find closest point on virtual wall to ref_point
+    Point p = projection_onto(virtual_walls, ref_point);
+
+    // 3. Distance validation: 2mm <= dist <= 10mm
+    double dist = (p - ref_point).cast<double>().norm();
+    if (dist < scale_(2.0) || dist > scale_(10.0))
+        return std::nullopt;
+
+    // 4. Must be inside the lslice (respects donut holes)
+    if (!lslice.contains(p))
+        return std::nullopt;
+
+    return p;
+}
+
 //BBS
 LiftType GCode::to_lift_type(ZHopType z_hop_types) {
     switch (z_hop_types)
@@ -7613,7 +7417,7 @@ bool GCode::needs_retraction(const Polyline &travel, ExtrusionRole role, LiftTyp
     return true;
 }
 
-std::string GCode::retract(bool toolchange, bool is_last_retraction, LiftType lift_type, bool apply_instantly, ExtrusionRole role)
+std::string GCode::retract(bool toolchange, bool is_last_retraction, LiftType lift_type, bool apply_instantly, ExtrusionRole role, bool skip_lift)
 {
     std::string gcode;
 
@@ -7661,7 +7465,7 @@ std::string GCode::retract(bool toolchange, bool is_last_retraction, LiftType li
         can_lift = false;
     }
 
-    if (needs_lift && can_lift) {
+    if (needs_lift && can_lift && !skip_lift) {
         if (apply_instantly)
             gcode += m_writer.eager_lift(lift_type);
         else

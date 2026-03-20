@@ -2,6 +2,7 @@
 #define slic3r_GCode_hpp_
 
 #include "libslic3r.h"
+#include <optional>
 #include "ExPolygon.hpp"
 #include "GCodeWriter.hpp"
 #include "Layer.hpp"
@@ -247,7 +248,7 @@ public:
 
     std::string     travel_to(const Point& point, ExtrusionRole role, std::string comment, double z = DBL_MAX);
     bool            needs_retraction(const Polyline& travel, ExtrusionRole role, LiftType& lift_type);
-    std::string     retract(bool toolchange = false, bool is_last_retraction = false, LiftType lift_type = LiftType::NormalLift, bool apply_instantly = false, ExtrusionRole role = erNone);
+    std::string     retract(bool toolchange = false, bool is_last_retraction = false, LiftType lift_type = LiftType::NormalLift, bool apply_instantly = false, ExtrusionRole role = erNone, bool skip_lift = false);
     std::string     unretract() { return m_writer.unlift() + m_writer.unretract(); }
     std::string     set_extruder(unsigned int extruder_id, double print_z, bool by_object=false, int toolchange_temp_override = -1);
     bool is_BBL_Printer();
@@ -474,18 +475,17 @@ private:
 		// For sequential print, the instance of the object to be printing has to be defined.
 		const size_t                     				 single_object_instance_idx);
 
-    // LUGOWARE: P-Point Generation helpers (using lslices virtual wall)
-    Point           compute_p1_point(const Point& start_point, const std::vector<ObjectByExtruder::Island::Region>& by_region, const Polygons& cell_boundary);
-    Point           compute_p2_point(const Point& end_point, const std::vector<ObjectByExtruder::Island::Region>& by_region, const Polygons& cell_boundary);
-    static Point    get_island_first_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);
-    static Point    get_island_last_point(const std::vector<ObjectByExtruder::Island::Region>& by_region);
-
     std::string     extrude_perimeters(const Print& print, const std::vector<ObjectByExtruder::Island::Region>& by_region, bool is_first_layer, bool is_infill_first);
     std::string     extrude_infill(const Print& print, const std::vector<ObjectByExtruder::Island::Region>& by_region, bool ironing);
     std::string     extrude_support(const ExtrusionEntityCollection& support_fills, const ExtrusionRole support_extrusion_role);
 
     // BBS
     LiftType to_lift_type(ZHopType z_hop_types);
+
+    // P-point helper functions
+    std::optional<Point> compute_p_point(const Point& ref_point, const ExPolygon& lslice);
+    int                  find_lslice_index(const Point& point, const Layer& layer);
+    bool                 should_generate_p_point(const Layer& layer, int lslice_idx);
 
     std::set<ObjectID>              m_objsWithBrim; // indicates the objs with brim
     std::set<ObjectID>              m_objSupportsWithBrim; // indicates the objs' supports with brim
@@ -590,6 +590,11 @@ private:
 
     Point                               m_last_pos;
     bool                                m_last_pos_defined;
+
+    // P-point state
+    bool                                m_p_point_enabled = false;
+    bool                                m_island_first_extrusion = false;
+    int                                 m_current_island_lslice_idx = -1;
 
     std::unique_ptr<CoolingBuffer>      m_cooling_buffer;
     std::unique_ptr<SpiralVase>         m_spiral_vase;

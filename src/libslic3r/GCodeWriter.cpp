@@ -1023,6 +1023,17 @@ std::string GCodeWriter::unlift()
     return gcode;
 }
 
+std::string GCodeWriter::unlift_to(double target_z)
+{
+    std::string gcode;
+    if (m_lifted > 0 || m_pos(2) != target_z) {
+        gcode += this->_travel_to_z(target_z, "restore layer Z");
+    }
+    m_lifted = 0;
+    m_to_lift = 0.;
+    return gcode;
+}
+
 std::string GCodeWriter::set_fan(const GCodeFlavor gcode_flavor, unsigned int speed)
 {
     std::ostringstream gcode;

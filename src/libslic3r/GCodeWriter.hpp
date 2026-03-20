@@ -89,6 +89,7 @@ public:
     // record a lift request, do realy lift in next travel
     std::string lazy_lift(LiftType lift_type = LiftType::NormalLift, bool spiral_vase = false);
     std::string unlift();
+    std::string unlift_to(double target_z); // unlift to explicit Z (safe across layer changes)
     const Vec3d& get_position() const { return m_pos; }
     Vec3d&       get_position() { return m_pos; }
     void        set_position(const Vec3d& in) { m_pos = in; }
