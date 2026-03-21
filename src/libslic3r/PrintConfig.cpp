@@ -9133,7 +9133,7 @@ void DynamicPrintConfig::update_values_to_printer_extruders(DynamicPrintConfig& 
             if (variant_index[0] < 0) {
                 BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << boost::format(", Line %1%: could not found extruder_type %2%, nozzle_volume_type %3%, for filament")
                     % __LINE__ % s_keys_names_ExtruderType[extruder_type] % s_keys_names_NozzleVolumeType[nozzle_volume_type];
-                assert(false);
+                variant_index[0] = 0;
             }
 
             extruder_count = 1;
@@ -9175,6 +9175,7 @@ void DynamicPrintConfig::update_values_to_printer_extruders(DynamicPrintConfig& 
                 case coStrings:
                 {
                     ConfigOptionStrings * opt = this->option<ConfigOptionStrings>(key);
+                    if (!opt) break;
                     std::vector<std::string> new_values;
 
                     new_values.resize(extruder_count * stride);
@@ -9189,6 +9190,7 @@ void DynamicPrintConfig::update_values_to_printer_extruders(DynamicPrintConfig& 
                 case coInts:
                 {
                     ConfigOptionInts * opt = this->option<ConfigOptionInts>(key);
+                    if (!opt) break;
                     std::vector<int> new_values;
 
                     new_values.resize(extruder_count * stride);
@@ -9203,6 +9205,7 @@ void DynamicPrintConfig::update_values_to_printer_extruders(DynamicPrintConfig& 
                 case coFloats:
                 {
                     ConfigOptionFloats * opt = this->option<ConfigOptionFloats>(key);
+                    if (!opt) break;
                     std::vector<double> new_values;
 
                     new_values.resize(extruder_count * stride);
@@ -9217,6 +9220,7 @@ void DynamicPrintConfig::update_values_to_printer_extruders(DynamicPrintConfig& 
                 case coPercents:
                 {
                     ConfigOptionPercents * opt = this->option<ConfigOptionPercents>(key);
+                    if (!opt) break;
                     std::vector<double> new_values;
 
                     new_values.resize(extruder_count * stride);
@@ -9231,6 +9235,7 @@ void DynamicPrintConfig::update_values_to_printer_extruders(DynamicPrintConfig& 
                 case coFloatsOrPercents:
                 {
                     ConfigOptionFloatsOrPercents * opt = this->option<ConfigOptionFloatsOrPercents>(key);
+                    if (!opt) break;
                     std::vector<FloatOrPercent> new_values;
 
                     new_values.resize(extruder_count * stride);
@@ -9245,6 +9250,7 @@ void DynamicPrintConfig::update_values_to_printer_extruders(DynamicPrintConfig& 
                 case coBools:
                 {
                     ConfigOptionBools * opt = this->option<ConfigOptionBools>(key);
+                    if (!opt) break;
                     std::vector<unsigned char> new_values;
 
                     new_values.resize(extruder_count * stride);

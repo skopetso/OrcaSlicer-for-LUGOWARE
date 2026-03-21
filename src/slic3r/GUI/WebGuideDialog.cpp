@@ -132,6 +132,8 @@ GuideFrame::GuideFrame(GUI_App *pGUI, long style)
     }
     m_browser->Hide();
     m_browser->SetSize(0, 0);
+    // LUGOWARE: set user agent to include BBL-Slicer for JS compatibility
+    m_browser->SetUserAgent(m_browser->GetUserAgent() + " BBL-Slicer");
 
     SetSizer(topsizer);
 
@@ -327,7 +329,6 @@ void GuideFrame::OnDocumentLoaded(wxWebViewEvent &evt)
     wxString NowUrl = m_browser->GetCurrentURL();
 
     if (evt.GetURL() == m_browser->GetCurrentURL()) {
-        // wxLogMessage("%s", "Document loaded; url='" + evt.GetURL() + "'");
     }
     UpdateState();
 
@@ -426,6 +427,8 @@ void GuideFrame::OnScriptMessage(wxWebViewEvent &evt)
         {
             json MSelected = j["data"];
 
+            BOOST_LOG_TRIVIAL(info) << "save_userguide_models: MSelected=" << MSelected.dump();
+
             int nModel = m_ProfileJson["model"].size();
             for (int m = 0; m < nModel; m++) {
                 json TmpModel = m_ProfileJson["model"][m];
@@ -436,8 +439,10 @@ void GuideFrame::OnScriptMessage(wxWebViewEvent &evt)
 
                     wxString s1 = TmpModel["model"];
                     wxString s2 = OneSelect["model"];
+                    BOOST_LOG_TRIVIAL(info) << "save_userguide_models: comparing s1=[" << s1 << "] s2=[" << s2 << "]";
                     if (s1.compare(s2) == 0) {
                         m_ProfileJson["model"][m]["nozzle_selected"] = m_ProfileJson["model"][m]["nozzle_diameter"];
+                        BOOST_LOG_TRIVIAL(info) << "save_userguide_models: MATCHED " << s1;
                         break;
                     }
                 }
@@ -1088,50 +1093,19 @@ int GuideFrame::LoadProfileData()
         }
         loaded_vendors.insert(PresetBundle::ORCA_FILAMENT_LIBRARY);
 
-        //load custom bundle from user data path
-        boost::filesystem::directory_iterator endIter;
-        for (boost::filesystem::directory_iterator iter(vendor_dir); iter != endIter; iter++) {
-            if (!boost::filesystem::is_directory(*iter)) {
-                wxString strVendor = from_u8(iter->path().string()).BeforeLast('.');
-                strVendor          = strVendor.AfterLast('\\');
-                strVendor          = strVendor.AfterLast('/');
-
-                wxString strExtension = from_u8(iter->path().string()).AfterLast('.').Lower();
-                if(strExtension.CmpNoCase("json") != 0 || loaded_vendors.find(w2s(strVendor)) != loaded_vendors.end())
-                    continue;
-
-                // LUGOWARE: only load BBL, Custom, and LUGOWARE vendors
-                std::string vendor_id = w2s(strVendor);
-                if (vendor_id != "BBL" && vendor_id != "Custom" && vendor_id != "LUGOWARE")
-                    continue;
-
-                LoadProfileFamily(w2s(strVendor), iter->path().string());
-                loaded_vendors.insert(w2s(strVendor));
+        // LUGOWARE: load vendors in explicit order (LUGOWARE first)
+        std::vector<std::string> vendor_load_order = {"LUGOWARE", "Custom", "BBL"};
+        for (const auto& vid : vendor_load_order) {
+            if (loaded_vendors.find(vid) != loaded_vendors.end()) continue;
+            auto vendor_json = boost::filesystem::path(vid + ".json");
+            if (boost::filesystem::exists(vendor_dir / vendor_json)) {
+                LoadProfileFamily(vid, (vendor_dir / vendor_json).string());
+                loaded_vendors.insert(vid);
+            } else if (boost::filesystem::exists(rsrc_vendor_dir / vendor_json)) {
+                LoadProfileFamily(vid, (rsrc_vendor_dir / vendor_json).string());
+                loaded_vendors.insert(vid);
             }
-            if (m_destroy)
-                return 0;
-        }
-
-        boost::filesystem::directory_iterator others_endIter;
-        for (boost::filesystem::directory_iterator iter(rsrc_vendor_dir); iter != others_endIter; iter++) {
-            if (!boost::filesystem::is_directory(*iter)) {
-                wxString strVendor = from_u8(iter->path().string()).BeforeLast('.');
-                strVendor          = strVendor.AfterLast('\\');
-                strVendor          = strVendor.AfterLast('/');
-                wxString strExtension = from_u8(iter->path().string()).AfterLast('.').Lower();
-                if (strExtension.CmpNoCase("json") != 0 || loaded_vendors.find(w2s(strVendor)) != loaded_vendors.end())
-                    continue;
-
-                // LUGOWARE: only load BBL, Custom, and LUGOWARE vendors
-                std::string rsrc_vendor_id = w2s(strVendor);
-                if (rsrc_vendor_id != "BBL" && rsrc_vendor_id != "Custom" && rsrc_vendor_id != "LUGOWARE")
-                    continue;
-
-                LoadProfileFamily(w2s(strVendor), iter->path().string());
-                loaded_vendors.insert(w2s(strVendor));
-            }
-            if (m_destroy)
-                return 0;
+            if (m_destroy) return 0;
         }
 
         //sync to web

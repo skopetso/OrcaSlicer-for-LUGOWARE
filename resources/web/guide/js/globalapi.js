@@ -261,7 +261,8 @@ function clearCookie(name) {
 function IsInSlicer()
 {
 	let bMatch=navigator.userAgent.match(  RegExp('BBL-Slicer','i') );
-	
+	if(!bMatch) bMatch = (typeof window.wx !== 'undefined' && window.wx !== null);
+
 	return bMatch;
 }
 
@@ -269,11 +270,13 @@ function IsInSlicer()
 
 function SendWXMessage( strMsg )
 {
-	let bCheck=IsInSlicer();
-	
-	if(bCheck!=null)
+	if(window.wx && window.wx.postMessage)
 	{
 		window.wx.postMessage(strMsg);
+	}
+	else if(window.chrome && window.chrome.webview && window.chrome.webview.postMessage)
+	{
+		window.chrome.webview.postMessage(strMsg);
 	}
 }
 

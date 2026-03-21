@@ -1938,12 +1938,18 @@ void ConfigWizard::priv::set_start_page(ConfigWizard::StartPage start_page)
 
 void ConfigWizard::priv::create_3rdparty_pages()
 {
+    // LUGOWARE: ensure LUGOWARE appears first, then others
+    std::vector<std::string> vendor_order;
+    vendor_order.push_back("LUGOWARE");
     for (const auto &pair : bundles) {
-        const VendorProfile *vendor = pair.second.vendor_profile;
-        //Orca: add custom as default
-        if (vendor->id == PresetBundle::ORCA_DEFAULT_BUNDLE) { continue; }
-        // LUGOWARE: only show LUGOWARE in 3rd party printer selection
-        if (vendor->id != "LUGOWARE") { continue; }
+        if (pair.first != "LUGOWARE" && pair.first != PresetBundle::ORCA_DEFAULT_BUNDLE)
+            vendor_order.push_back(pair.first);
+    }
+
+    for (const auto &vendor_id : vendor_order) {
+        auto it = bundles.find(vendor_id);
+        if (it == bundles.end()) continue;
+        const VendorProfile *vendor = it->second.vendor_profile;
 
         bool is_fff_technology = false;
         bool is_sla_technology = false;

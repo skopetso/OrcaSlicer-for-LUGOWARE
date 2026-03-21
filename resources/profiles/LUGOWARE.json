@@ -1,6 +1,6 @@
 {
     "name": "LUGOWARE",
-    "version": "02.04.00.00",
+    "version": "02.05.00.00",
     "force_update": "0",
     "description": "LUGOWARE printer configurations",
     "machine_model_list": [
@@ -53,22 +53,9 @@
             "sub_path": "process/fdm_process_lugoware_common.json"
         },
         {
-            "name": "FLEXIBLE 0.6 @LUGOWARE FLEX4 M",
-            "sub_path": "process/FLEXIBLE 0.6 @LUGOWARE FLEX4 M.json"
-        },
-        {
-            "name": "FLEXIBLE 0.6 @LUGOWARE FLEX4 L",
-            "sub_path": "process/FLEXIBLE 0.6 @LUGOWARE FLEX4 L.json"
-        },
-        {
-            "name": "FLEXIBLE 0.6 @LUGOWARE FLEX4 W",
-            "sub_path": "process/FLEXIBLE 0.6 @LUGOWARE FLEX4 W.json"
+            "name": "FLEXIBLE 0.6 @LUGOWARE",
+            "sub_path": "process/FLEXIBLE 0.6 @LUGOWARE.json"
         }
     ],
-    "filament_list": [
-        {
-            "name": "2.85 FOAM TPU @LUGOWARE",
-            "sub_path": "filament/2.85 FOAM TPU @LUGOWARE.json"
-        }
-    ]
+    "filament_list": []
 }
