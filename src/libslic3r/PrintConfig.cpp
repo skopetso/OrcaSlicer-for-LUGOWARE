@@ -2551,6 +2551,15 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
+    def = this->add("filament_heating_duration", coFloats);
+    def->label = L("Heating duration");
+    def->tooltip = L("Time to wait for the filament to heat up during tool change. "
+                   "This value can be used in G-code as {filament_heating_duration}.");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
     def = this->add("filament_cooling_moves", coInts);
     def->label = L("Number of cooling moves");
     def->tooltip = L("Filament is cooled by being moved back and forth in the "

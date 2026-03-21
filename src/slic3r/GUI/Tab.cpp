@@ -3969,6 +3969,7 @@ void TabFilament::build()
         optgroup->append_single_option_line("filament_unloading_speed_start", "material_multimaterial#unloading-speed-at-the-start");
         optgroup->append_single_option_line("filament_unloading_speed", "material_multimaterial#unloading-speed");
         optgroup->append_single_option_line("filament_toolchange_delay", "material_multimaterial#delay-after-unloading");
+        optgroup->append_single_option_line("filament_heating_duration");
         optgroup->append_single_option_line("filament_cooling_moves", "material_multimaterial#number-of-cooling-moves");
         optgroup->append_single_option_line("filament_cooling_initial_speed", "material_multimaterial#speed-of-the-first-cooling-move");
         optgroup->append_single_option_line("filament_cooling_final_speed", "material_multimaterial#speed-of-the-last-cooling-move");
@@ -4143,8 +4144,8 @@ void TabFilament::toggle_options()
     if (m_active_page->title() == L("Multimaterial")) {
         // Orca: hide specific settings for BBL printers
         for (auto el : {"filament_minimal_purge_on_wipe_tower", "filament_loading_speed_start", "filament_loading_speed",
-                        "filament_unloading_speed_start", "filament_unloading_speed", "filament_toolchange_delay", "filament_cooling_moves",
-                        "filament_cooling_initial_speed", "filament_cooling_final_speed"})
+                        "filament_unloading_speed_start", "filament_unloading_speed", "filament_toolchange_delay", "filament_heating_duration",
+                        "filament_cooling_moves", "filament_cooling_initial_speed", "filament_cooling_final_speed"})
             toggle_option(el, !is_BBL_printer);
 
         bool multitool_ramming = m_config->opt_bool("filament_multitool_ramming", 0);
