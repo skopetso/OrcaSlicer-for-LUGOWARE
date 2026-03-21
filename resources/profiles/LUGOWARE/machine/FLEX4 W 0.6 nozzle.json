@@ -10,7 +10,7 @@
         "0.6"
     ],
     "max_layer_height": [
-        "0.6"
+        "0.4"
     ],
     "min_layer_height": [
         "0.15"
@@ -18,11 +18,81 @@
     "retract_restart_extra": [
         "0.1"
     ],
+    "retraction_speed": [
+        "35"
+    ],
+    "deretraction_speed": [
+        "35"
+    ],
+    "retract_before_wipe": [
+        "0%"
+    ],
+    "wipe_distance": [
+        "2"
+    ],
+    "z_hop": [
+        "0.35"
+    ],
+    "z_hop_types": [
+        "Auto Lift"
+    ],
     "printable_area": [
         "0x0",
-        "330x0",
-        "330x255",
+        "331x0",
+        "331x255",
         "0x255"
     ],
-    "printable_height": "370"
+    "printable_height": "370",
+    "print_host": "192.168.0.151",
+    "machine_max_acceleration_travel": [
+        "16000",
+        "16000"
+    ],
+    "machine_max_acceleration_x": [
+        "16000",
+        "16000"
+    ],
+    "machine_max_acceleration_y": [
+        "16000",
+        "16000"
+    ],
+    "machine_max_acceleration_z": [
+        "400",
+        "200"
+    ],
+    "machine_max_acceleration_extruding": [
+        "5000",
+        "16000"
+    ],
+    "machine_max_speed_x": [
+        "1100",
+        "200"
+    ],
+    "machine_max_speed_y": [
+        "1100",
+        "200"
+    ],
+    "machine_max_speed_z": [
+        "40",
+        "12"
+    ],
+    "machine_max_speed_e": [
+        "50",
+        "25"
+    ],
+    "machine_max_jerk_z": [
+        "3",
+        "0.4"
+    ],
+    "machine_max_junction_deviation": [
+        "0.3"
+    ],
+    "machine_tool_change_time": "27",
+    "enable_filament_ramming": "0",
+    "purge_in_prime_tower": "0",
+    "fan_speedup_time": "3",
+    "before_layer_change_gcode": "G92 E0\nTIMELAPSE_TAKE_FRAME",
+    "machine_start_gcode": "START_PRINT BED_TEMP=[first_layer_bed_temperature] EXTRUDER_TEMP=[first_layer_temperature] INITIAL_TOOL=[initial_extruder]",
+    "machine_end_gcode": "END_PRINT",
+    "change_filament_gcode": "CHANGE_TOOL NEXT_TOOL={next_extruder} TEMP={nozzle_temperature[next_extruder]} FILAMENT_DIAMETER={filament_diameter[next_extruder]} RETRACT_LEN={retraction_length[next_extruder]} TC_RETRACT_LEN={retract_length_toolchange[next_extruder]}"
 }
