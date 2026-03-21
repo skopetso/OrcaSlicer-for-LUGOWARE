@@ -1,7 +1,6 @@
 {
     "type": "machine",
     "name": "fdm_lugoware_common",
-    "inherits": "fdm_klipper_common",
     "from": "system",
     "instantiation": "false",
     "printer_technology": "FFF",
@@ -30,11 +29,11 @@
     ],
     "machine_max_acceleration_x": [
         "16000",
-        "1000"
+        "16000"
     ],
     "machine_max_acceleration_y": [
         "16000",
-        "1000"
+        "16000"
     ],
     "machine_max_acceleration_z": [
         "400",

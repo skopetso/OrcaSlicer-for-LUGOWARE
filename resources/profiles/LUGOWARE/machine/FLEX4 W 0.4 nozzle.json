@@ -6,6 +6,7 @@
     "setting_id": "LUGW001",
     "instantiation": "true",
     "printer_model": "FLEX4 W",
+    "printer_variant": "0.4",
     "nozzle_diameter": [
         "0.4"
     ],

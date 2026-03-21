@@ -1,8 +1,11 @@
 {
     "type": "filament",
     "name": "2.85 FOAM TPU @LUGOWARE",
-    "inherits": "Generic TPU",
     "from": "system",
+    "filament_id": "LUGF001",
+    "filament_type": [
+        "TPU"
+    ],
     "instantiation": "true",
     "filament_diameter": [
         "2.85"
@@ -65,6 +68,10 @@
         "; filament end gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=1"
     ],
     "compatible_printers": [
+        "FLEX4 M 0.4 nozzle",
+        "FLEX4 M 0.6 nozzle",
+        "FLEX4 L 0.4 nozzle",
+        "FLEX4 L 0.6 nozzle",
         "FLEX4 W 0.4 nozzle",
         "FLEX4 W 0.6 nozzle"
     ]

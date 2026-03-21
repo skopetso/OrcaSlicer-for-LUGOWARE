@@ -6,8 +6,15 @@
     "setting_id": "LUGL001",
     "instantiation": "true",
     "printer_model": "FLEX4 L",
+    "printer_variant": "0.4",
     "nozzle_diameter": [
         "0.4"
+    ],
+    "printable_area": [
+        "0x0",
+        "230x0",
+        "230x255",
+        "0x255"
     ],
     "printable_height": "370"
 }

@@ -875,6 +875,11 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig *config, co
     for (auto el : {"xy_contour_compensation_layer_step", "xy_contour_compensation_layer_step_thickness", "xy_contour_compensation_layer_step_start_on"})
         toggle_line(el, has_contour_comp);
 
+    // P-point max depth toggle
+    // P-point max depth toggle
+    bool have_p_point = config->opt_bool("p_point_generation");
+    toggle_line("p_point_max_depth", have_p_point);
+
     // Get the current fuzzy skin state
     bool has_fuzzy_skin = config->opt_enum<FuzzySkinType>("fuzzy_skin") != FuzzySkinType::Disabled_fuzzy;
 

@@ -5266,6 +5266,7 @@ LayerResult GCode::process_layer(
 
                     // P-point: initialize for this island
                     m_p_point_enabled = m_config.p_point_generation.value && m_layer != nullptr;
+                    m_p_point_max_depth = m_config.p_point_max_depth.value;
                     m_island_first_extrusion = true;
                     m_current_island_lslice_idx = -1;
 
@@ -7255,19 +7256,29 @@ bool GCode::should_generate_p_point(const Layer& layer, int lslice_idx)
 // Returns std::nullopt if no valid P-point can be generated
 std::optional<Point> GCode::compute_p_point(const Point& ref_point, const ExPolygon& lslice)
 {
-    // 1. Generate virtual wall: lslice offset inward 3mm (1st try), 2mm (fallback)
-    ExPolygons virtual_walls = offset_ex(lslice, -scale_(3.0));
-    if (virtual_walls.empty())
-        virtual_walls = offset_ex(lslice, -scale_(2.0));
+    // 1. Generate virtual wall: binary search for deepest valid offset
+    ExPolygons virtual_walls;
+    int lo = 1, hi = m_p_point_max_depth, best_depth = 0;
+    while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        ExPolygons test = offset_ex(lslice, -scale_(double(mid)));
+        if (!test.empty()) {
+            best_depth = mid;
+            virtual_walls = std::move(test);
+            lo = mid + 1;  // try deeper
+        } else {
+            hi = mid - 1;  // too deep
+        }
+    }
     if (virtual_walls.empty())
         return std::nullopt;
 
     // 2. Find closest point on virtual wall to ref_point
     Point p = projection_onto(virtual_walls, ref_point);
 
-    // 3. Distance validation: 2mm <= dist <= 10mm
+    // 3. Distance validation: must be at least 1mm from ref_point
     double dist = (p - ref_point).cast<double>().norm();
-    if (dist < scale_(2.0) || dist > scale_(10.0))
+    if (dist < scale_(1.0))
         return std::nullopt;
 
     // 4. Must be inside the lslice (respects donut holes)

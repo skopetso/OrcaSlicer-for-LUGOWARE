@@ -6680,6 +6680,18 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 
+    def = this->add("p_point_max_depth", coInt);
+    def->label = L("P-point max depth");
+    def->category = L("Others");
+    def->tooltip = L("Maximum depth (mm) for virtual wall offset when generating P-points. "
+                     "Higher values place P-points deeper inside the model, farther from outer walls. "
+                     "The algorithm tries from this depth down to 1mm, using the deepest successful offset.");
+    def->sidetext = L("mm");
+    def->min = 2;
+    def->max = 50;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(10));
+
     def = this->add("hole_to_polyhole", coBool);
     def->label = L("Convert holes to polyholes");
     def->category = L("Quality");

@@ -2681,6 +2681,7 @@ void TabPrint::build()
         optgroup->append_single_option_line("timelapse_type", "others_settings_special_mode#timelapse");
         optgroup->append_single_option_line("enable_wrapping_detection");
         optgroup->append_single_option_line("p_point_generation");
+        optgroup->append_single_option_line("p_point_max_depth");
 
         optgroup = page->new_optgroup(L("Fuzzy Skin"), L"fuzzy_skin");
         optgroup->append_single_option_line("fuzzy_skin", "others_settings_fuzzy_skin");

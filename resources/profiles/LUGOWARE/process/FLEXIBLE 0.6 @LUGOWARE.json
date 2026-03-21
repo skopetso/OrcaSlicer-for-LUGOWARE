@@ -1,6 +1,6 @@
 {
     "type": "process",
-    "name": "FLEXIBLE 0.6 @LUGOWARE FLEX4 M",
+    "name": "FLEXIBLE 0.6 @LUGOWARE",
     "inherits": "fdm_process_lugoware_common",
     "from": "system",
     "instantiation": "true",
@@ -41,6 +41,11 @@
     "support_object_xy_distance": "0.15",
     "support_top_z_distance": "0",
     "compatible_printers": [
-        "FLEX4 M 0.6 nozzle"
+        "FLEX4 M 0.4 nozzle",
+        "FLEX4 M 0.6 nozzle",
+        "FLEX4 L 0.4 nozzle",
+        "FLEX4 L 0.6 nozzle",
+        "FLEX4 W 0.4 nozzle",
+        "FLEX4 W 0.6 nozzle"
     ]
 }
