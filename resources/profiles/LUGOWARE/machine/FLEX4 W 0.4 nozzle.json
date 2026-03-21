@@ -9,12 +9,6 @@
     "nozzle_diameter": [
         "0.4"
     ],
-    "max_layer_height": [
-        "0.6"
-    ],
-    "min_layer_height": [
-        "0.15"
-    ],
     "printable_area": [
         "0x0",
         "330x0",

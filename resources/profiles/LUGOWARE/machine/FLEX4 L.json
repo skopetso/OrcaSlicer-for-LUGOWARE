@@ -6,7 +6,7 @@
     "machine_tech": "FFF",
     "family": "LUGOWARE",
     "bed_model": "",
-    "bed_texture": "flex4-w-texture.png",
+    "bed_texture": "flex4-l-texture.png",
     "cover_img": "FLEX4 L_cover.png",
     "hotend_model": "",
     "default_materials": "Generic PLA;Generic TPU"

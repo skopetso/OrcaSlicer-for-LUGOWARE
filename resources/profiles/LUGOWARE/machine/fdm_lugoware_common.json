@@ -13,9 +13,16 @@
         "0x255"
     ],
     "printable_height": "270",
+    "extruder_clearance_height_to_lid": "140",
+    "extruder_clearance_height_to_rod": "36",
+    "extruder_clearance_radius": "65",
     "machine_max_acceleration_extruding": [
         "5000",
-        "16000"
+        "1250"
+    ],
+    "machine_max_acceleration_retracting": [
+        "5000",
+        "1250"
     ],
     "machine_max_acceleration_travel": [
         "16000",
@@ -23,11 +30,11 @@
     ],
     "machine_max_acceleration_x": [
         "16000",
-        "16000"
+        "1000"
     ],
     "machine_max_acceleration_y": [
         "16000",
-        "16000"
+        "1000"
     ],
     "machine_max_acceleration_z": [
         "400",
@@ -46,8 +53,16 @@
         "12"
     ],
     "machine_max_speed_e": [
-        "50",
-        "25"
+        "100",
+        "120"
+    ],
+    "machine_max_jerk_x": [
+        "9",
+        "10"
+    ],
+    "machine_max_jerk_y": [
+        "9",
+        "10"
     ],
     "machine_max_jerk_z": [
         "3",
@@ -56,11 +71,17 @@
     "machine_max_junction_deviation": [
         "0.3"
     ],
+    "max_layer_height": [
+        "0.4"
+    ],
+    "min_layer_height": [
+        "0.15"
+    ],
     "machine_start_gcode": "START_PRINT BED_TEMP=[first_layer_bed_temperature] EXTRUDER_TEMP=[first_layer_temperature] INITIAL_TOOL=[initial_extruder]",
     "machine_end_gcode": "END_PRINT",
     "before_layer_change_gcode": "G92 E0\nTIMELAPSE_TAKE_FRAME",
     "change_filament_gcode": "CHANGE_TOOL NEXT_TOOL={next_extruder} TEMP={nozzle_temperature[next_extruder]} FILAMENT_DIAMETER={filament_diameter[next_extruder]} RETRACT_LEN={retraction_length[next_extruder]} TC_RETRACT_LEN={retract_length_toolchange[next_extruder]}",
-    "machine_tool_change_time": "27",
+    "machine_tool_change_time": "28",
     "enable_filament_ramming": "0",
     "fan_speedup_time": "3",
     "purge_in_prime_tower": "0",
@@ -76,6 +97,12 @@
     "retract_length_toolchange": [
         "3"
     ],
+    "retraction_minimum_travel": [
+        "1"
+    ],
+    "wipe": [
+        "1"
+    ],
     "wipe_distance": [
         "2"
     ],
@@ -83,7 +110,7 @@
         "0.35"
     ],
     "z_hop_types": [
-        "Slope Lift"
+        "Auto Lift"
     ],
     "printer_extruder_id": [
         "1"
