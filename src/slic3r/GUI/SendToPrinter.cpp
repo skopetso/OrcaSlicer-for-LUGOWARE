@@ -369,7 +369,7 @@ SendToPrinterDialog::SendToPrinterDialog(Plater *plater)
 
     m_statictext_finish = new wxStaticText(m_panel_finish, wxID_ANY, L("Send complete"), wxDefaultPosition, wxDefaultSize, 0);
     m_statictext_finish->Wrap(-1);
-    m_statictext_finish->SetForegroundColour(wxColour(0, 255, 255));
+    m_statictext_finish->SetForegroundColour(wxColour(0, 151, 137));
     m_sizer_finish_h->Add(m_statictext_finish, 0, wxALIGN_CENTER | wxALL, FromDIP(5));
 
     m_sizer_finish_v->Add(m_sizer_finish_h, 1, wxALIGN_CENTER, 0);

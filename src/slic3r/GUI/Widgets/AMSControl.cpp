@@ -824,7 +824,7 @@ std::vector<AMSinfo> AMSControl::GenerateSimulateData() {
 
     auto caninfo1_0 = Caninfo{ "0", (""), wxColour(255, 255, 0), AMSCanType::AMS_CAN_TYPE_VIRTUAL };
     auto caninfo1_1 = Caninfo{ "1", (""), wxColour(255, 0, 255), AMSCanType::AMS_CAN_TYPE_VIRTUAL };
-    auto caninfo1_2 = Caninfo{ "2", (""), wxColour(0, 255, 255), AMSCanType::AMS_CAN_TYPE_VIRTUAL };
+    auto caninfo1_2 = Caninfo{ "2", (""), wxColour(0, 151, 137), AMSCanType::AMS_CAN_TYPE_VIRTUAL };
     auto caninfo1_3 = Caninfo{ "3", (""), wxColour(200, 80, 150), AMSCanType::AMS_CAN_TYPE_VIRTUAL };
 
     AMSinfo                        ams1 = AMSinfo{ "0", std::vector<Caninfo>{caninfo0_0, caninfo0_1, caninfo0_2, caninfo0_3}, 0 };

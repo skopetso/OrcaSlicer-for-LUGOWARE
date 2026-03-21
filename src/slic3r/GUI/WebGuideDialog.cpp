@@ -1100,6 +1100,11 @@ int GuideFrame::LoadProfileData()
                 if(strExtension.CmpNoCase("json") != 0 || loaded_vendors.find(w2s(strVendor)) != loaded_vendors.end())
                     continue;
 
+                // LUGOWARE: only load BBL, Custom, and LUGOWARE vendors
+                std::string vendor_id = w2s(strVendor);
+                if (vendor_id != "BBL" && vendor_id != "Custom" && vendor_id != "LUGOWARE")
+                    continue;
+
                 LoadProfileFamily(w2s(strVendor), iter->path().string());
                 loaded_vendors.insert(w2s(strVendor));
             }
@@ -1115,6 +1120,11 @@ int GuideFrame::LoadProfileData()
                 strVendor          = strVendor.AfterLast('/');
                 wxString strExtension = from_u8(iter->path().string()).AfterLast('.').Lower();
                 if (strExtension.CmpNoCase("json") != 0 || loaded_vendors.find(w2s(strVendor)) != loaded_vendors.end())
+                    continue;
+
+                // LUGOWARE: only load BBL, Custom, and LUGOWARE vendors
+                std::string rsrc_vendor_id = w2s(strVendor);
+                if (rsrc_vendor_id != "BBL" && rsrc_vendor_id != "Custom" && rsrc_vendor_id != "LUGOWARE")
                     continue;
 
                 LoadProfileFamily(w2s(strVendor), iter->path().string());

@@ -1942,6 +1942,8 @@ void ConfigWizard::priv::create_3rdparty_pages()
         const VendorProfile *vendor = pair.second.vendor_profile;
         //Orca: add custom as default
         if (vendor->id == PresetBundle::ORCA_DEFAULT_BUNDLE) { continue; }
+        // LUGOWARE: only show LUGOWARE in 3rd party printer selection
+        if (vendor->id != "LUGOWARE") { continue; }
 
         bool is_fff_technology = false;
         bool is_sla_technology = false;

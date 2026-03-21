@@ -78,7 +78,7 @@ const char* support_surface_type_to_color_name(const SupporLayerType surface_typ
         case SupporLayerType::Base:           return "rgb(0,0,255)"; // "blue";
         case SupporLayerType::BottomInterface:return "rgb(255,255,128)"; // yellow 
         case SupporLayerType::BottomContact:  return "rgb(255,0,255)"; // magenta
-        case SupporLayerType::RaftInterface:  return "rgb(0,255,255)";
+        case SupporLayerType::RaftInterface:  return "rgb(0,151,137)";
         case SupporLayerType::RaftBase:       return "rgb(128,128,128)";
         case SupporLayerType::Unknown:        return "rgb(128,0,0)"; // maroon
         default:                                            return "rgb(64,64,64)";
