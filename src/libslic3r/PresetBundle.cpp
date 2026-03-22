@@ -2171,6 +2171,17 @@ void PresetBundle::export_selections(AppConfig &config)
     //config.set("presets", "sla_print",    sla_prints.get_selected_preset_name());
     //config.set("presets", "sla_material", sla_materials.get_selected_preset_name());
     //config.set("presets", "physical_printer", physical_printers.get_selected_full_printer_name());
+    // Sync selected printer's vendor/model/variant to AppConfig so it appears
+    // checked in the "Select/Remove printers" dialog (fixes 3MF load ghost preset)
+    const Preset &selected_printer = printers.get_selected_preset();
+    if (selected_printer.is_system && selected_printer.vendor != nullptr) {
+        const std::string &model = selected_printer.config.opt_string("printer_model");
+        const std::string &variant = selected_printer.config.opt_string("printer_variant");
+        if (!model.empty() && !variant.empty()) {
+            config.set_variant(selected_printer.vendor->id, model, variant, true);
+        }
+    }
+
     //BBS: add config related log
     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format(": printer %1%, print %2%, filaments[0] %3% ")%printers.get_selected_preset_name() % prints.get_selected_preset_name() %filament_presets[0];
 }

@@ -16,8 +16,8 @@
     "extruder_clearance_height_to_rod": "36",
     "extruder_clearance_radius": "65",
     "machine_max_acceleration_extruding": [
-        "5000",
-        "1250"
+        "10000",
+        "10000"
     ],
     "machine_max_acceleration_retracting": [
         "5000",
