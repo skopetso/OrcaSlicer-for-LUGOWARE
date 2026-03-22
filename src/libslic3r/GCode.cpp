@@ -5270,16 +5270,34 @@ LayerResult GCode::process_layer(
                     m_island_first_extrusion = true;
                     m_current_island_lslice_idx = -1;
 
-                    gcode += this->extrude_perimeters(print, by_region_specific, first_layer, false);
-                    if (!has_wipe_tower && need_insert_timelapse_gcode_for_traditional && printer_structure == PrinterStructure::psI3
-                        && !has_insert_timelapse_gcode && has_infill(by_region_specific)) {
-                        gcode += this->retract(false, false, auto_lift_type, true);
-                        gcode += insert_timelapse_gcode();
-                        has_insert_timelapse_gcode = true;
+                    // Region-by-region extrusion: complete each region's walls+infill
+                    // before moving to the next region, reducing unnecessary travel moves.
+                    {
+                        bool timelapse_inserted_for_island = false;
+                        for (size_t region_idx = 0; region_idx < by_region_specific.size(); ++region_idx) {
+                            const auto &region = by_region_specific[region_idx];
+                            if (region.perimeters.empty() && region.infills.empty())
+                                continue;
+                            // Create a single-region vector for the existing extrude functions
+                            std::vector<ObjectByExtruder::Island::Region> single_region_vec(by_region_specific.size());
+                            single_region_vec[region_idx] = region;
+                            // Extrude perimeters for this region (non-infill-first)
+                            gcode += this->extrude_perimeters(print, single_region_vec, first_layer, false);
+                            // Timelapse gcode insertion (once per island)
+                            if (!has_wipe_tower && need_insert_timelapse_gcode_for_traditional && printer_structure == PrinterStructure::psI3
+                                && !has_insert_timelapse_gcode && !timelapse_inserted_for_island && has_infill(single_region_vec)) {
+                                gcode += this->retract(false, false, auto_lift_type, true);
+                                gcode += insert_timelapse_gcode();
+                                has_insert_timelapse_gcode = true;
+                                timelapse_inserted_for_island = true;
+                            }
+                            // Extrude infill for this region
+                            gcode += this->extrude_infill(print, single_region_vec, false);
+                            // Extrude infill-first perimeters and ironing for this region
+                            gcode += this->extrude_perimeters(print, single_region_vec, first_layer, true);
+                            gcode += this->extrude_infill(print, single_region_vec, true);
+                        }
                     }
-                    gcode += this->extrude_infill(print, by_region_specific, false);
-                    gcode += this->extrude_perimeters(print, by_region_specific, first_layer, true);
-                    gcode += this->extrude_infill(print, by_region_specific, true);
 
                     // P-point: P2 processing after island extrusion completes
                     if (m_p_point_enabled && m_last_pos_defined && m_layer != nullptr) {
