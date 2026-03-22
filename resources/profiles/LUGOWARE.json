@@ -53,8 +53,40 @@
             "sub_path": "process/fdm_process_lugoware_common.json"
         },
         {
-            "name": "FLEXIBLE 0.6 @LUGOWARE",
-            "sub_path": "process/FLEXIBLE 0.6 @LUGOWARE.json"
+            "name": "FLEXIBLE(0.25)",
+            "sub_path": "process/FLEXIBLE(0.25).json"
+        },
+        {
+            "name": "STANDARD(0.2)",
+            "sub_path": "process/STANDARD(0.2).json"
+        },
+        {
+            "name": "STANDARD_DRAFT(0.28)",
+            "sub_path": "process/STANDARD_DRAFT(0.28).json"
+        },
+        {
+            "name": "STRONG PARTS(0.2)",
+            "sub_path": "process/STRONG PARTS(0.2).json"
+        },
+        {
+            "name": "STRONGEST PARTS(0.25)",
+            "sub_path": "process/STRONGEST PARTS(0.25).json"
+        },
+        {
+            "name": "0.4 Support + FLEXIBLE(0.25)",
+            "sub_path": "process/0.4 Support + FLEXIBLE(0.25).json"
+        },
+        {
+            "name": "0.4 Support + STANDARD(0.2)",
+            "sub_path": "process/0.4 Support + STANDARD(0.2).json"
+        },
+        {
+            "name": "0.4 Support + STRONG PARTS(0.2)",
+            "sub_path": "process/0.4 Support + STRONG PARTS(0.2).json"
+        },
+        {
+            "name": "0.4 Support + STRONGEST PARTS(0.2)",
+            "sub_path": "process/0.4 Support + STRONGEST PARTS(0.2).json"
         }
     ],
     "filament_list": []
