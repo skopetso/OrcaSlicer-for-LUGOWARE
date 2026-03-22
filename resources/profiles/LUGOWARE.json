@@ -87,6 +87,14 @@
         {
             "name": "0.4 Support + STRONGEST PARTS(0.2)",
             "sub_path": "process/0.4 Support + STRONGEST PARTS(0.2).json"
+        },
+        {
+            "name": "FOAMING TPU(0.25)",
+            "sub_path": "process/FOAMING TPU(0.25).json"
+        },
+        {
+            "name": "0.4 Support + FOAMING TPU(0.25)",
+            "sub_path": "process/0.4 Support + FOAMING TPU(0.25).json"
         }
     ],
     "filament_list": []

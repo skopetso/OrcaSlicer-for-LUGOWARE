@@ -1,0 +1,18 @@
+{
+    "filter_out_gap_fill": "100",
+    "from": "system",
+    "gap_fill_target": "nowhere",
+    "inherits": "FLEXIBLE(0.25)",
+    "name": "FOAMING TPU(0.25)",
+    "p_point_generation": "1",
+    "p_point_max_depth": "30",
+    "print_extruder_id": [
+        "1"
+    ],
+    "print_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "print_settings_id": "FOAMING TPU(0.25)",
+    "reduce_crossing_wall": "1",
+    "version": "2.5.0.0"
+}
