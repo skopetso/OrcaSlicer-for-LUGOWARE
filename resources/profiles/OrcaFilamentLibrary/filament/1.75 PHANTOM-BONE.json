@@ -1,0 +1,19 @@
+{
+    "type": "filament",
+    "instantiation": "true",
+    "setting_id": "LGFL01",
+    "filament_id": "LGFL01",
+    "filament_vendor": ["Lugoware"],
+    "filament_type": ["Radiopaque"],
+    "compatible_printers": [],
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_settings_id": [
+        "1.75 PHANTOM-BONE"
+    ],
+    "from": "system",
+    "inherits": "fdm_filament_pet",
+    "name": "1.75 PHANTOM-BONE",
+    "version": "2.3.2.51"
+}
