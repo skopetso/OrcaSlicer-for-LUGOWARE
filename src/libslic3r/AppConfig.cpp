@@ -39,8 +39,8 @@ using namespace nlohmann;
 
 namespace Slic3r {
 
-static const std::string VERSION_CHECK_URL = "https://check-version.orcaslicer.com/latest";
-static const std::string PROFILE_UPDATE_URL = "https://api.github.com/repos/OrcaSlicer/orcaslicer-profiles/releases/tags";
+static const std::string VERSION_CHECK_URL = "https://api.github.com/repos/skopetso/OrcaSlicer-for-LUGOWARE/releases";
+static const std::string PROFILE_UPDATE_URL = "https://api.github.com/repos/skopetso/OrcaSlicer-for-LUGOWARE/releases/tags";
 static const std::string MODELS_STR = "models";
 
 const std::string AppConfig::SECTION_FILAMENTS = "filaments";
