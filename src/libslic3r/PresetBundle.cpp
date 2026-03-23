@@ -1689,7 +1689,6 @@ void PresetBundle::load_installed_printers(const AppConfig &config)
     for (auto &preset : printers)
         preset.set_visible_from_appconfig(config);
 }
-}
 
 const std::string& PresetBundle::get_preset_name_by_alias( const Preset::Type& preset_type, const std::string& alias) const
 {

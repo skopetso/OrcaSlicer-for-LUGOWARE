@@ -1201,8 +1201,9 @@ int GuideFrame::SaveProfileData()
         m_Region = wxGetApp().app_config->get("region");
         m_ProfileJson["region"] = m_Region;
 
-        m_ProfileJson["network_plugin_install"] = wxGetApp().app_config->get("app","installed_networking");
-        m_ProfileJson["network_plugin_compability"] = wxGetApp().is_compatibility_version() ? "1" : "0";
+        // LUGOWARE: skip network plugin install prompt — not needed for LUGOWARE printers
+        m_ProfileJson["network_plugin_install"] = "1";
+        m_ProfileJson["network_plugin_compability"] = "1";
         network_plugin_ready = wxGetApp().is_compatibility_version();
 
         StealthMode = wxGetApp().app_config->get_bool("app","stealth_mode");
