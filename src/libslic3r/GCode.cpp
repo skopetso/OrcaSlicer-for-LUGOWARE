@@ -5270,25 +5270,144 @@ LayerResult GCode::process_layer(
                     m_island_first_extrusion = true;
                     m_current_island_lslice_idx = -1;
 
-                    // Region-by-region extrusion: perimeters (inner→outer) then infill per region.
-                    // Preserves original perimeter ordering to guarantee inner→outer→infill sequence.
+                    // LUGOWARE: Contour-by-contour extrusion.
+                    // Perimeter entities are Path/Loop with role:
+                    //   1=erPerimeter(inner), 2=erExternalPerimeter(outer), 3=erOverhangPerimeter
+                    // Pattern: inner(1)...→outer(2)...→inner(1)... = contour boundary at outer→inner.
+                    // Extrude each contour's walls, then match infill by bbox before next contour.
                     {
-                        // Perimeters (walls-first pass)
-                        gcode += this->extrude_perimeters(print, by_region_specific, first_layer, false);
+                        struct InfillEntry {
+                            size_t region_idx;
+                            ExtrusionEntity *entity;
+                            Point center;
+                            bool matched = false;
+                        };
 
-                        // Timelapse gcode insertion
-                        if (!has_wipe_tower && need_insert_timelapse_gcode_for_traditional && printer_structure == PrinterStructure::psI3
-                            && !has_insert_timelapse_gcode) {
-                            gcode += this->retract(false, false, auto_lift_type, true);
-                            gcode += insert_timelapse_gcode();
-                            has_insert_timelapse_gcode = true;
+                        std::function<void(const ExtrusionEntity*, BoundingBox&)> collect_bbox;
+                        collect_bbox = [&collect_bbox](const ExtrusionEntity *e, BoundingBox &bbox) {
+                            if (auto *eec = dynamic_cast<const ExtrusionEntityCollection*>(e)) {
+                                for (const ExtrusionEntity *sub : eec->entities) collect_bbox(sub, bbox);
+                            } else if (auto *p = dynamic_cast<const ExtrusionPath*>(e)) {
+                                for (const Point &pt : p->polyline.points) bbox.merge(pt);
+                            } else if (auto *mp = dynamic_cast<const ExtrusionMultiPath*>(e)) {
+                                for (const auto &sp : mp->paths) for (const Point &pt : sp.polyline.points) bbox.merge(pt);
+                            } else if (auto *lp = dynamic_cast<const ExtrusionLoop*>(e)) {
+                                for (const auto &sp : lp->paths) for (const Point &pt : sp.polyline.points) bbox.merge(pt);
+                            }
+                        };
+
+                        // Collect infills
+                        std::vector<InfillEntry> infills;
+                        for (size_t region_idx = 0; region_idx < by_region_specific.size(); ++region_idx) {
+                            const auto &region = by_region_specific[region_idx];
+                            for (ExtrusionEntity *ee : region.infills)
+                                if (ee->role() != erIroning)
+                                    infills.push_back({region_idx, ee, ee->first_point()});
                         }
 
-                        // Infill
-                        gcode += this->extrude_infill(print, by_region_specific, false);
+                        const bool infill_first = !first_layer && m_config.is_infill_first;
+                        bool timelapse_inserted_for_island = false;
 
-                        // Perimeters (infill-first pass)
-                        gcode += this->extrude_perimeters(print, by_region_specific, first_layer, true);
+                        auto extrude_matched_infill = [&](const BoundingBox &contour_bbox) {
+                            BoundingBox match_bbox = contour_bbox;
+                            match_bbox.offset(scale_(0.5));
+                            for (auto &inf : infills) {
+                                if (inf.matched) continue;
+                                if (match_bbox.contains(inf.center)) {
+                                    m_config.apply(print.get_print_region(inf.region_idx).config());
+                                    auto *eec = dynamic_cast<const ExtrusionEntityCollection*>(inf.entity);
+                                    if (eec) {
+                                        for (ExtrusionEntity *ee : eec->chained_path_from(m_last_pos).entities)
+                                            gcode += this->extrude_entity(*ee, "infill");
+                                    } else {
+                                        gcode += this->extrude_entity(*inf.entity, "infill");
+                                    }
+                                    inf.matched = true;
+                                }
+                            }
+                        };
+
+                        for (size_t region_idx = 0; region_idx < by_region_specific.size(); ++region_idx) {
+                            const auto &region = by_region_specific[region_idx];
+                            if (region.perimeters.empty()) continue;
+                            m_config.apply(print.get_print_region(region_idx).config());
+
+                            BoundingBox contour_bbox;
+
+                            for (size_t pi = 0; pi < region.perimeters.size(); ++pi) {
+                                const ExtrusionEntity *ee = region.perimeters[pi];
+                                ExtrusionRole cur_role = ee->role();
+
+                                // Accumulate contour bbox
+                                collect_bbox(ee, contour_bbox);
+
+                                // Detect contour end:
+                                //  - end of list
+                                //  - outer wall followed by inner wall (new contour)
+                                //  - next perimeter's bbox doesn't overlap (different area)
+                                bool is_contour_end = (pi + 1 >= region.perimeters.size());
+                                if (!is_contour_end) {
+                                    ExtrusionRole next_role = region.perimeters[pi + 1]->role();
+                                    bool role_break = is_external_perimeter(cur_role) && is_internal_perimeter(next_role);
+                                    // Also check spatial proximity
+                                    BoundingBox next_bbox;
+                                    collect_bbox(region.perimeters[pi + 1], next_bbox);
+                                    BoundingBox test = contour_bbox;
+                                    test.offset(scale_(0.5));
+                                    bool far_away = next_bbox.defined && !test.overlap(next_bbox);
+                                    is_contour_end = role_break || far_away;
+                                }
+
+                                if (infill_first && is_contour_end) {
+                                    extrude_matched_infill(contour_bbox);
+                                }
+
+                                // Extrude this perimeter
+                                const bool should_print = first_layer ? true
+                                    : (m_config.is_infill_first == false);
+                                if (should_print)
+                                    gcode += this->extrude_entity(*ee, "perimeter", -1., region.perimeters);
+
+                                if (!infill_first && is_contour_end) {
+                                    // Timelapse insertion (once per island)
+                                    if (!has_wipe_tower && need_insert_timelapse_gcode_for_traditional && printer_structure == PrinterStructure::psI3
+                                        && !has_insert_timelapse_gcode && !timelapse_inserted_for_island && !infills.empty()) {
+                                        gcode += this->retract(false, false, auto_lift_type, true);
+                                        gcode += insert_timelapse_gcode();
+                                        has_insert_timelapse_gcode = true;
+                                        timelapse_inserted_for_island = true;
+                                    }
+                                    extrude_matched_infill(contour_bbox);
+                                    contour_bbox = BoundingBox(); // reset for next contour
+                                }
+
+                                // Infill-first: extrude perimeter after infill
+                                if (infill_first && is_contour_end) {
+                                    // Re-extrude perimeters for this contour
+                                    // (already handled above with should_print logic)
+                                    contour_bbox = BoundingBox();
+                                }
+                            }
+
+                            // Handle infill-first perimeters pass
+                            if (infill_first) {
+                                for (const ExtrusionEntity *ee : region.perimeters)
+                                    gcode += this->extrude_entity(*ee, "perimeter", -1., region.perimeters);
+                            }
+                        }
+
+                        // Remaining unmatched infill
+                        for (auto &inf : infills) {
+                            if (inf.matched) continue;
+                            m_config.apply(print.get_print_region(inf.region_idx).config());
+                            auto *eec = dynamic_cast<const ExtrusionEntityCollection*>(inf.entity);
+                            if (eec) {
+                                for (ExtrusionEntity *ee : eec->chained_path_from(m_last_pos).entities)
+                                    gcode += this->extrude_entity(*ee, "infill");
+                            } else {
+                                gcode += this->extrude_entity(*inf.entity, "infill");
+                            }
+                        }
 
                         // Ironing pass
                         for (size_t region_idx = 0; region_idx < by_region_specific.size(); ++region_idx) {
