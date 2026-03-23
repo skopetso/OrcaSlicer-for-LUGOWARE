@@ -962,18 +962,6 @@
     ],
     "filament_list": [
         {
-            "name": "COEX PCTG PRIME @BBL X1C",
-            "sub_path": "filament/COEX/COEX PCTG PRIME @BBL X1C.json"
-        },
-        {
-            "name": "COEX PCTG PRIME @BBL X1C 0.2 nozzle",
-            "sub_path": "filament/COEX/COEX PCTG PRIME @BBL X1C 0.2 nozzle.json"
-        },
-        {
-            "name": "COEX PCTG PRIME @BBL X1C 0.8 nozzle",
-            "sub_path": "filament/COEX/COEX PCTG PRIME @BBL X1C 0.8 nozzle.json"
-        },
-        {
             "name": "COEX PETG @BBL X1C",
             "sub_path": "filament/COEX/COEX PETG @BBL X1C.json"
         },
@@ -1000,18 +988,6 @@
         {
             "name": "fdm_filament_common",
             "sub_path": "filament/fdm_filament_common.json"
-        },
-        {
-            "name": "COEX PCTG PRIME @BBL A1M 0.4 nozzle",
-            "sub_path": "filament/COEX/COEX PCTG PRIME @BBL A1M.json"
-        },
-        {
-            "name": "COEX PCTG PRIME @BBL A1M 0.2 nozzle",
-            "sub_path": "filament/COEX/COEX PCTG PRIME @BBL A1M 0.2 nozzle.json"
-        },
-        {
-            "name": "COEX PCTG PRIME @BBL A1M 0.8 nozzle",
-            "sub_path": "filament/COEX/COEX PCTG PRIME @BBL A1M 0.8 nozzle.json"
         },
         {
             "name": "COEX PETG @BBL A1M 0.4 nozzle",
@@ -7224,18 +7200,6 @@
         {
             "name": "COEX NYLEX UNFILLED  @BBL X1C",
             "sub_path": "filament/COEX/COEX NYLEX UNFILLED @BBL X1C.json"
-        },
-        {
-            "name": "COEX PCTG PRIME @BBL A1",
-            "sub_path": "filament/COEX/COEX PCTG PRIME @BBL A1.json"
-        },
-        {
-            "name": "COEX PCTG PRIME @BBL A1 0.2 nozzle",
-            "sub_path": "filament/COEX/COEX PCTG PRIME @BBL A1 0.2 nozzle.json"
-        },
-        {
-            "name": "COEX PCTG PRIME @BBL A1 0.8 nozzle",
-            "sub_path": "filament/COEX/COEX PCTG PRIME @BBL A1 0.8 nozzle.json"
         },
         {
             "name": "COEX PETG @BBL A1",
