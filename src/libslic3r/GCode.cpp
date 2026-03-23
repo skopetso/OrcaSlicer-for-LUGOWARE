@@ -5270,148 +5270,25 @@ LayerResult GCode::process_layer(
                     m_island_first_extrusion = true;
                     m_current_island_lslice_idx = -1;
 
-                    // Cell-by-cell extrusion: match each perimeter loop with nearby infill,
-                    // complete each cell (perimeter + infill) before moving to the next.
+                    // Region-by-region extrusion: perimeters (inner→outer) then infill per region.
+                    // Preserves original perimeter ordering to guarantee inner→outer→infill sequence.
                     {
-                        // Collect all perimeter entities with region index
-                        struct CellEntry {
-                            size_t region_idx;
-                            const ExtrusionEntity *perimeter;
-                            Point center;
-                            BoundingBox bbox;
-                        };
-                        struct InfillEntry {
-                            size_t region_idx;
-                            ExtrusionEntity *infill;
-                            Point center;
-                            bool matched = false;
-                        };
-                        std::vector<CellEntry> cells;
-                        std::vector<InfillEntry> infills;
+                        // Perimeters (walls-first pass)
+                        gcode += this->extrude_perimeters(print, by_region_specific, first_layer, false);
 
-                        // Recursive helper to collect all points from an extrusion entity
-                        std::function<void(const ExtrusionEntity*, BoundingBox&)> collect_bbox;
-                        collect_bbox = [&collect_bbox](const ExtrusionEntity *entity, BoundingBox &bbox) {
-                            auto *eec = dynamic_cast<const ExtrusionEntityCollection*>(entity);
-                            if (eec) {
-                                for (const ExtrusionEntity *sub : eec->entities)
-                                    collect_bbox(sub, bbox);
-                                return;
-                            }
-                            auto *path = dynamic_cast<const ExtrusionPath*>(entity);
-                            if (path) {
-                                for (const Point &p : path->polyline.points)
-                                    bbox.merge(p);
-                                return;
-                            }
-                            auto *mpath = dynamic_cast<const ExtrusionMultiPath*>(entity);
-                            if (mpath) {
-                                for (const auto &sp : mpath->paths)
-                                    for (const Point &p : sp.polyline.points)
-                                        bbox.merge(p);
-                                return;
-                            }
-                            auto *loop = dynamic_cast<const ExtrusionLoop*>(entity);
-                            if (loop) {
-                                for (const auto &sp : loop->paths)
-                                    for (const Point &p : sp.polyline.points)
-                                        bbox.merge(p);
-                                return;
-                            }
-                        };
-
-                        for (size_t region_idx = 0; region_idx < by_region_specific.size(); ++region_idx) {
-                            const auto &region = by_region_specific[region_idx];
-                            for (const ExtrusionEntity *ee : region.perimeters) {
-                                BoundingBox bbox;
-                                collect_bbox(ee, bbox);
-                                if (!bbox.defined) {
-                                    bbox.merge(ee->first_point());
-                                    bbox.offset(scale_(2.0));
-                                }
-                                cells.push_back({region_idx, ee, ee->first_point(), bbox});
-                            }
-                            for (ExtrusionEntity *ee : region.infills) {
-                                if (ee->role() != erIroning)
-                                    infills.push_back({region_idx, ee, ee->first_point()});
-                            }
+                        // Timelapse gcode insertion
+                        if (!has_wipe_tower && need_insert_timelapse_gcode_for_traditional && printer_structure == PrinterStructure::psI3
+                            && !has_insert_timelapse_gcode) {
+                            gcode += this->retract(false, false, auto_lift_type, true);
+                            gcode += insert_timelapse_gcode();
+                            has_insert_timelapse_gcode = true;
                         }
 
-                        // Sort cells by nearest-neighbor from current position
-                        if (!cells.empty() && m_last_pos_defined) {
-                            Point cur = m_last_pos;
-                            for (size_t i = 0; i < cells.size(); ++i) {
-                                size_t nearest = i;
-                                double min_dist = (cells[i].center - cur).cast<double>().squaredNorm();
-                                for (size_t j = i + 1; j < cells.size(); ++j) {
-                                    double d = (cells[j].center - cur).cast<double>().squaredNorm();
-                                    if (d < min_dist) { min_dist = d; nearest = j; }
-                                }
-                                if (nearest != i) std::swap(cells[i], cells[nearest]);
-                                cur = cells[i].center;
-                            }
-                        }
+                        // Infill
+                        gcode += this->extrude_infill(print, by_region_specific, false);
 
-                        // For each cell, find matching infill by proximity
-                        bool timelapse_inserted_for_island = false;
-                        for (size_t ci = 0; ci < cells.size(); ++ci) {
-                            auto &cell = cells[ci];
-                            // Apply region config and extrude perimeter
-                            m_config.apply(print.get_print_region(cell.region_idx).config());
-                            const bool should_print = first_layer ? true
-                                : (m_config.is_infill_first == false);
-                            if (should_print)
-                                gcode += this->extrude_entity(*cell.perimeter, "perimeter", -1., by_region_specific[cell.region_idx].perimeters);
-
-                            // Timelapse gcode insertion (once per island)
-                            if (!has_wipe_tower && need_insert_timelapse_gcode_for_traditional && printer_structure == PrinterStructure::psI3
-                                && !has_insert_timelapse_gcode && !timelapse_inserted_for_island && !infills.empty()) {
-                                gcode += this->retract(false, false, auto_lift_type, true);
-                                gcode += insert_timelapse_gcode();
-                                has_insert_timelapse_gcode = true;
-                                timelapse_inserted_for_island = true;
-                            }
-
-                            // Find and extrude infill entities whose start point falls
-                            // inside this perimeter's bounding box (with small margin)
-                            BoundingBox match_bbox = cell.bbox;
-                            match_bbox.offset(scale_(1.0)); // 1mm margin
-                            for (auto &inf : infills) {
-                                if (inf.matched) continue;
-                                if (match_bbox.contains(inf.center)) {
-                                    m_config.apply(print.get_print_region(inf.region_idx).config());
-                                    auto *eec = dynamic_cast<const ExtrusionEntityCollection*>(inf.infill);
-                                    if (eec) {
-                                        for (ExtrusionEntity *ee : eec->chained_path_from(m_last_pos).entities)
-                                            gcode += this->extrude_entity(*ee, "infill");
-                                    } else {
-                                        gcode += this->extrude_entity(*inf.infill, "infill");
-                                    }
-                                    inf.matched = true;
-                                }
-                            }
-                        }
-
-                        // Extrude any remaining unmatched infill
-                        for (auto &inf : infills) {
-                            if (inf.matched) continue;
-                            m_config.apply(print.get_print_region(inf.region_idx).config());
-                            auto *eec = dynamic_cast<const ExtrusionEntityCollection*>(inf.infill);
-                            if (eec) {
-                                for (ExtrusionEntity *ee : eec->chained_path_from(m_last_pos).entities)
-                                    gcode += this->extrude_entity(*ee, "infill");
-                            } else {
-                                gcode += this->extrude_entity(*inf.infill, "infill");
-                            }
-                        }
-
-                        // Handle infill-first perimeters
-                        if (!first_layer && m_config.is_infill_first) {
-                            for (auto &cell : cells) {
-                                m_config.apply(print.get_print_region(cell.region_idx).config());
-                                gcode += this->extrude_entity(*cell.perimeter, "perimeter", -1., by_region_specific[cell.region_idx].perimeters);
-                            }
-                        }
+                        // Perimeters (infill-first pass)
+                        gcode += this->extrude_perimeters(print, by_region_specific, first_layer, true);
 
                         // Ironing pass
                         for (size_t region_idx = 0; region_idx < by_region_specific.size(); ++region_idx) {
