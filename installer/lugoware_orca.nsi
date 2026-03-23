@@ -6,7 +6,7 @@
 
 ; General
 Name "LUGOWARE OrcaSlicer"
-OutFile "..\LugowareOrcaSlicer-Setup.exe"
+OutFile "..\lugoware_slicer_${VERSION}.exe"
 InstallDir "$PROGRAMFILES64\LugowareOrcaSlicer"
 InstallDirRegKey HKLM "Software\LugowareOrcaSlicer" "InstallDir"
 RequestExecutionLevel admin
