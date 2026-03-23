@@ -12,7 +12,7 @@ InstallDirRegKey HKLM "Software\LugowareOrcaSlicer" "InstallDir"
 RequestExecutionLevel admin
 
 ; Version
-!define VERSION "2.4.0"
+!define VERSION "2.4.1"
 !define PRODUCT_NAME "LUGOWARE OrcaSlicer"
 
 ; UI
