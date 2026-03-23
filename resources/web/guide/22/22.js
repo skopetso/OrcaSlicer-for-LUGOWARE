@@ -228,12 +228,19 @@ function SortUI()
 	{
 		$("#VendorList .CValues").append( VendorHtmlArray[key] );
 	}	
-	$("#VendorList .CValues input").prop("checked",true);
-	
+	// LUGOWARE: only check Lugoware vendor by default on first run
+	$("#VendorList .CValues input").prop("checked",false);
+	$("#VendorList .CValues input").each(function() {
+		if ($(this).attr("vendor") && $(this).attr("vendor").toLowerCase() === "lugoware")
+			$(this).prop("checked", true);
+	});
+	// Uncheck "All" since not all vendors are selected
+	$("#VendorList input:first").prop("checked",false);
+
 	//------
 	if(SelectNumber==0)
 		ChooseDefaultFilament();
-	
+
 	//--If Need Install Network Plugin
 	if(m_ProfileItem["network_plugin_install"]!='1' || (m_ProfileItem["network_plugin_install"]=='1' && m_ProfileItem["network_plugin_compability"]=='0') )
 	{
@@ -241,6 +248,7 @@ function SortUI()
 		$("#GotoNetPluginBtn").show();
 	}
 
+	SortFilament();
 	UpdateStats();
 }
 

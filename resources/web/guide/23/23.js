@@ -233,12 +233,19 @@ function SortUI()
 	{
 		$("#VendorList .CValues").append( VendorHtmlArray[key] );
 	}	
-	$("#VendorList .CValues input").prop("checked",true);
-	
+	// LUGOWARE: only check Lugoware vendor by default on first run
+	$("#VendorList .CValues input").prop("checked",false);
+	$("#VendorList .CValues input").each(function() {
+		if ($(this).attr("vendor") && $(this).attr("vendor").toLowerCase() === "lugoware")
+			$(this).prop("checked", true);
+	});
+	$("#VendorList input:first").prop("checked",false);
+
 	//------
 	if(SelectNumber==0)
 		ChooseDefaultFilament();
 
+	SortFilament();
 	UpdateStats();
 }
 
