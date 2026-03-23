@@ -1,6 +1,7 @@
 {
     "filter_out_gap_fill": "100",
     "from": "system",
+    "instantiation": "true",
     "gap_fill_target": "nowhere",
     "inherits": "0.4 Support + FLEXIBLE(0.25)",
     "name": "0.4 Support + FOAMING TPU(0.25)",

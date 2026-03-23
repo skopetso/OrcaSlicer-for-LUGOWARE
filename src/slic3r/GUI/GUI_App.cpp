@@ -7566,6 +7566,8 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
     bool       res = wizard.run();
 
     if (res) {
+        // LUGOWARE: ensure printer visibility is refreshed after wizard
+        preset_bundle->load_installed_printers(*app_config);
         load_current_presets();
         update_publish_status();
         mainframe->refresh_plugin_tips();

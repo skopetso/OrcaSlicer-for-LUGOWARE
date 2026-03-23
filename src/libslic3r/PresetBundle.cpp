@@ -1502,6 +1502,7 @@ std::pair<PresetsConfigSubstitutions, std::string> PresetBundle::load_system_pre
                 }
             }
         } catch (const std::runtime_error &err) {
+            BOOST_LOG_TRIVIAL(error) << "LUGOWARE: Exception loading vendor " << vendor_name << ": " << err.what();
             if (validation_mode)
                 throw err;
             else {
@@ -1687,6 +1688,7 @@ void PresetBundle::load_installed_printers(const AppConfig &config)
 	this->update_system_maps();
     for (auto &preset : printers)
         preset.set_visible_from_appconfig(config);
+}
 }
 
 const std::string& PresetBundle::get_preset_name_by_alias( const Preset::Type& preset_type, const std::string& alias) const
@@ -4262,10 +4264,10 @@ std::pair<PresetsConfigSubstitutions, size_t> PresetBundle::load_vendor_configs_
                                            presets_loaded, is_orca_lib);
         if (!reason.empty()) {
             ++m_errors;
-            //parse error
+            //parse error — LUGOWARE: skip broken filament instead of aborting entire vendor
             std::string subfile_path = path + "/" + vendor_name + "/" + subfile.second;
-            BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << boost::format(", got error when parse filament setting from %1%") % subfile_path;
-            throw ConfigurationError((boost::format("Failed loading configuration file %1%\nSuggest cleaning the directory %2% firstly") % subfile_path % path).str());
+            BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << boost::format(", got error when parse filament setting from %1%, skipping") % subfile_path;
+            continue;
         }
     }
     if (is_orca_lib) {

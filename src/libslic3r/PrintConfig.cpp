@@ -9129,6 +9129,9 @@ void DynamicPrintConfig::update_values_to_printer_extruders(DynamicPrintConfig& 
         //int extruder_count = opt_nozzle_diameters->size();
         auto opt_extruder_type = dynamic_cast<const ConfigOptionEnumsGeneric*>(printer_config.option("extruder_type"));
         auto opt_nozzle_volume_type = dynamic_cast<const ConfigOptionEnumsGeneric*>(printer_config.option("nozzle_volume_type"));
+        // LUGOWARE: null check to prevent crash when printer has no extruder_type/nozzle_volume_type
+        if (!opt_extruder_type || !opt_nozzle_volume_type)
+            return;
         std::vector<int> variant_index;
 
         if (extruder_id > 0 && extruder_id <= static_cast<unsigned> (extruder_count)) {

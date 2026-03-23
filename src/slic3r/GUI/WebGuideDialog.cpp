@@ -887,6 +887,11 @@ bool GuideFrame::apply_config(AppConfig *app_config, PresetBundle *preset_bundle
     if (check_unsaved_preset_changes)
         preset_bundle->load_presets(*app_config, ForwardCompatibilitySubstitutionRule::Enable,
                                     {preferred_model, preferred_variant, first_added_filament, std::string()});
+    else {
+        // LUGOWARE: even if presets didn't change, refresh printer visibility
+        // to ensure newly selected printers (e.g. BBL) appear in the dropdown
+        preset_bundle->load_installed_printers(*app_config);
+    }
 
     // If the active filament is not in the wizard-selected filaments, switch to the first
     // compatible wizard-selected filament. This handles the first-run case where load_presets
@@ -1305,6 +1310,8 @@ int GuideFrame::LoadProfileFamily(std::string strVendor, std::string strFilePath
             LoadFile(sub_file, contents);
             json pm = json::parse(contents);
 
+            // LUGOWARE: null-safe check for instantiation
+            if (!pm.contains("instantiation") || pm["instantiation"].is_null()) continue;
             std::string strInstant = pm["instantiation"];
             if (strInstant.compare("true") == 0) {
                 OneMachine["model"] = pm["printer_model"];
@@ -1410,6 +1417,8 @@ int GuideFrame::LoadProfileFamily(std::string strVendor, std::string strFilePath
             LoadFile(sub_file, contents);
             json pm = json::parse(contents);
 
+            // LUGOWARE: null-safe check for instantiation
+            if (!pm.contains("instantiation") || pm["instantiation"].is_null()) continue;
             std::string bInstall = pm["instantiation"];
             if (bInstall == "true") { m_ProfileJson["process"].push_back(OneProcess); }
         }
