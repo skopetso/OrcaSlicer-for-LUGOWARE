@@ -12,9 +12,6 @@
     "filament_settings_id": [
         "1.75 LPLA"
     ],
-    "filament_vendor": [
-        "Lugoware"
-    ],
     "from": "system",
     "inherits": "fdm_filament_pla",
     "name": "1.75 LPLA",

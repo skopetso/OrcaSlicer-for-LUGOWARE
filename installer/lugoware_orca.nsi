@@ -24,6 +24,10 @@ RequestExecutionLevel admin
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
+
+; Finish page with auto-run checkbox
+!define MUI_FINISHPAGE_RUN "$INSTDIR\orca-slicer.exe"
+!define MUI_FINISHPAGE_RUN_TEXT "Launch LUGOWARE OrcaSlicer"
 !insertmacro MUI_PAGE_FINISH
 
 !insertmacro MUI_UNPAGE_CONFIRM

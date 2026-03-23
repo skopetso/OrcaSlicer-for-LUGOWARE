@@ -625,13 +625,13 @@ std::set<std::string> PagePrinters::get_selected_models()
 
 void PagePrinters::set_run_reason(ConfigWizard::RunReason run_reason)
 {
-    //Orca: add custom as default
-    if (is_primary_printer_page
-        && (run_reason == ConfigWizard::RR_DATA_EMPTY || run_reason == ConfigWizard::RR_DATA_LEGACY)
-        && printer_pickers.size() > 0 
-        && printer_pickers[0]->vendor_id == PresetBundle::ORCA_DEFAULT_BUNDLE) {
-        //printer_pickers[0]->select_one(0, true);
-        printer_pickers[0]->select_all(true);
+    // LUGOWARE: auto-select all LUGOWARE printers on first run
+    if ((run_reason == ConfigWizard::RR_DATA_EMPTY || run_reason == ConfigWizard::RR_DATA_LEGACY)) {
+        for (auto *picker : printer_pickers) {
+            if (picker->vendor_id == "LUGOWARE") {
+                picker->select_all(true);
+            }
+        }
     }
 }
 
@@ -1003,7 +1003,14 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
 		}
 
 		sel_type_prev = sel_type;
+		// LUGOWARE: default to Lugoware vendor if available
 		sel_vendor = 0;
+		for (unsigned int i = 0; i < list_vendor->GetCount(); i++) {
+			if (list_vendor->get_data(i) == "Lugoware") {
+				sel_vendor = i;
+				break;
+			}
+		}
 		sel_vendor_prev = wxNOT_FOUND;
 		list_vendor->SetSelection(sel_vendor);
 		list_profile->Clear();
@@ -2362,6 +2369,9 @@ static std::string get_first_added_preset(const std::map<std::string, std::strin
     std::set<std::string> diff = get_new_added_presets(old_data, new_data);
     if (diff.empty())
         return std::string();
+    // LUGOWARE: prefer 1.75 Generic PLA as default filament
+    if (diff.count("1.75 Generic PLA"))
+        return "1.75 Generic PLA";
     return *diff.begin();
 }
 

@@ -21,9 +21,6 @@
     "filament_type": [
         "PET"
     ],
-    "filament_vendor": [
-        "Lugoware"
-    ],
     "from": "system",
     "hot_plate_temp": [
         "80"

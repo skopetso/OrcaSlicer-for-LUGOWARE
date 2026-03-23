@@ -9,5 +9,5 @@
     "bed_texture": "flex4-l-texture.png",
     "cover_img": "FLEX4 L_cover.png",
     "hotend_model": "",
-    "default_materials": "Generic PLA;Generic TPU"
+    "default_materials": "1.75 Generic PLA;1.75 Generic PETG;1.75 Generic PVA;1.75 Generic TPU 85A;1.75 Generic TPU 90-98A;1.75 Generic TPU D;2.85 Generic Foaming TPU;2.85 Generic TPU 60A;2.85 Generic TPU 70A;2.85 Generic TPU 85A;1.75 LPLA;1.75 LPET;1.75 PHANTOM-BONE;1.75 PHANTOM-TISSUE;1.75 PHANTOM-SKIN;1.75 PHANTOM-FAT"
 }
