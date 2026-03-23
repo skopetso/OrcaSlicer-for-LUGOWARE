@@ -4,16 +4,16 @@
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
 
+; Version
+!define VERSION "2.4.1"
+!define PRODUCT_NAME "LUGOWARE OrcaSlicer"
+
 ; General
-Name "LUGOWARE OrcaSlicer"
+Name "${PRODUCT_NAME}"
 OutFile "..\lugoware_slicer_${VERSION}.exe"
 InstallDir "$PROGRAMFILES64\LugowareOrcaSlicer"
 InstallDirRegKey HKLM "Software\LugowareOrcaSlicer" "InstallDir"
 RequestExecutionLevel admin
-
-; Version
-!define VERSION "2.4.1"
-!define PRODUCT_NAME "LUGOWARE OrcaSlicer"
 
 ; UI
 !define MUI_ICON "..\resources\images\OrcaSlicer.ico"
