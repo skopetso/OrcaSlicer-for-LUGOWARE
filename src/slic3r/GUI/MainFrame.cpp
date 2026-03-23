@@ -4151,8 +4151,7 @@ bool MainFrame::is_printer_view() const { return m_tabpanel->GetSelection() == T
 
 void MainFrame::refresh_plugin_tips()
 {
-    if (m_webview != nullptr)
-        m_webview->ShowNetpluginTip();
+    // LUGOWARE: skip network plugin tips
 }
 
 void MainFrame::RunScript(wxString js)

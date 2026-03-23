@@ -970,9 +970,10 @@ void GUI_App::post_init()
     hms_query = new HMSQuery();
 
     m_show_gcode_window = app_config->get_bool("show_gcode_window");
-    if (m_networking_need_update) {
-        show_network_plugin_download_dialog(false);
-    }
+    // LUGOWARE: skip network plugin download prompt on startup
+    // if (m_networking_need_update) {
+    //     show_network_plugin_download_dialog(false);
+    // }
 
     // Start preset sync after project opened, otherwise we could have preset change during project opening which could cause crash 
     if (app_config->get("sync_user_preset") == "true") {
