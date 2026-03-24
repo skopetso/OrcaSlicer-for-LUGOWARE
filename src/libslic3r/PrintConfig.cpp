@@ -2605,6 +2605,17 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats { 20. });
 
+    // LUGOWARE: Additional prime
+    def = this->add("filament_additional_prime", coFloats);
+    def->label = L("Additional prime amount");
+    def->tooltip = L("Extra prime amount after tool change. This value is passed to Klipper "
+                     "as A_P parameter in the CHANGE_TOOL macro.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 50;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
     def = this->add("filament_cooling_initial_speed", coFloats);
     def->label = L("Speed of the first cooling move");
     def->tooltip = L("Cooling moves are gradually accelerating beginning at this speed.");

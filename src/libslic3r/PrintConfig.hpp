@@ -1419,6 +1419,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     // LUGOWARE: Toolchange slowdown
     ((ConfigOptionFloats,              filament_toolchange_slowdown_speed_ratio))
     ((ConfigOptionFloats,              filament_toolchange_slowdown_distance))
+    // LUGOWARE: Additional prime
+    ((ConfigOptionFloats,              filament_additional_prime))
 )
 
 // This object is mapped to Perl as Slic3r::Config::Print.
