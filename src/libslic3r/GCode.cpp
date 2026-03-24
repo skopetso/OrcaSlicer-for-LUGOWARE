@@ -7713,7 +7713,7 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
         {
             double slowdown_dist = m_config.filament_toolchange_slowdown_distance.get_at(new_filament_id);
             double slowdown_ratio = m_config.filament_toolchange_slowdown_speed_ratio.get_at(new_filament_id);
-            if (slowdown_dist <= 0) slowdown_dist = 20.;
+            if (slowdown_dist <= 0) slowdown_dist = 60.;
             if (slowdown_ratio <= 0) slowdown_ratio = 50.;
             m_toolchange_remaining_slowdown_dist = slowdown_dist;
             m_toolchange_slowdown_speed_ratio = slowdown_ratio / 100.0;
@@ -7965,7 +7965,7 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
     {
         double slowdown_dist = m_config.filament_toolchange_slowdown_distance.get_at(new_filament_id);
         double slowdown_ratio = m_config.filament_toolchange_slowdown_speed_ratio.get_at(new_filament_id);
-        if (slowdown_dist <= 0) slowdown_dist = 20.;
+        if (slowdown_dist <= 0) slowdown_dist = 60.;
         if (slowdown_ratio <= 0) slowdown_ratio = 50.;
         m_toolchange_remaining_slowdown_dist = slowdown_dist;
         m_toolchange_slowdown_speed_ratio = slowdown_ratio / 100.0;

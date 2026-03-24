@@ -2603,7 +2603,7 @@ void PrintConfigDef::init_fff_params()
     def->min = 0;
     def->max = 200;
     def->mode = comAdvanced;
-    def->set_default_value(new ConfigOptionFloats { 20. });
+    def->set_default_value(new ConfigOptionFloats { 60. });
 
     // LUGOWARE: Additional prime
     def = this->add("filament_additional_prime", coFloats);
