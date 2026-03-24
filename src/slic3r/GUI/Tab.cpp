@@ -3969,7 +3969,6 @@ void TabFilament::build()
         optgroup->append_single_option_line("filament_unloading_speed_start", "material_multimaterial#unloading-speed-at-the-start");
         optgroup->append_single_option_line("filament_unloading_speed", "material_multimaterial#unloading-speed");
         optgroup->append_single_option_line("filament_toolchange_delay", "material_multimaterial#delay-after-unloading");
-        optgroup->append_single_option_line("filament_heating_duration");
         optgroup->append_single_option_line("filament_cooling_moves", "material_multimaterial#number-of-cooling-moves");
         optgroup->append_single_option_line("filament_cooling_initial_speed", "material_multimaterial#speed-of-the-first-cooling-move");
         optgroup->append_single_option_line("filament_cooling_final_speed", "material_multimaterial#speed-of-the-last-cooling-move");
@@ -3998,6 +3997,10 @@ void TabFilament::build()
         optgroup->append_single_option_line("filament_multitool_ramming", "material_multimaterial#tool-change-parameters-with-multi-extruder");
         optgroup->append_single_option_line("filament_multitool_ramming_volume", "material_multimaterial#multi-tool-ramming-volume");
         optgroup->append_single_option_line("filament_multitool_ramming_flow", "material_multimaterial#multi-tool-ramming-flow");
+
+        optgroup->append_single_option_line("filament_toolchange_slowdown_speed_ratio");
+        optgroup->append_single_option_line("filament_toolchange_slowdown_distance");
+        optgroup->append_single_option_line("filament_heating_duration");
 
     page = add_options_page(L("Dependencies"), "advanced");
         optgroup = page->new_optgroup(L("Compatible printers"), "param_dependencies_printers");

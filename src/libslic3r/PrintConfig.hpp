@@ -1415,6 +1415,10 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionStrings,              small_area_infill_flow_compensation_model))
 
     ((ConfigOptionBool,                has_scarf_joint_seam))
+
+    // LUGOWARE: Toolchange slowdown
+    ((ConfigOptionFloats,              filament_toolchange_slowdown_speed_ratio))
+    ((ConfigOptionFloats,              filament_toolchange_slowdown_distance))
 )
 
 // This object is mapped to Perl as Slic3r::Config::Print.

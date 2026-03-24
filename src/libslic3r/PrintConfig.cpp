@@ -2584,6 +2584,27 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
+    // LUGOWARE: Toolchange slowdown
+    def = this->add("filament_toolchange_slowdown_speed_ratio", coFloats);
+    def->label = L("Toolchange slowdown speed (%)");
+    def->tooltip = L("Speed ratio applied after a tool change. 50 means 50% of normal speed. "
+                     "This helps the new filament adhere properly after switching.");
+    def->sidetext = "%";
+    def->min = 10;
+    def->max = 100;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats { 50. });
+
+    def = this->add("filament_toolchange_slowdown_distance", coFloats);
+    def->label = L("Toolchange slowdown distance");
+    def->tooltip = L("Distance to travel at reduced speed after a tool change. "
+                     "After this distance, speed returns to normal.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 200;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats { 20. });
+
     def = this->add("filament_cooling_initial_speed", coFloats);
     def->label = L("Speed of the first cooling move");
     def->tooltip = L("Cooling moves are gradually accelerating beginning at this speed.");

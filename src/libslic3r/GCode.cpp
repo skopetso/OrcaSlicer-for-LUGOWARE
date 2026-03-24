@@ -6655,7 +6655,12 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
     }
 
     double F = speed * 60;  // convert mm/sec to mm/min
-    
+
+    // LUGOWARE: Apply toolchange slowdown to F value
+    if (m_toolchange_remaining_slowdown_dist > 0) {
+        F *= m_toolchange_slowdown_speed_ratio;
+    }
+
     // Orca: Dynamic PA
     // If adaptive PA is enabled, by default evaluate PA on all extrusion moves
     bool is_pa_calib = m_curr_print->calib_mode() == CalibMode::Calib_PA_Line ||
@@ -6944,6 +6949,16 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
                             dE * e_ratio,
                             GCodeWriter::full_gcode_comment ? tempDescription : "", path.is_force_no_extrusion());
                     }
+                    // LUGOWARE: Track toolchange slowdown distance and restore speed
+                    if (m_toolchange_remaining_slowdown_dist > 0) {
+                        m_toolchange_remaining_slowdown_dist -= line_length;
+                        if (m_toolchange_remaining_slowdown_dist <= 0) {
+                            m_toolchange_remaining_slowdown_dist = 0;
+                            // Restore original speed
+                            double restored_F = speed * 60;
+                            gcode += m_writer.set_speed(restored_F, "", comment);
+                        }
+                    }
                 }
             } else {
                 // BBS: start to generate gcode from arc fitting data which includes line and arc
@@ -6973,6 +6988,15 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
                                 this->point_to_gcode(line.b),
                                 dE,
                                 GCodeWriter::full_gcode_comment ? tempDescription : "", path.is_force_no_extrusion());
+                            // LUGOWARE: Track toolchange slowdown distance (arc fitting linear)
+                            if (m_toolchange_remaining_slowdown_dist > 0) {
+                                m_toolchange_remaining_slowdown_dist -= line_length;
+                                if (m_toolchange_remaining_slowdown_dist <= 0) {
+                                    m_toolchange_remaining_slowdown_dist = 0;
+                                    double restored_F = speed * 60;
+                                    gcode += m_writer.set_speed(restored_F, "", comment);
+                                }
+                            }
                         }
                         break;
                     }
@@ -6998,6 +7022,15 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
                             dE,
                             arc.direction == ArcDirection::Arc_Dir_CCW,
                             GCodeWriter::full_gcode_comment ? tempDescription : "", path.is_force_no_extrusion());
+                        // LUGOWARE: Track toolchange slowdown distance (arc)
+                        if (m_toolchange_remaining_slowdown_dist > 0) {
+                            m_toolchange_remaining_slowdown_dist -= arc_length;
+                            if (m_toolchange_remaining_slowdown_dist <= 0) {
+                                m_toolchange_remaining_slowdown_dist = 0;
+                                double restored_F = speed * 60;
+                                gcode += m_writer.set_speed(restored_F, "", comment);
+                            }
+                        }
                         break;
                     }
                     default:
@@ -7663,6 +7696,17 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
         }
 
         gcode += m_writer.toolchange(new_filament_id);
+
+        // LUGOWARE: Activate toolchange slowdown for new filament
+        {
+            double slowdown_dist = m_config.filament_toolchange_slowdown_distance.get_at(new_filament_id);
+            double slowdown_ratio = m_config.filament_toolchange_slowdown_speed_ratio.get_at(new_filament_id);
+            if (slowdown_dist <= 0) slowdown_dist = 20.;
+            if (slowdown_ratio <= 0) slowdown_ratio = 50.;
+            m_toolchange_remaining_slowdown_dist = slowdown_dist;
+            m_toolchange_slowdown_speed_ratio = slowdown_ratio / 100.0;
+        }
+
         return gcode;
     }
 
@@ -7903,6 +7947,16 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
         gcode += toolchange_command;
     else {
         // user provided his own toolchange gcode, no need to do anything
+    }
+
+    // LUGOWARE: Activate toolchange slowdown for new filament
+    {
+        double slowdown_dist = m_config.filament_toolchange_slowdown_distance.get_at(new_filament_id);
+        double slowdown_ratio = m_config.filament_toolchange_slowdown_speed_ratio.get_at(new_filament_id);
+        if (slowdown_dist <= 0) slowdown_dist = 20.;
+        if (slowdown_ratio <= 0) slowdown_ratio = 50.;
+        m_toolchange_remaining_slowdown_dist = slowdown_dist;
+        m_toolchange_slowdown_speed_ratio = slowdown_ratio / 100.0;
     }
 
     // Set the temperature if the wipe tower didn't (not needed for non-single extruder MM)
