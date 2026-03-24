@@ -114,9 +114,13 @@ void Extruder::set_retracted(double retracted, double restart_extra)
 
     if (retracted > EPSILON) {
         m_retracted     = retracted;
+        if (m_share_extruder)
+            m_share_retracted[extruder_id()] = retracted;
         m_restart_extra = restart_extra < EPSILON ? 0 : restart_extra;
     } else {
         m_retracted     = 0;
+        if (m_share_extruder)
+            m_share_retracted[extruder_id()] = 0;
         m_restart_extra = 0;
     }
 }

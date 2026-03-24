@@ -3153,6 +3153,17 @@ void GCode::_do_export(Print& print, GCodeOutputStream &file, ThumbnailsGenerato
         // Ugly hack: Do not set the initial extruder if the extruder is primed using the MMU priming towers at the edge of the print bed.
         file.write(this->set_extruder(initial_extruder_id, 0.));
     }
+
+    // LUGOWARE: For toolchanger printers, the first tool also goes through
+    // a tool change, so set retracted state to tc_retract so the first
+    // unretract pushes the correct amount (and retract is skipped).
+    if (m_config.template_custom_gcode.value.find("LUGOWARE_TOOLCHANGER") != std::string::npos) {
+        double tc_retract = m_config.retract_length_toolchange.get_at(initial_extruder_id);
+        double tc_restart = m_config.retract_restart_extra_toolchange.get_at(initial_extruder_id);
+        if (m_writer.filament() != nullptr)
+            m_writer.filament()->set_retracted(tc_retract, tc_restart);
+    }
+
     // BBS: set that indicates objs with brim
     for (auto iter = print.m_brimMap.begin(); iter != print.m_brimMap.end(); ++iter) {
         if (!iter->second.empty())
@@ -7607,6 +7618,7 @@ std::string GCode::retract(bool toolchange, bool is_last_retraction, LiftType li
 
     if (m_writer.filament() == nullptr)
         return gcode;
+
 
     // wipe (if it's enabled for this extruder and we have a stored wipe path and no-zero wipe distance)
     if (FILAMENT_CONFIG(wipe) && m_wipe.has_path() && scale_(FILAMENT_CONFIG(wipe_distance)) > SCALED_EPSILON) {

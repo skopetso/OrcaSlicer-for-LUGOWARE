@@ -80,6 +80,7 @@
     "machine_end_gcode": "END_PRINT",
     "before_layer_change_gcode": "G92 E0\nTIMELAPSE_TAKE_FRAME",
     "change_filament_gcode": "CHANGE_TOOL NEXT_TOOL={next_extruder} TEMP={nozzle_temperature[next_extruder]} FILAMENT_DIAMETER={filament_diameter[next_extruder]} RETRACT_LEN={retraction_length[next_extruder]} TC_RETRACT_LEN={retract_length_toolchange[next_extruder]} H_D={filament_heating_duration[next_extruder]} A_P={filament_additional_prime[next_extruder]}",
+    "template_custom_gcode": "; LUGOWARE_TOOLCHANGER",
     "machine_tool_change_time": "28",
     "enable_filament_ramming": "0",
     "fan_speedup_time": "3",
