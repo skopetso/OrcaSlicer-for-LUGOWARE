@@ -20,11 +20,24 @@ namespace pt = boost::property_tree;
 namespace Slic3r {
 namespace GUI {
 
-PrinterWebView::PrinterWebView(wxWindow *parent)
+PrinterWebView::PrinterWebView(wxWindow *parent, bool show_nav)
         : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
  {
 
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
+
+    // Navigation bar (back/forward/reload)
+    if (show_nav) {
+        wxBoxSizer* navsizer = new wxBoxSizer(wxHORIZONTAL);
+        auto* btn_back = new wxButton(this, wxID_ANY, L"\u25C0", wxDefaultPosition, wxSize(40, 30));
+        auto* btn_forward = new wxButton(this, wxID_ANY, L"\u25B6", wxDefaultPosition, wxSize(40, 30));
+        navsizer->Add(btn_back, 0, wxALL, 2);
+        navsizer->Add(btn_forward, 0, wxALL, 2);
+        topsizer->Add(navsizer, 0, wxEXPAND);
+
+        btn_back->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { if (m_browser && m_browser->CanGoBack()) m_browser->GoBack(); });
+        btn_forward->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { if (m_browser && m_browser->CanGoForward()) m_browser->GoForward(); });
+    }
 
       // Create the webview
     m_browser = WebView::CreateWebView(this, "");

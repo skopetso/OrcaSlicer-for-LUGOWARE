@@ -33,7 +33,7 @@ namespace GUI {
 
 class PrinterWebView : public wxPanel {
 public:
-    PrinterWebView(wxWindow *parent);
+    PrinterWebView(wxWindow *parent, bool show_nav = false);
     virtual ~PrinterWebView();
 
     void load_url(wxString& url, wxString apikey = "");

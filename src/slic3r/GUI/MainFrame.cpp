@@ -1322,6 +1322,16 @@ void MainFrame::init_tabpanel() {
         m_tabpanel->AddPage(m_multi_machine, _L("Multi-device"), std::string("tab_multi_active"), std::string("tab_multi_active"), false);
     }
 
+    // PrintFarm tab
+    m_printfarm_view = new PrinterWebView(m_tabpanel);
+    m_printfarm_view->SetBackgroundColour(*wxWHITE);
+    m_tabpanel->AddPage(m_printfarm_view, _L("PrintFarm"), std::string("tab_monitor_active"), std::string("tab_monitor_active"), false);
+    {
+        std::string url = wxGetApp().app_config->get("printfarm_url");
+        if (url.empty()) url = "http://localhost:5176";
+        m_printfarm_view->load_url(wxString::FromUTF8(url));
+    }
+
     m_project = new ProjectPanel(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
     m_project->SetBackgroundColour(*wxWHITE);
     m_tabpanel->AddPage(m_project, _L("Project"), std::string("tab_auxiliary_active"), std::string("tab_auxiliary_active"), false);

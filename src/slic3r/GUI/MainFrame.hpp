@@ -223,9 +223,10 @@ public:
         tpMonitor       = 3,
         tpMultiDevice   = 4,
         tpProject       = 5,
-        tpCalibration   = 6,
-        tpAuxiliary     = 7,
-        toDebugTool     = 8,
+        tpPrintFarm     = 6,
+        tpCalibration   = 7,
+        tpAuxiliary     = 8,
+        toDebugTool     = 9,
     };
 
     //BBS: add slice&&print status update logic
@@ -384,6 +385,7 @@ public:
     CalibrationPanel*     m_calibration{ nullptr };
     WebViewPanel*         m_webview { nullptr };
     PrinterWebView*       m_printer_view{nullptr};
+    PrinterWebView*       m_printfarm_view{nullptr};
     wxLogWindow*          m_log_window { nullptr };
     // BBS
     //wxBookCtrlBase*       m_tabpanel { nullptr };

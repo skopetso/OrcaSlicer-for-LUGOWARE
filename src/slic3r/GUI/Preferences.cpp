@@ -1433,6 +1433,43 @@ void PreferencesDialog::create_items()
            "Lower values produce smaller files but lose more geometric detail; higher values preserve more detail at the cost of larger files."));
     g_sizer->Add(item_draco_bits);
 
+    //// GENERAL > PrintFarm
+    g_sizer->Add(create_item_title(_L("PrintFarm")), 1, wxEXPAND);
+
+    // PrintFarm URL - text input without digit-only validator
+    auto item_printfarm_url = [this]() -> wxBoxSizer* {
+        wxBoxSizer *sizer = new wxBoxSizer(wxHORIZONTAL);
+        auto title = new wxStaticText(m_parent, wxID_ANY, _L("PrintFarm URL"), wxDefaultPosition, DESIGN_TITLE_SIZE, wxST_NO_AUTORESIZE);
+        title->SetForegroundColour(DESIGN_GRAY900_COLOR);
+        title->SetFont(::Label::Body_14);
+        title->Wrap(DESIGN_TITLE_SIZE.x);
+        auto input = new ::TextInput(m_parent, wxEmptyString, wxEmptyString, wxEmptyString, wxDefaultPosition, DESIGN_INPUT_SIZE, wxTE_PROCESS_ENTER);
+        StateColor input_bg(std::pair<wxColour, int>(wxColour("#F0F0F1"), StateColor::Disabled), std::pair<wxColour, int>(*wxWHITE, StateColor::Enabled));
+        input->SetBackgroundColor(input_bg);
+        input->GetTextCtrl()->SetValue(wxString::FromUTF8(app_config->get("printfarm_url")));
+        sizer->AddSpacer(FromDIP(DESIGN_LEFT_MARGIN));
+        sizer->Add(title, 0, wxALIGN_CENTER_VERTICAL);
+        sizer->Add(input, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(5));
+        input->GetTextCtrl()->Bind(wxEVT_TEXT_ENTER, [this, input](wxCommandEvent &e) {
+            auto value = input->GetTextCtrl()->GetValue();
+            app_config->set("printfarm_url", std::string(value.ToUTF8()));
+            app_config->save();
+            if (wxGetApp().mainframe && wxGetApp().mainframe->m_printfarm_view)
+                wxGetApp().mainframe->m_printfarm_view->load_url(value);
+            e.Skip();
+        });
+        input->GetTextCtrl()->Bind(wxEVT_KILL_FOCUS, [this, input](wxFocusEvent &e) {
+            auto value = input->GetTextCtrl()->GetValue();
+            app_config->set("printfarm_url", std::string(value.ToUTF8()));
+            app_config->save();
+            if (wxGetApp().mainframe && wxGetApp().mainframe->m_printfarm_view)
+                wxGetApp().mainframe->m_printfarm_view->load_url(value);
+            e.Skip();
+        });
+        return sizer;
+    }();
+    g_sizer->Add(item_printfarm_url);
+
     g_sizer->AddSpacer(FromDIP(10));
     sizer_page->Add(g_sizer, 0, wxEXPAND);
 
