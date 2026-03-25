@@ -7919,7 +7919,9 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
     std::string change_filament_gcode = m_config.change_filament_gcode.value;
 
     // Move the lift gcode here which is in the change_filament_gcode originally
-    change_filament_gcode = this->retract(false, false, LiftType::SpiralLift, true) + change_filament_gcode;
+    // LUGOWARE: Skip pre-toolchange retract - firmware handles retraction in DOCK macro
+    if (m_config.template_custom_gcode.value.find("LUGOWARE_TOOLCHANGER") == std::string::npos)
+        change_filament_gcode = this->retract(false, false, LiftType::SpiralLift, true) + change_filament_gcode;
 
     std::string toolchange_gcode_parsed;
     //Orca: Ignore change_filament_gcode if is the first call for a tool change and manual_filament_change is enabled
@@ -7969,6 +7971,15 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
         if (slowdown_ratio <= 0) slowdown_ratio = 50.;
         m_toolchange_remaining_slowdown_dist = slowdown_dist;
         m_toolchange_slowdown_speed_ratio = slowdown_ratio / 100.0;
+    }
+
+    // LUGOWARE: After toolchange, firmware already retracted by tc_retract.
+    // Tell OrcaSlicer so it won't retract again and will unretract the correct amount.
+    if (m_config.template_custom_gcode.value.find("LUGOWARE_TOOLCHANGER") != std::string::npos) {
+        double tc_retract = m_config.retract_length_toolchange.get_at(new_filament_id);
+        double tc_restart = m_config.retract_restart_extra_toolchange.get_at(new_filament_id);
+        if (m_writer.filament() != nullptr)
+            m_writer.filament()->set_retracted(tc_retract, tc_restart);
     }
 
     // Set the temperature if the wipe tower didn't (not needed for non-single extruder MM)
