@@ -1454,16 +1454,16 @@ void PreferencesDialog::create_items()
             auto value = input->GetTextCtrl()->GetValue();
             app_config->set("printfarm_url", std::string(value.ToUTF8()));
             app_config->save();
-            if (wxGetApp().mainframe && wxGetApp().mainframe->m_printfarm_view)
-                wxGetApp().mainframe->m_printfarm_view->load_url(value);
+            if (wxGetApp().mainframe && wxGetApp().mainframe->m_printfarm_panel)
+                wxGetApp().mainframe->m_printfarm_panel->load_url(value);
             e.Skip();
         });
         input->GetTextCtrl()->Bind(wxEVT_KILL_FOCUS, [this, input](wxFocusEvent &e) {
             auto value = input->GetTextCtrl()->GetValue();
             app_config->set("printfarm_url", std::string(value.ToUTF8()));
             app_config->save();
-            if (wxGetApp().mainframe && wxGetApp().mainframe->m_printfarm_view)
-                wxGetApp().mainframe->m_printfarm_view->load_url(value);
+            if (wxGetApp().mainframe && wxGetApp().mainframe->m_printfarm_panel)
+                wxGetApp().mainframe->m_printfarm_panel->load_url(value);
             e.Skip();
         });
         return sizer;
