@@ -7919,9 +7919,7 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
     std::string change_filament_gcode = m_config.change_filament_gcode.value;
 
     // Move the lift gcode here which is in the change_filament_gcode originally
-    // LUGOWARE: Skip pre-toolchange retract - firmware handles retraction in DOCK macro
-    if (m_config.template_custom_gcode.value.find("LUGOWARE_TOOLCHANGER") == std::string::npos)
-        change_filament_gcode = this->retract(false, false, LiftType::SpiralLift, true) + change_filament_gcode;
+    change_filament_gcode = this->retract(false, false, LiftType::SpiralLift, true) + change_filament_gcode;
 
     std::string toolchange_gcode_parsed;
     //Orca: Ignore change_filament_gcode if is the first call for a tool change and manual_filament_change is enabled
@@ -7980,6 +7978,9 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
         double tc_restart = m_config.retract_restart_extra_toolchange.get_at(new_filament_id);
         if (m_writer.filament() != nullptr)
             m_writer.filament()->set_retracted(tc_retract, tc_restart);
+        // Tell writer we're already at Z hop height so it won't Z lift again
+        double z_hop = m_config.z_hop.get_at(new_filament_id);
+        m_writer.set_zhop(z_hop);
     }
 
     // Set the temperature if the wipe tower didn't (not needed for non-single extruder MM)

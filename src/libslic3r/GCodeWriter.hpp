@@ -94,6 +94,7 @@ public:
     Vec3d&       get_position() { return m_pos; }
     void        set_position(const Vec3d& in) { m_pos = in; }
     double      get_zhop() const { return m_lifted; }
+    void        set_zhop(double lift) { m_lifted = lift; }
 
     //BBS: set offset for gcode writer
     void set_xy_offset(double x, double y) { m_x_offset = x; m_y_offset = y; }
