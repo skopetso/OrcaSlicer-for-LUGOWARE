@@ -1325,7 +1325,7 @@ void MainFrame::init_tabpanel() {
 
     // PrintFarm tab
     m_printfarm_panel = new PrintFarmPanel(m_tabpanel);
-    m_tabpanel->AddPage(m_printfarm_panel, _L("PrintFarm"), std::string("tab_monitor_active"), std::string("tab_monitor_active"), false);
+    m_tabpanel->AddPage(m_printfarm_panel, _L("PrintFarm"), std::string("tab_printfarm_active"), std::string("tab_printfarm_active"), false);
 
     m_project = new ProjectPanel(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
     m_project->SetBackgroundColour(*wxWHITE);
