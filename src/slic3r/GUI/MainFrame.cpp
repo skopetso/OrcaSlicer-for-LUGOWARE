@@ -21,6 +21,7 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintConfig.hpp"
+#include "slic3r/Utils/Http.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/PresetBundle.hpp"
 
@@ -1638,6 +1639,120 @@ bool MainFrame::can_upload() const
     return true;
 }
 
+void MainFrame::on_upload_to_printfarm()
+{
+    if (!m_plater) return;
+
+    auto* config = wxGetApp().app_config;
+    std::string farm_url = config->get("printfarm_url");
+    if (farm_url.empty()) {
+        wxMessageBox(_L("PrintFarm URL is not configured. Please set it up in the PrintFarm tab first."), _L("Error"), wxICON_ERROR);
+        return;
+    }
+
+    // Get sliced gcode temp file path
+    auto& partplate_list = m_plater->get_partplate_list();
+    auto* curr_plate = partplate_list.get_curr_plate();
+    if (!curr_plate) {
+        wxMessageBox(_L("No plate available."), _L("Error"), wxICON_ERROR);
+        return;
+    }
+
+    std::string tmp_gcode_path = curr_plate->get_tmp_gcode_path();
+    if (tmp_gcode_path.empty() || !boost::filesystem::exists(tmp_gcode_path)) {
+        wxMessageBox(_L("No sliced G-code available. Please slice first."), _L("Error"), wxICON_ERROR);
+        return;
+    }
+
+    boost::filesystem::path temp_gcode(tmp_gcode_path);
+    wxString default_name = m_plater->get_export_gcode_filename(".gcode", true);
+    if (default_name.IsEmpty()) default_name = "print.gcode";
+
+    // Ask for filename (strip .gcode for display, auto-add later)
+    wxString name_without_ext = default_name;
+    if (name_without_ext.EndsWith(".gcode"))
+        name_without_ext = name_without_ext.Left(name_without_ext.Length() - 6);
+
+    wxTextEntryDialog name_dlg(this, _L("File name for PrintFarm:"), _L("Upload to PrintFarm"), name_without_ext);
+    if (name_dlg.ShowModal() != wxID_OK) return;
+    default_name = name_dlg.GetValue();
+    if (default_name.IsEmpty()) default_name = "print";
+    if (!default_name.EndsWith(".gcode"))
+        default_name += ".gcode";
+
+    // Login first to get token
+    std::string token;
+    {
+        std::string login_url = farm_url + "/api/auth/login";
+        std::string admin_user = config->get("printfarm_admin_user");
+        std::string admin_pass = config->get("printfarm_admin_pass");
+
+        if (admin_user.empty() || admin_pass.empty()) {
+            // Ask for credentials
+            wxTextEntryDialog user_dlg(this, _L("PrintFarm Username:"), _L("Login to PrintFarm"));
+            if (user_dlg.ShowModal() != wxID_OK) return;
+            admin_user = user_dlg.GetValue().ToStdString();
+
+            wxTextEntryDialog pass_dlg(this, _L("PrintFarm Password:"), _L("Login to PrintFarm"), "", wxTextEntryDialogStyle | wxTE_PASSWORD);
+            if (pass_dlg.ShowModal() != wxID_OK) return;
+            admin_pass = pass_dlg.GetValue().ToStdString();
+        }
+
+        std::string login_body = "{\"username\":\"" + admin_user + "\",\"password\":\"" + admin_pass + "\"}";
+        bool login_ok = false;
+
+        Slic3r::Http::post(login_url)
+            .header("Content-Type", "application/json")
+            .set_post_body(login_body)
+            .on_complete([&token, &login_ok](std::string body, unsigned status) {
+                // Parse token from JSON response
+                size_t pos = body.find("\"token\":\"");
+                if (pos != std::string::npos) {
+                    pos += 9;
+                    size_t end = body.find("\"", pos);
+                    if (end != std::string::npos) {
+                        token = body.substr(pos, end - pos);
+                        login_ok = true;
+                    }
+                }
+            })
+            .on_error([](std::string body, std::string error, unsigned status) {
+                BOOST_LOG_TRIVIAL(error) << "PrintFarm login failed: " << error;
+            })
+            .perform_sync();
+
+        if (!login_ok || token.empty()) {
+            wxMessageBox(_L("Failed to login to PrintFarm server."), _L("Error"), wxICON_ERROR);
+            return;
+        }
+    }
+
+    // Upload gcode file
+    std::string upload_url_str = farm_url + "/api/storage/upload";
+    bool upload_ok = false;
+
+    Slic3r::Http::post(upload_url_str)
+        .header("Authorization", "Bearer " + token)
+        .form_add_file("file", temp_gcode.string(), default_name.ToStdString())
+        .form_add("path", "")
+        .on_complete([&upload_ok](std::string body, unsigned status) {
+            upload_ok = true;
+            BOOST_LOG_TRIVIAL(info) << "PrintFarm: Upload success, status=" << status;
+        })
+        .on_error([](std::string body, std::string error, unsigned status) {
+            BOOST_LOG_TRIVIAL(error) << "PrintFarm: Upload failed: " << error << " body=" << body;
+        })
+        .perform_sync();
+
+    if (upload_ok) {
+        wxMessageBox(_L("G-code uploaded to PrintFarm successfully!"), _L("Success"), wxICON_INFORMATION);
+    } else {
+        wxMessageBox(_L("Failed to upload G-code to PrintFarm."), _L("Error"), wxICON_ERROR);
+    }
+
+    // No cleanup needed - user's file
+}
+
 bool MainFrame::can_export_model() const
 {
     return (m_plater != nullptr) && !m_plater->model().objects.empty();
@@ -1924,6 +2039,8 @@ wxBoxSizer* MainFrame::create_side_tools()
                 wxPostEvent(m_plater, SimpleEvent(EVT_GLTOOLBAR_SEND_GCODE));
             else if (m_print_select == eUploadGcode)
                 wxPostEvent(m_plater, SimpleEvent(EVT_GLTOOLBAR_UPLOAD_GCODE));
+            else if (m_print_select == eUploadToFarm)
+                on_upload_to_printfarm();
             else if (m_print_select == eExportSlicedFile)
                 wxPostEvent(m_plater, SimpleEvent(EVT_GLTOOLBAR_EXPORT_SLICED_FILE));
             else if (m_print_select == eExportAllSlicedFile)
@@ -2007,6 +2124,22 @@ wxBoxSizer* MainFrame::create_side_tools()
 
                 p->append_button(send_gcode_btn);
                 p->append_button(export_gcode_btn);
+
+                // PrintFarm upload button (only if printfarm is configured)
+                if (wxGetApp().app_config && !wxGetApp().app_config->get("printfarm_url").empty()) {
+                    SideButton* upload_farm_btn = new SideButton(p, _L("Upload to PrintFarm"), "");
+                    upload_farm_btn->SetCornerRadius(0);
+                    upload_farm_btn->Bind(wxEVT_BUTTON, [this, p](wxCommandEvent&) {
+                        m_print_btn->SetLabel(_L("Upload to PrintFarm"));
+                        m_print_select = eUploadToFarm;
+                        m_print_enable = get_enable_print_status();
+                        m_print_btn->Enable(m_print_enable);
+                        this->Layout();
+                        fit_tab_labels();
+                        p->Dismiss();
+                    });
+                    p->append_button(upload_farm_btn);
+                }
             }
             else {
                 //Orca Slicer Buttons
@@ -2140,6 +2273,22 @@ wxBoxSizer* MainFrame::create_side_tools()
                     p->Dismiss();
                 });
                 p->append_button(export_gcode_btn);
+
+                // PrintFarm upload button (only if printfarm is configured)
+                if (wxGetApp().app_config && !wxGetApp().app_config->get("printfarm_url").empty()) {
+                    SideButton* upload_farm_btn = new SideButton(p, _L("Upload to PrintFarm"), "");
+                    upload_farm_btn->SetCornerRadius(0);
+                    upload_farm_btn->Bind(wxEVT_BUTTON, [this, p](wxCommandEvent&) {
+                        m_print_btn->SetLabel(_L("Upload to PrintFarm"));
+                        m_print_select = eUploadToFarm;
+                        m_print_enable = get_enable_print_status();
+                        m_print_btn->Enable(m_print_enable);
+                        this->Layout();
+                        fit_tab_labels();
+                        p->Dismiss();
+                    });
+                    p->append_button(upload_farm_btn);
+                }
             }
 
             p->Popup(m_print_btn);

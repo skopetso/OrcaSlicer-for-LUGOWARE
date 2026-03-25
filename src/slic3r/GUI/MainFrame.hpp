@@ -251,7 +251,8 @@ public:
         eSendToPrinterAll    = 6,
         eUploadGcode         = 7,
         eExportAllSlicedFile = 8,
-        ePrintMultiMachine   = 9
+        ePrintMultiMachine   = 9,
+        eUploadToFarm        = 10
     };
 
     void update_layout();
@@ -340,6 +341,7 @@ public:
     bool can_save_as() const;
     //BBS
     bool can_upload() const;
+    void on_upload_to_printfarm();
     void save_project();
     bool save_project_as(const wxString& filename = wxString());
 
