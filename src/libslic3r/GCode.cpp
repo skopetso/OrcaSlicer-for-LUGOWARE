@@ -6340,8 +6340,14 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
                 // 4. Z-hop down at P1 (use unlift_to with explicit layer Z to avoid layer-change Z bugs)
                 gcode += m_writer.unlift_to(m_layer->print_z);
                 gcode += "; P1 point used\n";
-                // 5. Move from P1 to start point on the bed (no extrusion, still retracted)
-                gcode += m_writer.travel_to_xy(this->point_to_gcode(path.first_point()), "P1 to start point");
+                // 5. Move from P1 to start point using avoid_crossing_perimeters if enabled
+                if (m_config.reduce_crossing_wall && m_writer.is_current_position_clear()) {
+                    Polyline p1_to_start = m_avoid_crossing_perimeters.travel_to(*this, path.first_point());
+                    for (size_t i = 1; i < p1_to_start.size(); ++i)
+                        gcode += m_writer.travel_to_xy(this->point_to_gcode(p1_to_start.points[i]), "P1 to start (avoid crossing)");
+                } else {
+                    gcode += m_writer.travel_to_xy(this->point_to_gcode(path.first_point()), "P1 to start point");
+                }
                 this->set_last_pos(path.first_point());
             }
         }
