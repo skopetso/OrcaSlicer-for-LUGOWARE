@@ -383,6 +383,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/Printer/PrinterFileSystem.h
     GUI/PrinterWebView.cpp
     GUI/PrinterWebView.hpp
+    GUI/PrintFarmPanel.cpp
+    GUI/PrintFarmPanel.hpp
     GUI/PrintHostDialogs.cpp
     GUI/PrintHostDialogs.hpp
     GUI/PrintOptionsDialog.cpp

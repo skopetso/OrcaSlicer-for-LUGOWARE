@@ -232,3 +232,99 @@ ctest --test-dir ./tests/sla_print/sla_print_tests
 - **Performance benchmarks** help catch performance regressions
 - **Memory leak** detection important for long-running GUI application
 - **Cross-platform** testing required before releases
+
+## LUGOWARE Customization History
+
+### Build 49~49d (v2.4.0 → v2.4.1)
+- **BBL 프린터 위자드 버그 수정**: 깨진 COEX PCTG PRIME 필라멘트가 BBL 벤더 전체 로딩을 중단시키던 버그 (throw→continue)
+- FOAMING TPU 프로세스에 누락된 `instantiation` 필드 추가
+- LoadProfileFamily null-safe 체크 추가
+- PrintConfig.cpp extruder_type/nozzle_volume_type null 체크
+- COEX PCTG PRIME 파일 9개 + BBL.json 참조 제거
+- 위자드 필라멘트 페이지 Vendor 필터 기본 Lugoware만 체크
+- 서드파티 필라멘트 벤더 제거 (Generic, Bambu Lab, Lugoware만 유지)
+
+### Build 50~51
+- **네트워크 플러그인 위자드 스킵**: Bambu 네트워크 플러그인 설치 페이지 비활성화
+- **플러그인 팝업/사이드바 비활성화**: 플러그인 설치 요구 팝업 및 사이드바 메시지 숨김
+
+### Build 52~53
+- **벽/infill 출력 순서 수정**: 내벽→infill→외벽 순서 버그 수정
+- **Cell-by-cell extrusion 재구현**: contour-aware 그룹핑으로 내벽+외벽 쌍을 묶은 후 infill 매칭
+
+### Build 54 (v2.4.1)
+- NSIS 설치파일 언어 선택 다이얼로그 추가 (EN/KR/PL/JP/CN/DE/FR/ES)
+- 버전 2.4.1로 업데이트
+- 설치파일 이름에 버전 포함 (`lugoware_slicer_2.4.1.exe`)
+
+### Build 55 (v2.4.12)
+- **툴체인지 감속 기능**: F값 직접 감속 (기본 50% 속도, 60mm 거리)
+  - 설정: `filament_toolchange_slowdown_speed_ratio`, `filament_toolchange_slowdown_distance`
+  - 위치: 필라멘트 설정 > Multimaterial 탭
+- **Additional Prime 설정**: `filament_additional_prime` — Klipper CHANGE_TOOL 매크로에 A_P 파라미터로 전달
+- **Heating Duration UI 이동**: Multimaterial 탭 하단으로 이동
+- **retract_restart_extra_toolchange**: 프린터→필라멘트 설정으로 이동
+
+### Build 56 (v2.4.12)
+- **첫 툴 tc_retract 지원**: LUGOWARE_TOOLCHANGER 감지 (`template_custom_gcode`)
+  - 첫 번째 툴도 tc_retract 상태로 설정하여 올바른 unretract 보장
+- 버전 2.4.12로 업데이트
+
+### Build 57
+- **PrintFarm 탭 추가**: 웹뷰로 프린트팜 서버 표시
+  - Preferences > General에 PrintFarm URL 설정
+  - URL 변경 시 재시작 없이 즉시 반영
+
+### Build 58
+- **툴체인지 retract/unretract 수정 (Critical)**
+  - pre-toolchange retract 시 OLD 필라멘트 retraction_length가 NEW 필라멘트 unretract에 적용되던 버그 수정
+  - 매 툴체인지 후 `set_retracted(tc_retract)` 설정
+  - T2 과압출(8.1mm→3.1mm) 해결
+
+### Build 59
+- **Z hop 순서 수정**: 툴체인지 후 XY 먼저 이동 → Z 내림 순서 보장
+  - Z hop 중복 이동 제거
+
+### Build 60
+- **PrintFarm 탭 Setup UI**: 서버/클라이언트 카드 선택 방식
+  - 서버 모드: Storage Path, Admin Username/Password, Install & Start Server
+  - 클라이언트 모드: URL 입력 → 연결
+  - 서버 설치: resources 복사, .env 생성, admin 등록, storage 설정 API 호출
+
+### Build 61
+- **Upload to PrintFarm 버튼**: Print 드롭다운에 추가
+  - 슬라이싱된 gcode를 직접 업로드 (파일 대화상자 없음)
+  - 파일명 입력 대화상자 (.gcode 자동 추가)
+  - 서버 로그인 → multipart/form-data 업로드
+- **PrintFarm 아이콘 SVG**: 모니터+프린터 2대 연결 아이콘
+
+### Build 62
+- PrintFarm 아이콘 스타일 통일 (#fff, 20x20, 다른 탭과 일관성)
+- Preferences에 "Reset Admin Password" 버튼 추가
+
+## LUGOWARE 프로파일 구조
+- `resources/profiles/LUGOWARE.json` — 벤더 정의
+- `resources/profiles/LUGOWARE/machine/` — 프린터 모델 및 노즐 프리셋
+- `resources/profiles/LUGOWARE/process/` — 프로세스 프리셋 11종
+- `resources/profiles/OrcaFilamentLibrary/` — 필라멘트 (base + Generic @System + Bambu + Lugoware 16종)
+- 프로파일 변경 시 3곳 동기화: `resources/`, `build/OrcaSlicer/resources/`, `AppData/Roaming/LugowareOrcaSlicer/system/`
+
+## LUGOWARE 툴체인저 특수 기능
+- `template_custom_gcode`에 `; LUGOWARE_TOOLCHANGER` 포함 시 활성화
+- 첫 툴 tc_retract 자동 설정
+- pre-toolchange retract 유지 (펌웨어 G92 E0으로 무효화됨)
+- 매 툴체인지 후 set_retracted(tc_retract) + set_zhop(z_hop)
+- 툴체인지 후 F값 감속 (filament_toolchange_slowdown_speed_ratio/distance)
+
+## Klipper 펌웨어 (별도 관리)
+- `C:\Users\Huhn\Desktop\CFG\V3(FIRSTDOCK)\` — 펌웨어 cfg 파일
+- v12.29 W/M: a_p 적용, M220 제거, FIRST_DOCK→DOCK_TOOL 통합 (h_d*2)
+- CHANGE_TOOL 파라미터: NEXT_TOOL, TEMP, FILAMENT_DIAMETER, RETRACT_LEN, TC_RETRACT_LEN, H_D, A_P
+
+## 남은 숙제
+- cell-by-cell 개선 (큰 아일랜드에서 벽→벽→벽→채움 패턴)
+- 멀티컬러 세팅 초기화 버그 (BBL↔LUGOWARE 전환 시)
+- Generic 필라멘트 드롭다운 alias 매칭 문제
+- Physical Printer IP 저장 문제
+- PrintFarm 서버 모드 (resources/printfarm 파일 필요)
+- BBL 프린터 프린트팜 통합

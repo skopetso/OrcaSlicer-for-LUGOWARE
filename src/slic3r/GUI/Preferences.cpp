@@ -3,6 +3,7 @@
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
 #include "Plater.hpp"
+#include "slic3r/Utils/Http.hpp"
 #include "MsgDialog.hpp"
 #include "I18N.hpp"
 #include "libslic3r/AppConfig.hpp"
@@ -1469,6 +1470,50 @@ void PreferencesDialog::create_items()
         return sizer;
     }();
     g_sizer->Add(item_printfarm_url);
+
+    // Reset Admin Password button (only for server mode / localhost)
+    std::string current_farm_url = wxGetApp().app_config->get("printfarm_url");
+    bool is_server_mode = current_farm_url.find("localhost") != std::string::npos || current_farm_url.find("127.0.0.1") != std::string::npos;
+    if (is_server_mode) {
+    auto item_reset_admin = [this]() -> wxBoxSizer* {
+        auto sizer = new wxBoxSizer(wxHORIZONTAL);
+        auto title = new wxStaticText(m_parent, wxID_ANY, _L(""), wxDefaultPosition, DESIGN_TITLE_SIZE);
+        sizer->Add(title, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(5));
+
+        auto btn = new wxButton(m_parent, wxID_ANY, _L("Reset Admin Password"), wxDefaultPosition, wxSize(FromDIP(180), FromDIP(28)));
+        btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+            auto* app_config = wxGetApp().app_config;
+            std::string farm_url = app_config->get("printfarm_url");
+            if (farm_url.empty()) {
+                wxMessageBox(_L("PrintFarm URL is not configured."), _L("Error"), wxICON_ERROR);
+                return;
+            }
+
+            std::string reset_url = farm_url + "/api/auth/reset-admin";
+            bool ok = false;
+
+            Slic3r::Http::post(reset_url)
+                .header("Content-Type", "application/json")
+                .set_post_body(std::string("{}"))
+                .on_complete([&ok](std::string body, unsigned status) {
+                    ok = true;
+                })
+                .on_error([](std::string body, std::string error, unsigned status) {
+                    BOOST_LOG_TRIVIAL(error) << "PrintFarm: Reset admin failed: " << error;
+                })
+                .perform_sync();
+
+            if (ok) {
+                wxMessageBox(_L("Admin password has been reset successfully."), _L("Success"), wxICON_INFORMATION);
+            } else {
+                wxMessageBox(_L("Failed to reset admin password."), _L("Error"), wxICON_ERROR);
+            }
+        });
+        sizer->Add(btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(5));
+        return sizer;
+    }();
+    g_sizer->Add(item_reset_admin);
+    } // end is_server_mode
 
     g_sizer->AddSpacer(FromDIP(10));
     sizer_page->Add(g_sizer, 0, wxEXPAND);
