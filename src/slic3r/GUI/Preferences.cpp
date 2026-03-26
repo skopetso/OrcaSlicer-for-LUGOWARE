@@ -1515,6 +1515,33 @@ void PreferencesDialog::create_items()
     g_sizer->Add(item_reset_admin);
     } // end is_server_mode
 
+    // Reset PrintFarm Setup button (always visible if printfarm configured)
+    std::string current_farm_mode = wxGetApp().app_config->get("printfarm_mode");
+    if (!current_farm_mode.empty()) {
+    auto item_reset_setup = [this]() -> wxBoxSizer* {
+        auto sizer = new wxBoxSizer(wxHORIZONTAL);
+        auto title = new wxStaticText(m_parent, wxID_ANY, _L(""), wxDefaultPosition, DESIGN_TITLE_SIZE);
+        sizer->Add(title, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(5));
+
+        auto btn = new wxButton(m_parent, wxID_ANY, _L("Reset PrintFarm Setup"), wxDefaultPosition, wxSize(FromDIP(180), FromDIP(28)));
+        btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+            auto confirm = wxMessageBox(_L("This will reset PrintFarm settings and show the setup screen again.\nContinue?"),
+                _L("Reset PrintFarm Setup"), wxYES_NO | wxICON_QUESTION);
+            if (confirm != wxYES) return;
+
+            auto* app_config = wxGetApp().app_config;
+            app_config->set("printfarm_mode", "");
+            app_config->set("printfarm_url", "");
+            app_config->save();
+
+            wxMessageBox(_L("PrintFarm setup has been reset.\nRestart the application to see the setup screen."), _L("Success"), wxICON_INFORMATION);
+        });
+        sizer->Add(btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(5));
+        return sizer;
+    }();
+    g_sizer->Add(item_reset_setup);
+    } // end printfarm configured
+
     g_sizer->AddSpacer(FromDIP(10));
     sizer_page->Add(g_sizer, 0, wxEXPAND);
 

@@ -5,7 +5,7 @@
 !include "FileFunc.nsh"
 
 ; Version
-!define VERSION "2.4.13"
+!define VERSION "2.4.131"
 !define PRODUCT_NAME "LUGOWARE OrcaSlicer"
 
 ; General

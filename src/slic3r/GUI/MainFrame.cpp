@@ -1680,49 +1680,25 @@ void MainFrame::on_upload_to_printfarm()
     if (!default_name.EndsWith(".gcode"))
         default_name += ".gcode";
 
-    // Login first to get token
+    // Get token from PrintFarm webview's localStorage
     std::string token;
     {
-        std::string login_url = farm_url + "/api/auth/login";
-        std::string admin_user = config->get("printfarm_admin_user");
-        std::string admin_pass = config->get("printfarm_admin_pass");
-
-        if (admin_user.empty() || admin_pass.empty()) {
-            // Ask for credentials
-            wxTextEntryDialog user_dlg(this, _L("PrintFarm Username:"), _L("Login to PrintFarm"));
-            if (user_dlg.ShowModal() != wxID_OK) return;
-            admin_user = user_dlg.GetValue().ToStdString();
-
-            wxTextEntryDialog pass_dlg(this, _L("PrintFarm Password:"), _L("Login to PrintFarm"), "", wxTextEntryDialogStyle | wxTE_PASSWORD);
-            if (pass_dlg.ShowModal() != wxID_OK) return;
-            admin_pass = pass_dlg.GetValue().ToStdString();
+        if (m_printfarm_panel) {
+            auto* webview = m_printfarm_panel->get_webview();
+            if (webview && webview->get_webview()) {
+                wxString js_result;
+                webview->get_webview()->RunScript("localStorage.getItem('lugoware_token')", &js_result);
+                token = js_result.ToStdString();
+                // Remove surrounding quotes if present
+                if (token.size() >= 2 && token.front() == '"' && token.back() == '"')
+                    token = token.substr(1, token.size() - 2);
+                if (token == "null" || token == "undefined")
+                    token.clear();
+            }
         }
 
-        std::string login_body = "{\"username\":\"" + admin_user + "\",\"password\":\"" + admin_pass + "\"}";
-        bool login_ok = false;
-
-        Slic3r::Http::post(login_url)
-            .header("Content-Type", "application/json")
-            .set_post_body(login_body)
-            .on_complete([&token, &login_ok](std::string body, unsigned status) {
-                // Parse token from JSON response
-                size_t pos = body.find("\"token\":\"");
-                if (pos != std::string::npos) {
-                    pos += 9;
-                    size_t end = body.find("\"", pos);
-                    if (end != std::string::npos) {
-                        token = body.substr(pos, end - pos);
-                        login_ok = true;
-                    }
-                }
-            })
-            .on_error([](std::string body, std::string error, unsigned status) {
-                BOOST_LOG_TRIVIAL(error) << "PrintFarm login failed: " << error;
-            })
-            .perform_sync();
-
-        if (!login_ok || token.empty()) {
-            wxMessageBox(_L("Failed to login to PrintFarm server."), _L("Error"), wxICON_ERROR);
+        if (token.empty()) {
+            wxMessageBox(_L("Please login to PrintFarm first.\nOpen the PrintFarm tab and login, then try again."), _L("Error"), wxICON_ERROR);
             return;
         }
     }

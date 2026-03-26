@@ -1,5 +1,6 @@
 {
     "filter_out_gap_fill": "100",
+    "independent_support_layer_height": "0",
     "from": "system",
     "instantiation": "true",
     "gap_fill_target": "nowhere",

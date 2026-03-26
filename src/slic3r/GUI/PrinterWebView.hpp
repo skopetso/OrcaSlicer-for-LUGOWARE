@@ -45,6 +45,7 @@ public:
     void update_mode();
 
     bool Show(bool show = true) override;
+    wxWebView* get_webview() { return m_browser; }
 
 private:
     void SendAPIKey();
