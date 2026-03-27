@@ -2290,13 +2290,6 @@ void TabPrint::build()
         optgroup->append_single_option_line("xy_contour_compensation_layer_step");
         optgroup->append_single_option_line("xy_contour_compensation_layer_step_thickness");
         optgroup->append_single_option_line("xy_contour_compensation_layer_step_start_on");
-
-        optgroup->append_single_option_line("pattern_compensation_type");
-        optgroup->append_single_option_line("pattern_compensation_tooth_width");
-        optgroup->append_single_option_line("pattern_compensation_tooth_depth");
-        optgroup->append_single_option_line("pattern_compensation_tooth_spacing");
-        optgroup->append_single_option_line("pattern_compensation_angle");
-        optgroup->append_single_option_line("pattern_compensation_first_layer");
         optgroup->append_single_option_line("elefant_foot_compensation", "quality_settings_precision#elephant-foot-compensation");
         optgroup->append_single_option_line("elefant_foot_compensation_layers", "quality_settings_precision#elephant-foot-compensation");
         optgroup->append_single_option_line("precise_outer_wall", "quality_settings_precision#precise-wall");

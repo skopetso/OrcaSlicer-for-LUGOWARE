@@ -64,39 +64,9 @@ template<> struct hash<Slic3r::FuzzySkinConfig>
         return seed;
     }
 };
-
-template<> struct hash<Slic3r::PatternCompensationType>
-{
-    size_t operator()(const Slic3r::PatternCompensationType& t) const noexcept
-    {
-        return std::hash<int>{}(static_cast<int>(t));
-    }
-};
 } // namespace std
 
 namespace Slic3r {
-
-struct PatternCompensationConfig
-{
-    PatternCompensationType type;
-    coord_t  tooth_width;
-    coord_t  tooth_depth;
-    coord_t  tooth_spacing;
-    double   angle_deg;
-    bool     first_layer;
-
-    bool operator==(const PatternCompensationConfig& r) const
-    {
-        return type == r.type
-            && tooth_width == r.tooth_width
-            && tooth_depth == r.tooth_depth
-            && tooth_spacing == r.tooth_spacing
-            && angle_deg == r.angle_deg
-            && first_layer == r.first_layer;
-    }
-
-    bool operator!=(const PatternCompensationConfig& r) const { return !(*this == r); }
-};
 
 class PerimeterGenerator {
 public:
@@ -132,9 +102,6 @@ public:
     bool                                            has_fuzzy_skin = false;
     bool                                            has_fuzzy_hole = false;
     std::unordered_map<FuzzySkinConfig, ExPolygons> regions_by_fuzzify;
-
-    bool                        has_pattern_compensation = false;
-    PatternCompensationConfig   pattern_compensation_config;
     
     PerimeterGenerator(
         // Input:

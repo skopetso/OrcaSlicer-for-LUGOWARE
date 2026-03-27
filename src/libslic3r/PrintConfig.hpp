@@ -58,13 +58,6 @@ enum class NoiseType {
     Voronoi,
 };
 
-enum class PatternCompensationType {
-    None,
-    Square,
-    Sawtooth,
-    Sine,
-};
-
 enum class WipeTowerType {
     Type1,
     Type2,
@@ -504,7 +497,6 @@ CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(FuzzySkinType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(FuzzySkinMode)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(WipeTowerType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NoiseType)
-CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(PatternCompensationType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(InfillPattern)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(IroningType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(SlicingMode)
@@ -1098,12 +1090,6 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionInt,                  fuzzy_skin_layer_step))
     ((ConfigOptionInt,                  fuzzy_skin_layer_step_thickness))
     ((ConfigOptionBool,                 fuzzy_skin_layer_step_start_on))
-    ((ConfigOptionEnum<PatternCompensationType>, pattern_compensation_type))
-    ((ConfigOptionFloat,                pattern_compensation_tooth_width))
-    ((ConfigOptionFloat,                pattern_compensation_tooth_depth))
-    ((ConfigOptionFloat,                pattern_compensation_tooth_spacing))
-    ((ConfigOptionFloat,                pattern_compensation_angle))
-    ((ConfigOptionBool,                 pattern_compensation_first_layer))
     ((ConfigOptionBool,                 p_point_generation))
     ((ConfigOptionInt,                  p_point_max_depth))
     ((ConfigOptionFloat,                gap_infill_speed))
