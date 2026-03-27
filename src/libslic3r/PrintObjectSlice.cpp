@@ -1219,8 +1219,8 @@ void PrintObject::slice_volumes()
     {
         // Compensation value, scaled. Only applying the negative scaling here, as the positive scaling has already been applied during slicing.
         const size_t num_extruders = print->config().filament_diameter.size();
-        const auto   xy_hole_scaled = (num_extruders > 1 && this->is_mm_painted()) ? scaled<float>(0.f) : scaled<float>(m_config.xy_hole_compensation.value);
-        const auto   xy_contour_scaled            = (num_extruders > 1 && this->is_mm_painted()) ? scaled<float>(0.f) : scaled<float>(m_config.xy_contour_compensation.value);
+        const auto   xy_hole_scaled = scaled<float>(m_config.xy_hole_compensation.value);
+        const auto   xy_contour_scaled            = scaled<float>(m_config.xy_contour_compensation.value);
         const int    xy_hole_layer_step    = m_config.xy_hole_compensation_layer_step.value;
         const int    xy_hole_layer_step_thickness = m_config.xy_hole_compensation_layer_step_thickness.value;
         const bool   xy_hole_layer_step_start_on = m_config.xy_hole_compensation_layer_step_start_on.value;
