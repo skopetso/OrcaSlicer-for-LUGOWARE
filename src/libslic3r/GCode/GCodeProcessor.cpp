@@ -5427,6 +5427,7 @@ void GCodeProcessor::process_filament_change(int id)
         extra_time += get_filament_unload_time(static_cast<size_t>(prev_filament_id));
         m_time_processor.extruder_unloaded = false;
         extra_time += get_filament_load_time(static_cast<size_t>(next_filament_id));
+        extra_time += get_extruder_change_time(next_extruder_id);
     }
     else {
         if (prev_extruder_id == -1) {
