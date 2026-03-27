@@ -924,7 +924,8 @@ void pick_seam_point(std::vector<SeamCandidate> &perimeter_points, size_t start_
   size_t seg_start = 0;
   bool in_segment = false;
   for (size_t index = start_index; index < end_index; ++index) {
-    if (perimeter_points[index].embedded_distance < 0.f) {
+    // LUGOWARE: 0.2mm tolerance for parts that are close but not exactly touching
+    if (perimeter_points[index].embedded_distance < 0.2f) {
       if (!in_segment) {
         seg_start = index;
         in_segment = true;
