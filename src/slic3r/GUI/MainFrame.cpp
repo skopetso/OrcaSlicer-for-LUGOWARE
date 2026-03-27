@@ -1709,7 +1709,7 @@ void MainFrame::on_upload_to_printfarm()
 
     Slic3r::Http::post(upload_url_str)
         .header("Authorization", "Bearer " + token)
-        .form_add_file("file", temp_gcode.string(), default_name.ToStdString())
+        .form_add_file("file", temp_gcode.string(), std::string(default_name.ToUTF8().data()))
         .form_add("path", "")
         .on_complete([&upload_ok](std::string body, unsigned status) {
             upload_ok = true;
