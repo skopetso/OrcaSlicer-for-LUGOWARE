@@ -5,6 +5,7 @@
 #include "ExtrusionEntity.hpp"
 #include "ExtrusionEntityCollection.hpp"
 #include "Feature/FuzzySkin/FuzzySkin.hpp"
+#include "Feature/PatternCompensation/PatternCompensation.hpp"
 #include "PrintConfig.hpp"
 #include "ShortestPath.hpp"
 #include "VariableWidth.hpp"
@@ -148,7 +149,10 @@ static ExtrusionEntityCollection traverse_loops(const PerimeterGenerator &perime
         }
 
         // Apply fuzzy skin if it is enabled for at least some part of the polygon.
-        const Polygon polygon = apply_fuzzy_skin(loop.polygon, perimeter_generator, loop.depth, loop.is_contour);
+        Polygon polygon = apply_fuzzy_skin(loop.polygon, perimeter_generator, loop.depth, loop.is_contour);
+
+        // Apply pattern compensation (gear/sawtooth/sine pattern on outer contour)
+        polygon = Feature::PatternCompensation::apply_pattern_compensation(polygon, perimeter_generator, loop.depth, loop.is_contour);
 
         ExtrusionPaths paths;
         if (perimeter_generator.config->detect_overhang_wall && perimeter_generator.layer_id > perimeter_generator.object_config->raft_layers) {
@@ -372,6 +376,7 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator& p
 
         const bool  is_contour = !extrusion->is_closed || pg_extrusion.is_contour;
         apply_fuzzy_skin(extrusion, perimeter_generator, is_contour);
+        Feature::PatternCompensation::apply_pattern_compensation(extrusion, perimeter_generator, is_contour);
 
         ExtrusionPaths paths;
         // detect overhanging/bridging perimeters
@@ -1116,6 +1121,22 @@ static void reorient_perimeters(ExtrusionEntityCollection &entities, bool steep_
 void PerimeterGenerator::process_classic()
 {
     group_region_by_fuzzify(*this);
+
+    // Initialize pattern compensation config
+    {
+        auto pc_type = config->pattern_compensation_type.value;
+        has_pattern_compensation = (pc_type != PatternCompensationType::None);
+        if (has_pattern_compensation) {
+            pattern_compensation_config = PatternCompensationConfig{
+                pc_type,
+                scaled<coord_t>(config->pattern_compensation_tooth_width.value),
+                scaled<coord_t>(config->pattern_compensation_tooth_depth.value),
+                scaled<coord_t>(config->pattern_compensation_tooth_spacing.value),
+                config->pattern_compensation_angle.value,
+                config->pattern_compensation_first_layer.value
+            };
+        }
+    }
 
     // other perimeters
     m_mm3_per_mm               		= this->perimeter_flow.mm3_per_mm();
@@ -2074,6 +2095,22 @@ void bringContoursToFront(std::vector<PerimeterGeneratorArachneExtrusion>& order
 void PerimeterGenerator::process_arachne()
 {
     group_region_by_fuzzify(*this);
+
+    // Initialize pattern compensation config
+    {
+        auto pc_type = config->pattern_compensation_type.value;
+        has_pattern_compensation = (pc_type != PatternCompensationType::None);
+        if (has_pattern_compensation) {
+            pattern_compensation_config = PatternCompensationConfig{
+                pc_type,
+                scaled<coord_t>(config->pattern_compensation_tooth_width.value),
+                scaled<coord_t>(config->pattern_compensation_tooth_depth.value),
+                scaled<coord_t>(config->pattern_compensation_tooth_spacing.value),
+                config->pattern_compensation_angle.value,
+                config->pattern_compensation_first_layer.value
+            };
+        }
+    }
 
     // other perimeters
     m_mm3_per_mm = this->perimeter_flow.mm3_per_mm();

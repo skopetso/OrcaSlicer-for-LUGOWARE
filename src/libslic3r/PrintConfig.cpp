@@ -187,6 +187,14 @@ static t_config_enum_values s_keys_map_NoiseType {
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NoiseType)
 
+static t_config_enum_values s_keys_map_PatternCompensationType {
+    { "none",      int(PatternCompensationType::None) },
+    { "square",    int(PatternCompensationType::Square) },
+    { "sawtooth",  int(PatternCompensationType::Sawtooth) },
+    { "sine",      int(PatternCompensationType::Sine) }
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(PatternCompensationType)
+
 static t_config_enum_values s_keys_map_WipeTowerType {
     { "type1",          int(WipeTowerType::Type1) },
     { "type2",          int(WipeTowerType::Type2) }
@@ -3477,6 +3485,72 @@ void PrintConfigDef::init_fff_params()
                      "When disabled, the first layer starts without fuzzy skin (applied layer comes later in the step cycle).");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(true));
+
+    def = this->add("pattern_compensation_type", coEnum);
+    def->label = L("Pattern compensation");
+    def->category = L("Quality");
+    def->tooltip = L("Apply a repeating geometric pattern (teeth) to the outer contour. "
+                     "Square creates gear-like teeth, Sawtooth creates triangular teeth, "
+                     "Sine creates smooth wave pattern.");
+    def->enum_keys_map = &ConfigOptionEnum<PatternCompensationType>::get_enum_values();
+    def->enum_values.push_back("none");
+    def->enum_values.push_back("square");
+    def->enum_values.push_back("sawtooth");
+    def->enum_values.push_back("sine");
+    def->enum_labels.push_back(L("None"));
+    def->enum_labels.push_back(L("Square"));
+    def->enum_labels.push_back(L("Sawtooth"));
+    def->enum_labels.push_back(L("Sine"));
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionEnum<PatternCompensationType>(PatternCompensationType::None));
+
+    def = this->add("pattern_compensation_tooth_width", coFloat);
+    def->label = L("Tooth width");
+    def->category = L("Quality");
+    def->tooltip = L("Width of each tooth along the perimeter in mm.");
+    def->sidetext = L("mm");
+    def->min = 0.2;
+    def->max = 20.0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(2.0));
+
+    def = this->add("pattern_compensation_tooth_depth", coFloat);
+    def->label = L("Tooth depth");
+    def->category = L("Quality");
+    def->tooltip = L("How far the tooth protrudes outward (positive) or inward (negative) in mm.");
+    def->sidetext = L("mm");
+    def->min = -5.0;
+    def->max = 5.0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.5));
+
+    def = this->add("pattern_compensation_tooth_spacing", coFloat);
+    def->label = L("Tooth spacing");
+    def->category = L("Quality");
+    def->tooltip = L("Gap between teeth along the perimeter in mm.");
+    def->sidetext = L("mm");
+    def->min = 0.0;
+    def->max = 20.0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(2.0));
+
+    def = this->add("pattern_compensation_angle", coFloat);
+    def->label = L("Pattern angle");
+    def->category = L("Quality");
+    def->tooltip = L("Direction angle of the pattern. 90 = vertical (gear-like columns), "
+                     "0 = horizontal (bands), 45 = diagonal/spiral pattern.");
+    def->sidetext = L("\u00B0");
+    def->min = 0.0;
+    def->max = 90.0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(90.0));
+
+    def = this->add("pattern_compensation_first_layer", coBool);
+    def->label = L("Apply to first layer");
+    def->category = L("Quality");
+    def->tooltip = L("Whether to apply pattern compensation on the first layer.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("filter_out_gap_fill", coFloat);
     def->label = L("Filter out tiny gaps");
