@@ -918,48 +918,6 @@ void pick_seam_point(std::vector<SeamCandidate> &perimeter_points, size_t start_
                      const SeamComparator &comparator) {
   size_t end_index = perimeter_points[start_index].perimeter.end_index;
 
-  // LUGOWARE: Find longest embedded segment (multi-color part boundary)
-  // and place seam at its midpoint
-  size_t best_seg_start = 0, best_seg_end = 0, best_seg_len = 0;
-  size_t seg_start = 0;
-  bool in_segment = false;
-  for (size_t index = start_index; index < end_index; ++index) {
-    // LUGOWARE: 0.2mm tolerance for parts that are close but not exactly touching
-    if (perimeter_points[index].embedded_distance < 0.2f) {
-      if (!in_segment) {
-        seg_start = index;
-        in_segment = true;
-      }
-    } else {
-      if (in_segment) {
-        size_t seg_len = index - seg_start;
-        if (seg_len > best_seg_len) {
-          best_seg_start = seg_start;
-          best_seg_end = index;
-          best_seg_len = seg_len;
-        }
-        in_segment = false;
-      }
-    }
-  }
-  // Check if segment extends to end
-  if (in_segment) {
-    size_t seg_len = end_index - seg_start;
-    if (seg_len > best_seg_len) {
-      best_seg_start = seg_start;
-      best_seg_end = end_index;
-      best_seg_len = seg_len;
-    }
-  }
-
-  if (best_seg_len > 0) {
-    // Place seam at midpoint of the longest embedded segment
-    perimeter_points[start_index].perimeter.seam_index = best_seg_start + best_seg_len / 2;
-    perimeter_points[start_index].perimeter.finalized = true;
-    return;
-  }
-
-  // Fallback: original comparator logic
   size_t seam_index = start_index;
   for (size_t index = start_index; index < end_index; ++index) {
     if (comparator.is_first_better(perimeter_points[index], perimeter_points[seam_index])) {
