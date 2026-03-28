@@ -990,7 +990,7 @@ static std::vector<std::string> s_Preset_filament_options {/*"filament_colour", 
     "filament_unloading_speed", "filament_unloading_speed_start", "filament_toolchange_delay", "filament_heating_duration", "filament_cooling_moves", "filament_stamping_loading_speed", "filament_stamping_distance",
     "filament_cooling_initial_speed", "filament_cooling_final_speed", "filament_ramming_parameters",
     "filament_multitool_ramming", "filament_multitool_ramming_volume", "filament_multitool_ramming_flow",
-    "filament_toolchange_slowdown_speed_ratio", "filament_toolchange_slowdown_distance", "filament_additional_prime", "retract_restart_extra_toolchange",
+    "filament_toolchange_slowdown_speed_ratio", "filament_toolchange_slowdown_distance", "filament_additional_prime", "filament_cell_zhop_height", "retract_restart_extra_toolchange",
     "activate_chamber_temp_control",
     "filament_long_retractions_when_cut","filament_retraction_distances_when_cut", "idle_temperature",
     //BBS filament change length while the extruder color

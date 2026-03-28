@@ -2616,6 +2616,18 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
+    // LUGOWARE: Cell Z-hop
+    def = this->add("filament_cell_zhop_height", coFloats);
+    def->label = L("Cell Z-hop height");
+    def->tooltip = L("When traveling between different cells (islands), perform a single diagonal "
+                     "XYZ move instead of separate Z-up, XY-travel, Z-down moves. "
+                     "Set to 0 to disable. Within the same cell, normal Z-hop is used.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 10;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
     def = this->add("filament_cooling_initial_speed", coFloats);
     def->label = L("Speed of the first cooling move");
     def->tooltip = L("Cooling moves are gradually accelerating beginning at this speed.");

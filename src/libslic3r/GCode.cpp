@@ -6321,11 +6321,39 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
         m_island_first_extrusion = false;
 
         // Find which lslice this island belongs to
+        int prev_island_idx = m_current_island_lslice_idx;
         m_current_island_lslice_idx = find_lslice_index(path.first_point(), *m_layer);
 
         if (m_current_island_lslice_idx >= 0 && should_generate_p_point(*m_layer, m_current_island_lslice_idx)) {
             auto p1 = compute_p_point(path.first_point(), m_layer->lslices[m_current_island_lslice_idx]);
-            if (p1.has_value()) {
+
+            // LUGOWARE: Cell Z-hop — diagonal XYZ move between different cells
+            double cell_zhop = FILAMENT_CONFIG(filament_cell_zhop_height);
+            bool is_cross_cell = (prev_island_idx >= 0 && prev_island_idx != m_current_island_lslice_idx);
+
+            if (is_cross_cell && cell_zhop > 0 && p1.has_value()) {
+                // Cell Z-hop: single diagonal XYZ move to P1 at elevated Z
+                // 1. Retract without z-hop
+                gcode += this->retract(false, false, LiftType::NormalLift, false, erNone, true); // skip_lift=true
+                // 2. Diagonal XYZ move to P1 at layer_z + cell_zhop_height
+                Vec2d p1_gcode = this->point_to_gcode(*p1);
+                double target_z = m_layer->print_z + cell_zhop;
+                gcode += m_writer.travel_to_xyz(Vec3d(p1_gcode.x(), p1_gcode.y(), target_z), "cell z-hop to P1");
+                this->set_last_pos(*p1);
+                // 3. Z down to layer
+                gcode += m_writer.unlift_to(m_layer->print_z);
+                gcode += "; cell z-hop P1\n";
+                // 4. Move from P1 to start point
+                if (m_config.reduce_crossing_wall && m_writer.is_current_position_clear()) {
+                    Polyline p1_to_start = m_avoid_crossing_perimeters.travel_to(*this, path.first_point());
+                    for (size_t i = 1; i < p1_to_start.size(); ++i)
+                        gcode += m_writer.travel_to_xy(this->point_to_gcode(p1_to_start.points[i]), "P1 to start (avoid crossing)");
+                } else {
+                    gcode += m_writer.travel_to_xy(this->point_to_gcode(path.first_point()), "P1 to start point");
+                }
+                this->set_last_pos(path.first_point());
+            } else if (p1.has_value()) {
+                // Normal P-point flow (within same cell or cell z-hop disabled)
                 // 1. Retract + z-hop (retract() handles wipe, retract, and lift)
                 LiftType p1_lift_type = LiftType::NormalLift;
                 Polyline p1_travel{this->last_pos(), *p1};

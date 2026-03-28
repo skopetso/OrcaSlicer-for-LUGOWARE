@@ -1421,6 +1421,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloats,              filament_toolchange_slowdown_distance))
     // LUGOWARE: Additional prime
     ((ConfigOptionFloats,              filament_additional_prime))
+    // LUGOWARE: Cell Z-hop (diagonal XYZ move between cells)
+    ((ConfigOptionFloats,              filament_cell_zhop_height))
 )
 
 // This object is mapped to Perl as Slic3r::Config::Print.
