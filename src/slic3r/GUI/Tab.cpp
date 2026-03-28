@@ -3563,7 +3563,6 @@ void TabFilament::add_filament_overrides_page()
     for (const std::string opt_key : {  "filament_retraction_length",
                                         "filament_z_hop",
                                         "filament_z_hop_types",
-                                        "filament_cell_zhop_height",
                                         "filament_retract_lift_above",
                                         "filament_retract_lift_below",
                                         "filament_retract_lift_enforce",
@@ -3605,7 +3604,6 @@ void TabFilament::update_filament_overrides_page(const DynamicPrintConfig* print
     std::vector<std::string> opt_keys = {   "filament_retraction_length",
                                             "filament_z_hop",
                                             "filament_z_hop_types",
-                                            "filament_cell_zhop_height",
                                             "filament_retract_lift_above",
                                             "filament_retract_lift_below",
                                             "filament_retract_lift_enforce",
@@ -3964,6 +3962,7 @@ void TabFilament::build()
         optgroup->append_single_option_line("filament_toolchange_slowdown_speed_ratio");
         optgroup->append_single_option_line("filament_toolchange_slowdown_distance");
         optgroup->append_single_option_line("filament_additional_prime");
+        optgroup->append_single_option_line("filament_cell_zhop_height");
         optgroup->append_single_option_line("retract_restart_extra_toolchange");
         optgroup->append_single_option_line("filament_heating_duration");
 
