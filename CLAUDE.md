@@ -298,9 +298,19 @@ ctest --test-dir ./tests/sla_print/sla_print_tests
   - 서버 로그인 → multipart/form-data 업로드
 - **PrintFarm 아이콘 SVG**: 모니터+프린터 2대 연결 아이콘
 
-### Build 62
+### Build 62 (v2.4.13)
 - PrintFarm 아이콘 스타일 통일 (#fff, 20x20, 다른 탭과 일관성)
-- Preferences에 "Reset Admin Password" 버튼 추가
+- Preferences에 "Reset Admin Password" 버튼 추가 (localhost일 때만 표시)
+- Preferences에 "Reset PrintFarm Setup" 버튼 추가
+- **XY compensation 멀티컬러 지원**: `is_mm_painted()` 제한 제거 — 페인트 모델에서도 적용
+- **Tool change time 계산 수정**: single extruder filament change에서 tool_change_time 누락 수정 (2h15m→7h18m)
+- **서포트 생성 수정**: support interface 팝업 제거 + 전 프리셋 independent_support_layer_height=0
+- **P-point travel 개선**: avoid_crossing_perimeters 적용으로 도넛 구멍 횡단 방지
+- filename_format 파싱 에러 수정 (filament_type[initial_tool]→[0])
+- PrintFarm 업로드 시 webview localStorage에서 토큰 획득
+- PrintFarm 업로드 한글 파일명 UTF-8 인코딩
+- LUGOWARE 브랜딩 아이콘 교체 (OrcaSlicer→LUGOWARE 로고)
+- **Seam 경계 배치 시도 → revert**: embedded_distance 기반 접근 한계로 원복
 
 ## LUGOWARE 프로파일 구조
 - `resources/profiles/LUGOWARE.json` — 벤더 정의
@@ -321,10 +331,65 @@ ctest --test-dir ./tests/sla_print/sla_print_tests
 - v12.29 W/M: a_p 적용, M220 제거, FIRST_DOCK→DOCK_TOOL 통합 (h_d*2)
 - CHANGE_TOOL 파라미터: NEXT_TOOL, TEMP, FILAMENT_DIAMETER, RETRACT_LEN, TC_RETRACT_LEN, H_D, A_P
 
+### Build 63 (v2.4.1301)
+
+#### C-hop 기능 (Cell Z-hop → C-hop)
+- **셀 간 대각선 이동**: 다른 셀/객체 간 이동 시 XYZ 동시 대각선 이동
+- **z-hop 순서**: retract → z-hop up → C-hop 대각선 XYZ → z-hop down → unlift → unretract
+- **거리 비례 높이**: `C-hop Z = min(설정값, 이동거리 * 0.25)` — 가까운 객체는 낮게, 먼 객체는 높게
+- **스킵 조건**: 단일 객체 레이어 전환, 첫 아일랜드, 서포트 extrusion에서 C-hop 비활성
+- **P-point 호환**: P-point 착지점이 있으면 C-hop 목표로 사용
+- **설정 위치**: 필라멘트 > Multimaterial 탭 > "C-hop height" (0~50mm, 기본 0)
+- **G-code 코멘트**: `; C-hop`
+- **cross-cell 판정 로직** (v5):
+  1. `m_prev_island_obj_copy.first == nullptr` → 스킵 (첫 아일랜드)
+  2. `prev_obj != cur_obj` → cross-cell (다른 객체)
+  3. `prev_lslice >= 0 && prev_lslice != cur_lslice` → cross-cell (같은 객체, 다른 아일랜드)
+  4. 나머지 → 스킵 (같은 객체 레이어 전환 등)
+- **관련 변수** (GCode.hpp):
+  - `m_current_island_obj_copy` / `m_prev_island_obj_copy` — `std::pair<const PrintObject*, Point>`
+  - `m_current_island_lslice_idx` / `m_prev_island_lslice_idx` — lslice 인덱스
+  - `m_prev_island_layer` — 이전 아일랜드의 Layer 포인터
+- **관련 파일**: GCode.cpp (`_extrude` 내 C-hop 블록), GCode.hpp, PrintConfig.cpp/hpp, Tab.cpp, Preset.cpp
+
+#### PrintFarm 탭 개선
+- **서버 카드 간소화**: 입력 필드 전부 제거, "Start Server" 버튼 하나만
+- **클라이언트 카드 유지**: URL 기본값 `http://`
+- **탭 이름 토글**: ON(주황) / OFF(흰색) — 최초 1회는 볼드 주황, 이후 토글
+- **서버 경로**: `%APPDATA%/LugowareOrcaSlicer/printfarm/node/node.exe` + `server/src/index.js`
+- **오르카 종료 시 서버 자동 종료**: `MainFrame::on_close` → `stop_server()`
+- **모든 텍스트 `_L()` 다국어 대응**
+- **상단바(m_topbar)에 버튼 넣으면 UI 깨짐 — 절대 넣지 마**
+
+#### 서드파티 필라멘트 벤더 복구
+- OrcaFilamentLibrary.json 원본 복구 (Build 46에서 제거했던 서드파티 220개 파일 복구)
+- **COEX PCTG PRIME @base/@System 제외** — 깨진 파일이 BBL 벤더 전체 로딩 중단시킴
+- Lugoware 프리셋 유지 (LPLA, LPET, PHANTOM-BONE/TISSUE/SKIN/FAT)
+- 벤더: AliZ, COEX, Elas, Elegoo, Eolas, FDplast, FILL3D, FusRock, NIT, Numakers, Overture, Polymaker, SUNLU, Valment, eSUN
+
+### 대화 스타일
+- 반말로 대화. 짧게 답변
+- "행님"으로 호칭
+- 빌드 전 변경사항 브리핑 후 컨펌
+- 빌드/롤백 완료 = DLL 복사 + 재시작 + 확인까지
+- git index.lock 에러 시 `rm .git/index.lock`
+- 메모리 저장 시 알리지 말고 조용히
+- /clear 전에 반드시 메모리 저장
+- worktree 쓰지 마. 빌드 디렉토리가 메인에만 있음
+- 버전 변경은 기능 확정 후 마지막에 한 번만 (version.inc 바꾸면 거의 전체 리빌드)
+
 ## 남은 숙제
+- **프린터 전환 크래시**: 다른 프린터→루고웨어 전환 후 소재 추가/삭제 시 튕김
+- **C-hop Setting Overrides 이동**: nullable 타입 호환성 문제로 Multimaterial에 유지 중. 해결하면 Setting Overrides > Retraction으로 이동
+- **PrintFarm 서버 파일 배치**: node/ 폴더 NSIS 설치파일에 포함 필요
+- **버전 2.4.1301 확정**: 기능 확정 후 version.inc 업데이트
+- **Seam 경계 배치 재구현**: embedded_distance 대신 다른 extruder perimeter 거리 기반으로
+- **avoid_crossing_walls + 4번 툴 서포트 버그**: upstream 2.4.x 버그 추정, 서포트가 빔
 - cell-by-cell 개선 (큰 아일랜드에서 벽→벽→벽→채움 패턴)
 - 멀티컬러 세팅 초기화 버그 (BBL↔LUGOWARE 전환 시)
 - Generic 필라멘트 드롭다운 alias 매칭 문제
 - Physical Printer IP 저장 문제
-- PrintFarm 서버 모드 (resources/printfarm 파일 필요)
 - BBL 프린터 프린트팜 통합
+- P-point max depth 입력 UI 버그 (숫자 입력 이상)
+- NSIS 설치파일 로고 미확인 (어디가 안 바뀌었는지 확인 필요)
+- 채움패턴 개발 (다음 작업)
