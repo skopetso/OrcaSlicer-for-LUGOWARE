@@ -6334,12 +6334,12 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
         bool is_cross_cell = false;
         if (m_prev_island_layer == nullptr || m_prev_island_obj_copy.first == nullptr) {
             // Very first island of the print — skip
-        } else if (m_prev_island_layer == m_layer) {
-            // Same layer: cross-cell if different island index (skip if prev was unset)
-            is_cross_cell = (m_prev_island_lslice_idx >= 0 && m_prev_island_lslice_idx != m_current_island_lslice_idx);
-        } else {
-            // Different layer: cross-cell only if different object (not just layer transition of same object)
-            is_cross_cell = (m_prev_island_obj_copy.first != m_current_island_obj_copy.first);
+        } else if (m_prev_island_obj_copy.first != m_current_island_obj_copy.first) {
+            // Different object — always cross-cell
+            is_cross_cell = true;
+        } else if (m_prev_island_lslice_idx >= 0 && m_prev_island_lslice_idx != m_current_island_lslice_idx) {
+            // Same object, same layer, different island
+            is_cross_cell = true;
         }
         bool cell_zhop_done = false;
 
