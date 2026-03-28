@@ -6320,14 +6320,14 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
         auto target_z = get_sloped_z(sloped->slope_begin.z_ratio);
         slope_need_z_travel = m_writer.will_move_z(target_z);
     }
-    // LUGOWARE: Cell Z-hop + P-point P1 processing on first extrusion of island
+    // LUGOWARE: C-hop + P-point P1 processing on first extrusion of island
     if (m_island_first_extrusion && m_layer != nullptr) {
         m_island_first_extrusion = false;
 
         // Find which lslice this island belongs to
         m_current_island_lslice_idx = find_lslice_index(path.first_point(), *m_layer);
 
-        // Cell Z-hop check: cross-cell = different island index OR different layer (different object)
+        // C-hop check: cross-cell = different island index OR different layer (different object)
         // Skip for support extrusions
         bool is_support = (path.role() == erSupportMaterial || path.role() == erSupportMaterialInterface || path.role() == erSupportTransition);
         double cell_zhop = is_support ? 0.0 : FILAMENT_CONFIG(filament_cell_zhop_height);
@@ -6360,16 +6360,16 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
             double zhop_height = m_writer.config.z_hop.get_at(m_writer.filament()->id());
             double zhop_z = m_layer->print_z + zhop_height;
             if (zhop_height > 0)
-                gcode += m_writer.travel_to_z(zhop_z, "z-hop before cell z-hop");
-            // 3. Diagonal XYZ move to target at cell z-hop height
-            gcode += m_writer.travel_to_xyz(Vec3d(target_gcode.x(), target_gcode.y(), target_z), "cell z-hop");
+                gcode += m_writer.travel_to_z(zhop_z, "z-hop before C-hop");
+            // 3. Diagonal XYZ move to target at C-hop height
+            gcode += m_writer.travel_to_xyz(Vec3d(target_gcode.x(), target_gcode.y(), target_z), "C-hop");
             this->set_last_pos(target);
             // 4. Z down to z-hop height
             if (zhop_height > 0)
-                gcode += m_writer.travel_to_z(zhop_z, "z-hop after cell z-hop");
+                gcode += m_writer.travel_to_z(zhop_z, "z-hop after C-hop");
             // 5. Z down to layer
             gcode += m_writer.unlift_to(m_layer->print_z);
-            gcode += "; cell z-hop\n";
+            gcode += "; C-hop\n";
             // 4. If landed on P1, move to start point
             if (landing_pt.has_value() && target != path.first_point()) {
                 if (m_config.reduce_crossing_wall && m_writer.is_current_position_clear()) {
@@ -6384,7 +6384,7 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
             cell_zhop_done = true;
         }
 
-        // P-point normal flow (only if cell z-hop didn't handle it)
+        // P-point normal flow (only if C-hop didn't handle it)
         if (!cell_zhop_done && m_p_point_enabled &&
             m_current_island_lslice_idx >= 0 && should_generate_p_point(*m_layer, m_current_island_lslice_idx)) {
             auto p1 = compute_p_point(path.first_point(), m_layer->lslices[m_current_island_lslice_idx]);

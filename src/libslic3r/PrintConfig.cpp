@@ -2616,9 +2616,9 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
-    // LUGOWARE: Cell Z-hop
+    // LUGOWARE: C-hop
     def = this->add("filament_cell_zhop_height", coFloats);
-    def->label = L("Cell Z-hop height");
+    def->label = L("C-hop height");
     def->tooltip = L("When traveling between different cells (islands), perform a single diagonal "
                      "XYZ move instead of separate Z-up, XY-travel, Z-down moves. "
                      "Set to 0 to disable. Within the same cell, normal Z-hop is used.");
