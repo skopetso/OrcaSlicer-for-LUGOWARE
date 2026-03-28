@@ -2624,7 +2624,7 @@ void PrintConfigDef::init_fff_params()
                      "Set to 0 to disable. Within the same cell, normal Z-hop is used.");
     def->sidetext = L("mm");
     def->min = 0;
-    def->max = 10;
+    def->max = 50;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
