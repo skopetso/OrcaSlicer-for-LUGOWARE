@@ -13,6 +13,7 @@
 #include <wx/sizer.h>
 
 wxDEFINE_EVENT(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED, wxCommandEvent);
+wxDEFINE_EVENT(wxCUSTOMEVT_NOTEBOOK_PAGE_RECLICK, wxCommandEvent);
 
 ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
     wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
@@ -242,6 +243,16 @@ void ButtonsListCtrl::SetPageText(size_t n, const wxString& strText)
     btn->SetLabel(strText);
     if(!strText.empty())  // ORCA
         m_pageLabels[n] = strText;
+}
+
+void ButtonsListCtrl::SetPageTextColor(size_t n, const wxColour& color)
+{
+    if (n < m_pageButtons.size()) {
+        StateColor text_color = StateColor(
+            std::pair{color, (int) StateColor::Normal});
+        m_pageButtons[n]->SetTextColor(text_color);
+        m_pageButtons[n]->Refresh();
+    }
 }
 
 // ORCA

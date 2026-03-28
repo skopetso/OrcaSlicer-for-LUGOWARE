@@ -1,6 +1,7 @@
 #include "PrintFarmPanel.hpp"
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
+#include "Notebook.hpp"
 #include "libslic3r/AppConfig.hpp"
 #include "slic3r/Utils/Http.hpp"
 
@@ -14,6 +15,8 @@
 #include <wx/sizer.h>
 #include <wx/font.h>
 #include <wx/wfstream.h>
+#include <wx/stdpaths.h>
+#include <wx/filename.h>
 
 #include <fstream>
 
@@ -48,6 +51,7 @@ PrintFarmPanel::PrintFarmPanel(wxWindow* parent)
             show_webview();
             if (mode == "server") {
                 start_server();
+                m_server_running = true;
             }
             load_url(wxString(url));
         } else {
@@ -67,7 +71,7 @@ void PrintFarmPanel::build_setup_page()
     setup_sizer->AddStretchSpacer(1);
 
     // Title
-    wxStaticText* title = new wxStaticText(m_setup_panel, wxID_ANY, "LUGOWARE PrintFarm");
+    wxStaticText* title = new wxStaticText(m_setup_panel, wxID_ANY, _L("LUGOWARE PrintFarm"));
     title->SetForegroundColour(wxColour(0, 190, 170));
     wxFont title_font = title->GetFont();
     title_font.SetPointSize(24);
@@ -75,7 +79,7 @@ void PrintFarmPanel::build_setup_page()
     title->SetFont(title_font);
     setup_sizer->Add(title, 0, wxALIGN_CENTER | wxBOTTOM, 10);
 
-    wxStaticText* subtitle = new wxStaticText(m_setup_panel, wxID_ANY, "Choose how to connect to PrintFarm");
+    wxStaticText* subtitle = new wxStaticText(m_setup_panel, wxID_ANY, _L("Choose how to connect to PrintFarm"));
     subtitle->SetForegroundColour(wxColour(180, 180, 180));
     wxFont subtitle_font = subtitle->GetFont();
     subtitle_font.SetPointSize(12);
@@ -87,7 +91,7 @@ void PrintFarmPanel::build_setup_page()
     cards_sizer->AddStretchSpacer(1);
 
     // --- Server Card (Left) ---
-    wxPanel* server_card = new wxPanel(m_setup_panel, wxID_ANY, wxDefaultPosition, wxSize(350, 450));
+    wxPanel* server_card = new wxPanel(m_setup_panel, wxID_ANY, wxDefaultPosition, wxSize(350, 320));
     server_card->SetBackgroundColour(wxColour(50, 55, 65));
     wxBoxSizer* server_sizer = new wxBoxSizer(wxVERTICAL);
 
@@ -95,68 +99,31 @@ void PrintFarmPanel::build_setup_page()
     wxFont icon_font = server_icon->GetFont();
     icon_font.SetPointSize(36);
     server_icon->SetFont(icon_font);
-    server_sizer->Add(server_icon, 0, wxALIGN_CENTER | wxTOP, 20);
+    server_sizer->Add(server_icon, 0, wxALIGN_CENTER | wxTOP, 25);
 
-    wxStaticText* server_title = new wxStaticText(server_card, wxID_ANY, "Run as Server");
+    wxStaticText* server_title = new wxStaticText(server_card, wxID_ANY, _L("Run as Server"));
     server_title->SetForegroundColour(*wxWHITE);
     wxFont card_title_font = server_title->GetFont();
     card_title_font.SetPointSize(14);
     card_title_font.SetWeight(wxFONTWEIGHT_BOLD);
     server_title->SetFont(card_title_font);
-    server_sizer->Add(server_title, 0, wxALIGN_CENTER | wxTOP, 8);
+    server_sizer->Add(server_title, 0, wxALIGN_CENTER | wxTOP, 10);
 
-    wxStaticText* server_desc = new wxStaticText(server_card, wxID_ANY, "Host PrintFarm on this PC");
+    wxStaticText* server_desc = new wxStaticText(server_card, wxID_ANY, _L("Host PrintFarm on this PC"));
     server_desc->SetForegroundColour(wxColour(150, 150, 150));
-    server_sizer->Add(server_desc, 0, wxALIGN_CENTER | wxBOTTOM, 12);
+    server_sizer->Add(server_desc, 0, wxALIGN_CENTER | wxBOTTOM, 15);
 
-    wxFont label_font = server_desc->GetFont();
-
-    // Storage Path
-    wxStaticText* storage_label = new wxStaticText(server_card, wxID_ANY, "Storage Path:");
-    storage_label->SetForegroundColour(wxColour(180, 180, 180));
-    server_sizer->Add(storage_label, 0, wxLEFT, 25);
-
-    wxString default_storage = wxString::Format("C:/Users/%s/PrintFarm/storage", wxGetUserId());
-    m_storage_path_input = new wxTextCtrl(server_card, wxID_ANY, default_storage,
-        wxDefaultPosition, wxSize(300, 26));
-    server_sizer->Add(m_storage_path_input, 0, wxALIGN_CENTER | wxTOP | wxBOTTOM, 3);
-
-    // Admin Username
-    wxStaticText* user_label = new wxStaticText(server_card, wxID_ANY, "Admin Username:");
-    user_label->SetForegroundColour(wxColour(180, 180, 180));
-    server_sizer->Add(user_label, 0, wxLEFT | wxTOP, 25);
-
-    m_admin_username = new wxTextCtrl(server_card, wxID_ANY, "admin",
-        wxDefaultPosition, wxSize(300, 26));
-    server_sizer->Add(m_admin_username, 0, wxALIGN_CENTER | wxTOP | wxBOTTOM, 3);
-
-    // Admin Password
-    wxStaticText* pass_label = new wxStaticText(server_card, wxID_ANY, "Admin Password:");
-    pass_label->SetForegroundColour(wxColour(180, 180, 180));
-    server_sizer->Add(pass_label, 0, wxLEFT, 25);
-
-    m_admin_password = new wxTextCtrl(server_card, wxID_ANY, "",
-        wxDefaultPosition, wxSize(300, 26), wxTE_PASSWORD);
-    server_sizer->Add(m_admin_password, 0, wxALIGN_CENTER | wxTOP | wxBOTTOM, 3);
-
-    // Confirm Password
-    wxStaticText* confirm_label = new wxStaticText(server_card, wxID_ANY, "Confirm Password:");
-    confirm_label->SetForegroundColour(wxColour(180, 180, 180));
-    server_sizer->Add(confirm_label, 0, wxLEFT, 25);
-
-    m_admin_password_confirm = new wxTextCtrl(server_card, wxID_ANY, "",
-        wxDefaultPosition, wxSize(300, 26), wxTE_PASSWORD);
-    server_sizer->Add(m_admin_password_confirm, 0, wxALIGN_CENTER | wxTOP | wxBOTTOM, 3);
-
-    wxButton* install_btn = new wxButton(server_card, wxID_ANY, "Install && Start Server",
+    m_start_server_btn = new wxButton(server_card, wxID_ANY, _L("Start Server"),
         wxDefaultPosition, wxSize(250, 38));
-    install_btn->SetBackgroundColour(wxColour(0, 190, 170));
-    install_btn->SetForegroundColour(*wxWHITE);
-    wxFont btn_font = install_btn->GetFont();
+    m_start_server_btn->SetBackgroundColour(wxColour(0, 190, 170));
+    m_start_server_btn->SetForegroundColour(*wxWHITE);
+    wxFont btn_font = m_start_server_btn->GetFont();
     btn_font.SetPointSize(11);
     btn_font.SetWeight(wxFONTWEIGHT_BOLD);
-    install_btn->SetFont(btn_font);
-    server_sizer->Add(install_btn, 0, wxALIGN_CENTER | wxTOP, 12);
+    m_start_server_btn->SetFont(btn_font);
+    server_sizer->Add(m_start_server_btn, 0, wxALIGN_CENTER | wxTOP, 15);
+
+    server_sizer->AddSpacer(20);
 
     server_card->SetSizer(server_sizer);
     cards_sizer->Add(server_card, 0, wxRIGHT, 20);
@@ -170,24 +137,24 @@ void PrintFarmPanel::build_setup_page()
     client_icon->SetFont(icon_font);
     client_sizer->Add(client_icon, 0, wxALIGN_CENTER | wxTOP, 25);
 
-    wxStaticText* client_title = new wxStaticText(client_card, wxID_ANY, "Connect as Client");
+    wxStaticText* client_title = new wxStaticText(client_card, wxID_ANY, _L("Connect as Client"));
     client_title->SetForegroundColour(*wxWHITE);
     client_title->SetFont(card_title_font);
     client_sizer->Add(client_title, 0, wxALIGN_CENTER | wxTOP, 10);
 
-    wxStaticText* client_desc = new wxStaticText(client_card, wxID_ANY, "Connect to an existing server");
+    wxStaticText* client_desc = new wxStaticText(client_card, wxID_ANY, _L("Connect to an existing server"));
     client_desc->SetForegroundColour(wxColour(150, 150, 150));
     client_sizer->Add(client_desc, 0, wxALIGN_CENTER | wxBOTTOM, 15);
 
-    wxStaticText* url_label = new wxStaticText(client_card, wxID_ANY, "Server URL:");
+    wxStaticText* url_label = new wxStaticText(client_card, wxID_ANY, _L("Server URL:"));
     url_label->SetForegroundColour(wxColour(180, 180, 180));
     client_sizer->Add(url_label, 0, wxLEFT, 25);
 
-    m_server_url_input = new wxTextCtrl(client_card, wxID_ANY, "http://192.168.0.46:46259",
+    m_server_url_input = new wxTextCtrl(client_card, wxID_ANY, "http://",
         wxDefaultPosition, wxSize(300, 28));
     client_sizer->Add(m_server_url_input, 0, wxALIGN_CENTER | wxTOP | wxBOTTOM, 5);
 
-    wxButton* connect_btn = new wxButton(client_card, wxID_ANY, "Connect",
+    wxButton* connect_btn = new wxButton(client_card, wxID_ANY, _L("Connect"),
         wxDefaultPosition, wxSize(250, 38));
     connect_btn->SetBackgroundColour(wxColour(0, 190, 170));
     connect_btn->SetForegroundColour(*wxWHITE);
@@ -205,8 +172,8 @@ void PrintFarmPanel::build_setup_page()
     m_main_sizer->Add(m_setup_panel, 1, wxEXPAND);
 
     // --- Event bindings ---
-    install_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
-        on_server_install();
+    m_start_server_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+        on_start_server();
     });
 
     connect_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
@@ -228,151 +195,92 @@ void PrintFarmPanel::show_webview()
     m_main_sizer->Layout();
 }
 
-void PrintFarmPanel::on_server_install()
+void PrintFarmPanel::on_start_server()
 {
-    // Validate admin credentials
-    wxString username = m_admin_username->GetValue();
-    wxString password = m_admin_password->GetValue();
-    wxString password_confirm = m_admin_password_confirm->GetValue();
+    // Show loading overlay
+    m_setup_panel->Disable();
+    wxWindowUpdateLocker lock(this);
 
-    if (username.IsEmpty()) {
-        wxMessageBox("Please enter an admin username.", "Error", wxICON_ERROR);
-        return;
-    }
-    if (password.IsEmpty()) {
-        wxMessageBox("Please enter an admin password.", "Error", wxICON_ERROR);
-        return;
-    }
-    if (password != password_confirm) {
-        wxMessageBox("Passwords do not match.", "Error", wxICON_ERROR);
-        return;
-    }
-    if (password.Length() < 4) {
-        wxMessageBox("Password must be at least 4 characters.", "Error", wxICON_ERROR);
-        return;
-    }
+    // Save config
+    auto* config = wxGetApp().app_config;
+    config->set("printfarm_mode", "server");
+    config->set("printfarm_url", "http://localhost:46259");
+    config->save();
 
-    wxString storage_path = m_storage_path_input->GetValue();
-    if (storage_path.IsEmpty()) {
-        storage_path = "C:/PrintFarm/storage";
-    }
+    m_setup_done = true;
 
+    // Ensure .env exists
     try {
-        // Determine source and destination paths
-        boost::filesystem::path resources_dir = boost::filesystem::path(Slic3r::resources_dir()) / "printfarm";
         boost::filesystem::path appdata_dir;
-
 #ifdef _WIN32
         const char* appdata = std::getenv("APPDATA");
-        if (appdata) {
-            appdata_dir = boost::filesystem::path(appdata) / "printfarm";
-        } else {
-            BOOST_LOG_TRIVIAL(error) << "PrintFarm: APPDATA environment variable not found";
-            return;
-        }
+        if (appdata)
+            appdata_dir = boost::filesystem::path(appdata) / "LugowareOrcaSlicer" / "printfarm";
 #else
         const char* home = std::getenv("HOME");
-        if (home) {
-            appdata_dir = boost::filesystem::path(home) / ".printfarm";
-        } else {
-            BOOST_LOG_TRIVIAL(error) << "PrintFarm: HOME environment variable not found";
-            return;
-        }
+        if (home)
+            appdata_dir = boost::filesystem::path(home) / ".LugowareOrcaSlicer" / "printfarm";
 #endif
-
-        // Create destination directory
-        if (!boost::filesystem::exists(appdata_dir)) {
-            boost::filesystem::create_directories(appdata_dir);
-        }
-
-        // Copy printfarm resources to appdata
-        if (boost::filesystem::exists(resources_dir)) {
-            for (auto& entry : boost::filesystem::recursive_directory_iterator(resources_dir)) {
-                boost::filesystem::path relative = boost::filesystem::relative(entry.path(), resources_dir);
-                boost::filesystem::path dest = appdata_dir / relative;
-
-                if (boost::filesystem::is_directory(entry.path())) {
-                    boost::filesystem::create_directories(dest);
-                } else {
-                    boost::filesystem::create_directories(dest.parent_path());
-                    boost::filesystem::copy_file(entry.path(), dest,
-                        boost::filesystem::copy_option::overwrite_if_exists);
+        if (!appdata_dir.empty()) {
+            boost::filesystem::path env_file = appdata_dir / "server" / ".env";
+            if (!boost::filesystem::exists(env_file)) {
+                boost::filesystem::create_directories(env_file.parent_path());
+                std::ofstream ofs(env_file.string());
+                if (ofs.is_open()) {
+                    ofs << "PORT=46259" << std::endl;
+                    ofs << "JWT_SECRET=lugoware-printfarm-secret-key" << std::endl;
+                    ofs.close();
+                    BOOST_LOG_TRIVIAL(info) << "PrintFarm: Created default .env at " << env_file.string();
                 }
             }
-            BOOST_LOG_TRIVIAL(info) << "PrintFarm: Copied resources to " << appdata_dir.string();
-        } else {
-            BOOST_LOG_TRIVIAL(warning) << "PrintFarm: Resources directory not found: " << resources_dir.string();
         }
-
-        // Create storage directory
-        boost::filesystem::path storage_dir(storage_path.ToStdString());
-        if (!boost::filesystem::exists(storage_dir)) {
-            boost::filesystem::create_directories(storage_dir);
-        }
-
-        // Create .env file
-        boost::filesystem::path env_file = appdata_dir / ".env";
-        {
-            std::ofstream ofs(env_file.string());
-            if (ofs.is_open()) {
-                ofs << "JWT_SECRET=lugoware-printfarm-secret-key" << std::endl;
-                ofs << "PORT=46259" << std::endl;
-                ofs << "STORAGE_PATH=" << storage_path.ToStdString() << std::endl;
-                ofs.close();
-                BOOST_LOG_TRIVIAL(info) << "PrintFarm: Created .env file at " << env_file.string();
-            } else {
-                BOOST_LOG_TRIVIAL(error) << "PrintFarm: Failed to create .env file";
-            }
-        }
-
-        // Save config
-        auto* config = wxGetApp().app_config;
-        config->set("printfarm_mode", "server");
-        config->set("printfarm_url", "http://localhost:46259");
-        config->set("printfarm_storage", storage_path.ToStdString());
-        config->save();
-
-        m_setup_done = true;
-
-        // Start the server
-        start_server();
-
-        // Wait for server to be ready
-        wxMilliSleep(3000);
-
-        // Register admin account
-        {
-            Slic3r::Http http = Slic3r::Http::post("http://localhost:46259/api/auth/register");
-            http.header("Content-Type", "application/json");
-            std::string body = "{\"username\":\"" + username.ToStdString() + "\",\"password\":\"" + password.ToStdString() + "\"}";
-            http.set_post_body(body);
-            http.on_complete([](std::string body, unsigned status) {
-                BOOST_LOG_TRIVIAL(info) << "PrintFarm: Admin registered, status=" << status;
-            }).on_error([](std::string body, std::string error, unsigned status) {
-                BOOST_LOG_TRIVIAL(warning) << "PrintFarm: Admin register failed: " << error << " body=" << body;
-            }).perform_sync();
-        }
-
-        // Configure storage path
-        {
-            Slic3r::Http http = Slic3r::Http::put("http://localhost:46259/api/storage/config");
-            http.header("Content-Type", "application/json");
-            std::string body = "{\"storagePath\":\"" + storage_path.ToStdString() + "\"}";
-            http.set_post_body(body);
-            http.on_complete([](std::string body, unsigned status) {
-                BOOST_LOG_TRIVIAL(info) << "PrintFarm: Storage configured, status=" << status;
-            }).on_error([](std::string body, std::string error, unsigned status) {
-                BOOST_LOG_TRIVIAL(warning) << "PrintFarm: Storage config failed: " << error;
-            }).perform_sync();
-        }
-
-        // Show the webview
-        show_webview();
-        load_url("http://localhost:46259");
-
     } catch (const std::exception& e) {
-        BOOST_LOG_TRIVIAL(error) << "PrintFarm: Installation failed: " << e.what();
+        BOOST_LOG_TRIVIAL(warning) << "PrintFarm: .env check failed: " << e.what();
     }
+
+    // Start the server
+    start_server();
+    m_server_running = true;
+    update_tab_label();
+
+    // Show loading spinner overlay
+    wxPanel* overlay = new wxPanel(this, wxID_ANY, wxPoint(0, 0), GetSize());
+    overlay->SetBackgroundColour(wxColour(40, 44, 52));
+    overlay->SetTransparent(200);
+
+    wxBoxSizer* overlay_sizer = new wxBoxSizer(wxVERTICAL);
+    overlay_sizer->AddStretchSpacer(1);
+
+    wxStaticText* loading_text = new wxStaticText(overlay, wxID_ANY, _L("Starting server..."));
+    loading_text->SetForegroundColour(wxColour(0, 190, 170));
+    wxFont loading_font = loading_text->GetFont();
+    loading_font.SetPointSize(16);
+    loading_font.SetWeight(wxFONTWEIGHT_BOLD);
+    loading_text->SetFont(loading_font);
+    overlay_sizer->Add(loading_text, 0, wxALIGN_CENTER);
+
+    wxStaticText* spinner = new wxStaticText(overlay, wxID_ANY, wxString::FromUTF8("\xE2\x8F\xB3"));
+    wxFont spinner_font = spinner->GetFont();
+    spinner_font.SetPointSize(32);
+    spinner->SetFont(spinner_font);
+    overlay_sizer->Add(spinner, 0, wxALIGN_CENTER | wxTOP, 10);
+
+    overlay_sizer->AddStretchSpacer(1);
+    overlay->SetSizer(overlay_sizer);
+    overlay->Raise();
+    overlay->Layout();
+    overlay->Update();
+    wxYield();
+
+    // Wait for server to be ready
+    wxMilliSleep(3000);
+
+    // Remove overlay and show webview
+    overlay->Destroy();
+    m_setup_panel->Enable();
+
+    show_webview();
+    load_url("http://localhost:46259");
 }
 
 void PrintFarmPanel::on_client_connect()
@@ -403,48 +311,42 @@ void PrintFarmPanel::start_server()
 #ifdef _WIN32
         const char* appdata = std::getenv("APPDATA");
         if (appdata) {
-            appdata_dir = boost::filesystem::path(appdata) / "printfarm";
+            appdata_dir = boost::filesystem::path(appdata) / "LugowareOrcaSlicer" / "printfarm";
         } else {
             BOOST_LOG_TRIVIAL(error) << "PrintFarm: APPDATA not found for server start";
             return;
         }
 
-        // Try start.bat first, then node.exe
-        boost::filesystem::path start_bat = appdata_dir / "start.bat";
-        boost::filesystem::path node_exe = appdata_dir / "node.exe";
-        boost::filesystem::path server_js = appdata_dir / "server.js";
+        boost::filesystem::path node_exe = appdata_dir / "node" / "node.exe";
+        boost::filesystem::path index_js = appdata_dir / "server" / "src" / "index.js";
 
-        wxString command;
-        if (boost::filesystem::exists(start_bat)) {
-            command = wxString::Format("cmd /c \"\"%s\"\"", start_bat.string());
-        } else if (boost::filesystem::exists(node_exe) && boost::filesystem::exists(server_js)) {
-            command = wxString::Format("\"%s\" \"%s\"", node_exe.string(), server_js.string());
+        if (boost::filesystem::exists(node_exe) && boost::filesystem::exists(index_js)) {
+            wxString command = wxString::Format("\"%s\" \"%s\"", node_exe.string(), index_js.string());
+            BOOST_LOG_TRIVIAL(info) << "PrintFarm: Starting server with: " << command.ToStdString();
+            wxExecute(command, wxEXEC_ASYNC | wxEXEC_HIDE_CONSOLE);
         } else {
-            BOOST_LOG_TRIVIAL(warning) << "PrintFarm: No start.bat or node.exe found in " << appdata_dir.string();
-            return;
+            BOOST_LOG_TRIVIAL(warning) << "PrintFarm: Server files not found. node="
+                << node_exe.string() << " index=" << index_js.string();
         }
-
-        BOOST_LOG_TRIVIAL(info) << "PrintFarm: Starting server with: " << command.ToStdString();
-        wxExecute(command, wxEXEC_ASYNC | wxEXEC_HIDE_CONSOLE);
 
 #else
         const char* home = std::getenv("HOME");
         if (home) {
-            appdata_dir = boost::filesystem::path(home) / ".printfarm";
+            appdata_dir = boost::filesystem::path(home) / ".LugowareOrcaSlicer" / "printfarm";
         } else {
             BOOST_LOG_TRIVIAL(error) << "PrintFarm: HOME not found for server start";
             return;
         }
 
-        boost::filesystem::path node_exe = appdata_dir / "node";
-        boost::filesystem::path server_js = appdata_dir / "server.js";
+        boost::filesystem::path node_exe = appdata_dir / "node" / "node";
+        boost::filesystem::path index_js = appdata_dir / "server" / "src" / "index.js";
 
-        if (boost::filesystem::exists(node_exe) && boost::filesystem::exists(server_js)) {
-            wxString command = wxString::Format("\"%s\" \"%s\"", node_exe.string(), server_js.string());
+        if (boost::filesystem::exists(node_exe) && boost::filesystem::exists(index_js)) {
+            wxString command = wxString::Format("\"%s\" \"%s\"", node_exe.string(), index_js.string());
             BOOST_LOG_TRIVIAL(info) << "PrintFarm: Starting server with: " << command.ToStdString();
             wxExecute(command, wxEXEC_ASYNC);
         } else {
-            BOOST_LOG_TRIVIAL(warning) << "PrintFarm: No node executable found in " << appdata_dir.string();
+            BOOST_LOG_TRIVIAL(warning) << "PrintFarm: Server files not found in " << appdata_dir.string();
         }
 #endif
 
@@ -459,6 +361,95 @@ void PrintFarmPanel::load_url(const wxString& url)
         wxString mutable_url = url;
         m_webview->load_url(mutable_url);
         BOOST_LOG_TRIVIAL(info) << "PrintFarm: Loading URL: " << url.ToStdString();
+    }
+}
+
+bool PrintFarmPanel::is_server_mode() const
+{
+    auto* config = wxGetApp().app_config;
+    return config && config->get("printfarm_mode") == "server";
+}
+
+void PrintFarmPanel::toggle_server()
+{
+    if (!m_toggle_enabled)
+        return;
+
+    if (m_server_running) {
+        stop_server();
+        m_server_running = false;
+        show_setup();
+        BOOST_LOG_TRIVIAL(info) << "PrintFarm: Server stopped by toggle";
+    } else {
+        auto* config = wxGetApp().app_config;
+        config->set("printfarm_mode", "server");
+        config->set("printfarm_url", "http://localhost:46259");
+        config->save();
+
+        start_server();
+        m_server_running = true;
+        BOOST_LOG_TRIVIAL(info) << "PrintFarm: Server started by toggle";
+
+        wxMilliSleep(2000);
+        show_webview();
+        load_url("http://localhost:46259");
+    }
+    update_tab_label();
+}
+
+void PrintFarmPanel::stop_server()
+{
+    try {
+#ifdef _WIN32
+        // Kill node.exe processes started by PrintFarm
+        wxExecute("taskkill /IM node.exe /F", wxEXEC_SYNC | wxEXEC_HIDE_CONSOLE);
+        BOOST_LOG_TRIVIAL(info) << "PrintFarm: Killed node.exe processes";
+#else
+        wxExecute("pkill -f 'node.*server.js'", wxEXEC_SYNC);
+        BOOST_LOG_TRIVIAL(info) << "PrintFarm: Killed node server processes";
+#endif
+    } catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(error) << "PrintFarm: Failed to stop server: " << e.what();
+    }
+}
+
+void PrintFarmPanel::shutdown_server()
+{
+    if (m_server_running) {
+        stop_server();
+        m_server_running = false;
+        BOOST_LOG_TRIVIAL(info) << "PrintFarm: Server shutdown on app exit";
+    }
+}
+
+void PrintFarmPanel::update_tab_label()
+{
+    auto* main_frame = dynamic_cast<MainFrame*>(wxGetApp().mainframe);
+    if (!main_frame)
+        return;
+
+    auto* tabpanel = main_frame->get_tabpanel();
+    if (!tabpanel)
+        return;
+
+    // Find the PrintFarm tab index
+    for (size_t i = 0; i < tabpanel->GetPageCount(); i++) {
+        if (tabpanel->GetPage(i) == this) {
+            wxString label;
+            if (is_server_mode()) {
+                label = m_server_running ? _L("PrintFarm [ON]") : _L("PrintFarm [OFF]");
+            } else {
+                label = _L("PrintFarm");
+            }
+            tabpanel->SetPageText(i, label);
+            // ON = orange, OFF/default = white
+            if (m_server_running) {
+                tabpanel->SetPageTextColor(i, wxColour(255, 165, 0));
+            } else {
+                tabpanel->SetPageTextColor(i, wxColour(254, 254, 254));
+            }
+            break;
+        }
     }
 }
 

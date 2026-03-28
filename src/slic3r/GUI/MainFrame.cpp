@@ -607,6 +607,11 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
 
         MarkdownTip::ExitTip();
 
+        // Stop PrintFarm server if running
+        if (m_printfarm_panel) {
+            m_printfarm_panel->shutdown_server();
+        }
+
         m_plater->reset();
         this->shutdown();
         // propagate event
@@ -1252,6 +1257,10 @@ void MainFrame::init_tabpanel() {
         else if (panel == m_monitor) {
             //monitor
         }
+        // Enable PrintFarm tab toggle after switching tabs
+        if (m_printfarm_panel && m_printfarm_panel->is_server_running()) {
+            m_printfarm_panel->enable_toggle();
+        }
 #ifndef __APPLE__
         if (sel == tp3DEditor) {
             m_topbar->EnableUndoRedoItems();
@@ -1281,6 +1290,16 @@ void MainFrame::init_tabpanel() {
             show_option(false);
             break;
         }*/
+    });
+
+    // Handle re-clicking the same tab (for PrintFarm server toggle)
+    m_tabpanel->Bind(wxCUSTOMEVT_NOTEBOOK_PAGE_RECLICK, [this](wxCommandEvent& evt) {
+        int page_idx = evt.GetId();
+        if (page_idx >= 0 && m_tabpanel->GetPage(page_idx) == m_printfarm_panel) {
+            if (m_printfarm_panel && m_printfarm_panel->is_server_mode()) {
+                m_printfarm_panel->toggle_server();
+            }
+        }
     });
 
     if (wxGetApp().is_editor()) {
@@ -1326,6 +1345,8 @@ void MainFrame::init_tabpanel() {
     // PrintFarm tab
     m_printfarm_panel = new PrintFarmPanel(m_tabpanel);
     m_tabpanel->AddPage(m_printfarm_panel, _L("PrintFarm"), std::string("tab_printfarm_active"), std::string("tab_printfarm_active"), false);
+    // Set initial tab label for server mode
+    m_printfarm_panel->update_tab_label();
 
     m_project = new ProjectPanel(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
     m_project->SetBackgroundColour(*wxWHITE);

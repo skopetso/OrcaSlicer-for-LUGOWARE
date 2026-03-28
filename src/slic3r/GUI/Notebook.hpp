@@ -12,6 +12,8 @@ class Button;
 
 // custom message the ButtonsListCtrl sends to its parent (Notebook) to notify a selection change:
 wxDECLARE_EVENT(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED, wxCommandEvent);
+// custom message sent when a user clicks an already-selected tab:
+wxDECLARE_EVENT(wxCUSTOMEVT_NOTEBOOK_PAGE_RECLICK, wxCommandEvent);
 
 class ButtonsListCtrl : public wxControl
 {
@@ -28,6 +30,7 @@ public:
     void RemovePage(size_t n);
     bool SetPageImage(size_t n, const std::string& bmp_name) const;
     void SetPageText(size_t n, const wxString& strText);
+    void SetPageTextColor(size_t n, const wxColour& color);
     void SetCompact(size_t n, bool compact); // ORCA
     wxString GetPageText(size_t n) const;
     wxFlexGridSizer* GetBtnsSizer(){return m_buttons_sizer;}; // ORCA
@@ -89,8 +92,16 @@ public:
 
         this->Bind(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED, [this](wxCommandEvent& evt)
         {
-            if (int page_idx = evt.GetId(); page_idx >= 0)
-                SetSelection(page_idx);
+            if (int page_idx = evt.GetId(); page_idx >= 0) {
+                if (page_idx == GetSelection()) {
+                    // Same tab re-clicked: fire reclick event
+                    wxCommandEvent reclick_evt(wxCUSTOMEVT_NOTEBOOK_PAGE_RECLICK);
+                    reclick_evt.SetId(page_idx);
+                    wxPostEvent(this, reclick_evt);
+                } else {
+                    SetSelection(page_idx);
+                }
+            }
         });
 
         this->Bind(wxEVT_NAVIGATION_KEY, &Notebook::OnNavigationKey, this);
@@ -222,6 +233,12 @@ public:
         GetBtnsListCtrl()->SetPageText(n, strText);
 
         return true;
+    }
+
+    void SetPageTextColor(size_t n, const wxColour& color)
+    {
+        if (n < GetPageCount())
+            GetBtnsListCtrl()->SetPageTextColor(n, color);
     }
 
     virtual wxString GetPageText(size_t n) const override

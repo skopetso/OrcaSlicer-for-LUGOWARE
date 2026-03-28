@@ -255,6 +255,8 @@ public:
         eUploadToFarm        = 10
     };
 
+    Notebook* get_tabpanel() { return m_tabpanel; }
+
     void update_layout();
 
 	// Called when closing the application and when switching the application language.
