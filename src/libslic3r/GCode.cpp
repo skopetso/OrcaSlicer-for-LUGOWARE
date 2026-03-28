@@ -6332,14 +6332,14 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
         bool is_support = (path.role() == erSupportMaterial || path.role() == erSupportMaterialInterface || path.role() == erSupportTransition);
         double cell_zhop = is_support ? 0.0 : FILAMENT_CONFIG(filament_cell_zhop_height);
         bool is_cross_cell = false;
-        if (m_prev_island_layer == nullptr) {
+        if (m_prev_island_layer == nullptr || m_prev_island_obj_copy.first == nullptr) {
             // Very first island of the print — skip
         } else if (m_prev_island_layer == m_layer) {
-            // Same layer: cross-cell if different island index
-            is_cross_cell = (m_prev_island_lslice_idx != m_current_island_lslice_idx);
+            // Same layer: cross-cell if different island index (skip if prev was unset)
+            is_cross_cell = (m_prev_island_lslice_idx >= 0 && m_prev_island_lslice_idx != m_current_island_lslice_idx);
         } else {
             // Different layer: cross-cell only if different object (not just layer transition of same object)
-            is_cross_cell = (m_prev_island_obj_copy != m_current_island_obj_copy);
+            is_cross_cell = (m_prev_island_obj_copy.first != m_current_island_obj_copy.first);
         }
         bool cell_zhop_done = false;
 
@@ -6352,7 +6352,11 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
 
             Point target = landing_pt.has_value() ? *landing_pt : path.first_point();
             Vec2d target_gcode = this->point_to_gcode(target);
-            double target_z = m_layer->print_z + cell_zhop;
+            // C-hop height = min(setting, travel_distance * 0.25)
+            Vec2d cur_gcode = this->point_to_gcode(m_last_pos);
+            double travel_dist = (target_gcode - cur_gcode).norm();
+            double effective_chop = std::min(cell_zhop, travel_dist * 0.25);
+            double target_z = m_layer->print_z + effective_chop;
 
             // 1. Retract without z-hop
             gcode += this->retract(false, false, LiftType::NormalLift, false, erNone, true);
