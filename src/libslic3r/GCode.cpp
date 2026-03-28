@@ -5279,6 +5279,10 @@ LayerResult GCode::process_layer(
                     m_p_point_enabled = m_config.p_point_generation.value && m_layer != nullptr;
                     m_p_point_max_depth = m_config.p_point_max_depth.value;
                     m_island_first_extrusion = true;
+                    m_prev_island_lslice_idx = m_current_island_lslice_idx;
+                    m_prev_island_layer = m_layer;
+                    m_prev_island_obj_copy = m_current_island_obj_copy;
+                    m_current_island_obj_copy = std::make_pair(&instance_to_print.print_object, instance_to_print.print_object.instances()[instance_to_print.instance_id].shift);
                     m_current_island_lslice_idx = -1;
 
                     // LUGOWARE: Contour-by-contour extrusion.
@@ -6316,34 +6320,58 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
         auto target_z = get_sloped_z(sloped->slope_begin.z_ratio);
         slope_need_z_travel = m_writer.will_move_z(target_z);
     }
-    // P-point: P1 processing on first extrusion of island
-    if (m_island_first_extrusion && m_p_point_enabled && m_layer != nullptr) {
+    // LUGOWARE: Cell Z-hop + P-point P1 processing on first extrusion of island
+    if (m_island_first_extrusion && m_layer != nullptr) {
         m_island_first_extrusion = false;
 
         // Find which lslice this island belongs to
-        int prev_island_idx = m_current_island_lslice_idx;
         m_current_island_lslice_idx = find_lslice_index(path.first_point(), *m_layer);
 
-        if (m_current_island_lslice_idx >= 0 && should_generate_p_point(*m_layer, m_current_island_lslice_idx)) {
-            auto p1 = compute_p_point(path.first_point(), m_layer->lslices[m_current_island_lslice_idx]);
+        // Cell Z-hop check: cross-cell = different island index OR different layer (different object)
+        // Skip for support extrusions
+        bool is_support = (path.role() == erSupportMaterial || path.role() == erSupportMaterialInterface || path.role() == erSupportTransition);
+        double cell_zhop = is_support ? 0.0 : FILAMENT_CONFIG(filament_cell_zhop_height);
+        bool is_cross_cell = false;
+        if (m_prev_island_layer == nullptr) {
+            // Very first island of the print — skip
+        } else if (m_prev_island_layer == m_layer) {
+            // Same layer: cross-cell if different island index
+            is_cross_cell = (m_prev_island_lslice_idx != m_current_island_lslice_idx);
+        } else {
+            // Different layer: cross-cell only if different object (not just layer transition of same object)
+            is_cross_cell = (m_prev_island_obj_copy != m_current_island_obj_copy);
+        }
+        bool cell_zhop_done = false;
 
-            // LUGOWARE: Cell Z-hop — diagonal XYZ move between different cells
-            double cell_zhop = FILAMENT_CONFIG(filament_cell_zhop_height);
-            bool is_cross_cell = (prev_island_idx >= 0 && prev_island_idx != m_current_island_lslice_idx);
+        if (is_cross_cell && cell_zhop > 0) {
+            // Try P-point for landing target, fallback to start point
+            std::optional<Point> landing_pt;
+            if (m_p_point_enabled && m_current_island_lslice_idx >= 0 &&
+                should_generate_p_point(*m_layer, m_current_island_lslice_idx))
+                landing_pt = compute_p_point(path.first_point(), m_layer->lslices[m_current_island_lslice_idx]);
 
-            if (is_cross_cell && cell_zhop > 0 && p1.has_value()) {
-                // Cell Z-hop: single diagonal XYZ move to P1 at elevated Z
-                // 1. Retract without z-hop
-                gcode += this->retract(false, false, LiftType::NormalLift, false, erNone, true); // skip_lift=true
-                // 2. Diagonal XYZ move to P1 at layer_z + cell_zhop_height
-                Vec2d p1_gcode = this->point_to_gcode(*p1);
-                double target_z = m_layer->print_z + cell_zhop;
-                gcode += m_writer.travel_to_xyz(Vec3d(p1_gcode.x(), p1_gcode.y(), target_z), "cell z-hop to P1");
-                this->set_last_pos(*p1);
-                // 3. Z down to layer
-                gcode += m_writer.unlift_to(m_layer->print_z);
-                gcode += "; cell z-hop P1\n";
-                // 4. Move from P1 to start point
+            Point target = landing_pt.has_value() ? *landing_pt : path.first_point();
+            Vec2d target_gcode = this->point_to_gcode(target);
+            double target_z = m_layer->print_z + cell_zhop;
+
+            // 1. Retract without z-hop
+            gcode += this->retract(false, false, LiftType::NormalLift, false, erNone, true);
+            // 2. Z-hop up (normal z-hop height)
+            double zhop_height = m_writer.config.z_hop.get_at(m_writer.filament()->id());
+            double zhop_z = m_layer->print_z + zhop_height;
+            if (zhop_height > 0)
+                gcode += m_writer.travel_to_z(zhop_z, "z-hop before cell z-hop");
+            // 3. Diagonal XYZ move to target at cell z-hop height
+            gcode += m_writer.travel_to_xyz(Vec3d(target_gcode.x(), target_gcode.y(), target_z), "cell z-hop");
+            this->set_last_pos(target);
+            // 4. Z down to z-hop height
+            if (zhop_height > 0)
+                gcode += m_writer.travel_to_z(zhop_z, "z-hop after cell z-hop");
+            // 5. Z down to layer
+            gcode += m_writer.unlift_to(m_layer->print_z);
+            gcode += "; cell z-hop\n";
+            // 4. If landed on P1, move to start point
+            if (landing_pt.has_value() && target != path.first_point()) {
                 if (m_config.reduce_crossing_wall && m_writer.is_current_position_clear()) {
                     Polyline p1_to_start = m_avoid_crossing_perimeters.travel_to(*this, path.first_point());
                     for (size_t i = 1; i < p1_to_start.size(); ++i)
@@ -6352,23 +6380,30 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
                     gcode += m_writer.travel_to_xy(this->point_to_gcode(path.first_point()), "P1 to start point");
                 }
                 this->set_last_pos(path.first_point());
-            } else if (p1.has_value()) {
-                // Normal P-point flow (within same cell or cell z-hop disabled)
-                // 1. Retract + z-hop (retract() handles wipe, retract, and lift)
+            }
+            cell_zhop_done = true;
+        }
+
+        // P-point normal flow (only if cell z-hop didn't handle it)
+        if (!cell_zhop_done && m_p_point_enabled &&
+            m_current_island_lslice_idx >= 0 && should_generate_p_point(*m_layer, m_current_island_lslice_idx)) {
+            auto p1 = compute_p_point(path.first_point(), m_layer->lslices[m_current_island_lslice_idx]);
+            if (p1.has_value()) {
+                // 1. Retract + z-hop
                 LiftType p1_lift_type = LiftType::NormalLift;
                 Polyline p1_travel{this->last_pos(), *p1};
                 this->needs_retraction(p1_travel, path.role(), p1_lift_type);
                 gcode += this->retract(false, false, p1_lift_type);
-                // 2. If not yet lifted, do lift now (eager because travel_to_xy won't trigger lazy lift)
+                // 2. Eager lift if needed
                 if (m_writer.get_zhop() == 0)
                     gcode += m_writer.eager_lift(p1_lift_type);
-                // 3. Travel to P1 XY (at z-hop height)
+                // 3. Travel to P1 XY
                 gcode += m_writer.travel_to_xy(this->point_to_gcode(*p1), "move to P1");
                 this->set_last_pos(*p1);
-                // 4. Z-hop down at P1 (use unlift_to with explicit layer Z to avoid layer-change Z bugs)
+                // 4. Z-hop down
                 gcode += m_writer.unlift_to(m_layer->print_z);
                 gcode += "; P1 point used\n";
-                // 5. Move from P1 to start point using avoid_crossing_perimeters if enabled
+                // 5. Move P1 to start
                 if (m_config.reduce_crossing_wall && m_writer.is_current_position_clear()) {
                     Polyline p1_to_start = m_avoid_crossing_perimeters.travel_to(*this, path.first_point());
                     for (size_t i = 1; i < p1_to_start.size(); ++i)

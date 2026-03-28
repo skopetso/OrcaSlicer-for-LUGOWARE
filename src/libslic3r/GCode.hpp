@@ -596,6 +596,10 @@ private:
     int                                 m_p_point_max_depth = 10;
     bool                                m_island_first_extrusion = false;
     int                                 m_current_island_lslice_idx = -1;
+    int                                 m_prev_island_lslice_idx = -1;
+    const Layer*                        m_prev_island_layer = nullptr;
+    std::pair<const PrintObject*, Point> m_current_island_obj_copy = {nullptr, Point(0,0)};
+    std::pair<const PrintObject*, Point> m_prev_island_obj_copy = {nullptr, Point(0,0)};
 
     std::unique_ptr<CoolingBuffer>      m_cooling_buffer;
     std::unique_ptr<SpiralVase>         m_spiral_vase;
