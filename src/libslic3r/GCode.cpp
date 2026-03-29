@@ -7041,6 +7041,9 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
                             // Restore original speed
                             double restored_F = speed * 60;
                             gcode += m_writer.set_speed(restored_F, "", comment);
+                            // LUGOWARE: Restore original temperature
+                            if (m_toolchange_slowdown_original_temp > 0)
+                                gcode += m_writer.set_temperature(m_toolchange_slowdown_original_temp, false);
                         }
                     }
                 }
@@ -7079,6 +7082,9 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
                                     m_toolchange_remaining_slowdown_dist = 0;
                                     double restored_F = speed * 60;
                                     gcode += m_writer.set_speed(restored_F, "", comment);
+                                    // LUGOWARE: Restore original temperature
+                                    if (m_toolchange_slowdown_original_temp > 0)
+                                        gcode += m_writer.set_temperature(m_toolchange_slowdown_original_temp, false);
                                 }
                             }
                         }
@@ -7113,6 +7119,9 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
                                 m_toolchange_remaining_slowdown_dist = 0;
                                 double restored_F = speed * 60;
                                 gcode += m_writer.set_speed(restored_F, "", comment);
+                                // LUGOWARE: Restore original temperature
+                                if (m_toolchange_slowdown_original_temp > 0)
+                                    gcode += m_writer.set_temperature(m_toolchange_slowdown_original_temp, false);
                             }
                         }
                         break;
@@ -7786,10 +7795,17 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
         {
             double slowdown_dist = m_config.filament_toolchange_slowdown_distance.get_at(new_filament_id);
             double slowdown_ratio = m_config.filament_toolchange_slowdown_speed_ratio.get_at(new_filament_id);
-            if (slowdown_dist <= 0) slowdown_dist = 60.;
+            if (slowdown_dist <= 0) slowdown_dist = 70.;
             if (slowdown_ratio <= 0) slowdown_ratio = 50.;
             m_toolchange_remaining_slowdown_dist = slowdown_dist;
             m_toolchange_slowdown_speed_ratio = slowdown_ratio / 100.0;
+            // LUGOWARE: Set temperature during slowdown (+additional_temp)
+            int additional_temp = (int)m_config.filament_toolchange_slowdown_additional_temp.get_at(new_filament_id);
+            int base_temp = this->on_first_layer()
+                ? m_config.nozzle_temperature_initial_layer.get_at(new_filament_id)
+                : m_config.nozzle_temperature.get_at(new_filament_id);
+            m_toolchange_slowdown_original_temp = base_temp;
+            gcode += m_writer.set_temperature(base_temp + additional_temp, false);
         }
 
         return gcode;
@@ -8038,10 +8054,17 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
     {
         double slowdown_dist = m_config.filament_toolchange_slowdown_distance.get_at(new_filament_id);
         double slowdown_ratio = m_config.filament_toolchange_slowdown_speed_ratio.get_at(new_filament_id);
-        if (slowdown_dist <= 0) slowdown_dist = 60.;
+        if (slowdown_dist <= 0) slowdown_dist = 70.;
         if (slowdown_ratio <= 0) slowdown_ratio = 50.;
         m_toolchange_remaining_slowdown_dist = slowdown_dist;
         m_toolchange_slowdown_speed_ratio = slowdown_ratio / 100.0;
+        // LUGOWARE: Set temperature during slowdown (+additional_temp)
+        int additional_temp = (int)m_config.filament_toolchange_slowdown_additional_temp.get_at(new_filament_id);
+        int base_temp = this->on_first_layer()
+            ? m_config.nozzle_temperature_initial_layer.get_at(new_filament_id)
+            : m_config.nozzle_temperature.get_at(new_filament_id);
+        m_toolchange_slowdown_original_temp = base_temp;
+        gcode += m_writer.set_temperature(base_temp + additional_temp, false);
     }
 
     // LUGOWARE: After toolchange, firmware already retracted by tc_retract.
@@ -8057,7 +8080,9 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
     }
 
     // Set the temperature if the wipe tower didn't (not needed for non-single extruder MM)
-    if (m_config.single_extruder_multi_material && !m_config.enable_prime_tower) {
+    // LUGOWARE: Skip if slowdown +5 temp is active — it will be restored when slowdown ends
+    if (m_config.single_extruder_multi_material && !m_config.enable_prime_tower
+        && m_toolchange_remaining_slowdown_dist <= 0) {
         int temp = (m_layer_index <= 0 ? m_config.nozzle_temperature_initial_layer.get_at(new_filament_id) :
                                          m_config.nozzle_temperature.get_at(new_filament_id));
 

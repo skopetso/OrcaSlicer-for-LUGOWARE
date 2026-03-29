@@ -1,46 +1,46 @@
 {
     "type": "filament",
     "instantiation": "true",
-    "setting_id": "LGFG04",
-    "filament_id": "LGFG04",
+    "setting_id": "LGFN05",
+    "filament_id": "LGFN05",
     "filament_vendor": ["Lugoware"],
     "filament_type": ["TPU"],
     "compatible_printers": [],
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_flow_ratio": [
+        "0.5"
+    ],
+    "filament_heating_duration": [
+        "7"
+    ],
+    "filament_max_volumetric_speed": [
+        "7"
+    ],
+    "filament_retraction_length": [
+        "2"
+    ],
+    "filament_settings_id": [
+        "1.75 Foaming TPU"
+    ],
+    "from": "system",
     "fan_max_speed": [
         "70"
     ],
     "fan_min_speed": [
         "70"
     ],
-    "filament_extruder_variant": [
-        "Direct Drive Standard"
-    ],
-    "filament_flow_ratio": [
-        "1.03"
-    ],
-    "filament_heating_duration": [
-        "7"
-    ],
-    "filament_max_volumetric_speed": [
-        "5"
-    ],
-    "filament_retraction_length": [
-        "1.2"
-    ],
-    "filament_settings_id": [
-        "1.75 Generic TPU 85A"
-    ],
-    "from": "system",
     "inherits": "fdm_filament_tpu",
-    "name": "1.75 Generic TPU 85A",
+    "name": "1.75 Foaming TPU",
     "nozzle_temperature": [
-        "245"
+        "215"
     ],
     "nozzle_temperature_initial_layer": [
-        "245"
+        "215"
     ],
     "overhang_fan_speed": [
         "70"
     ],
-    "version": "2.3.0.3"
+    "version": "2.3.2.51"
 }

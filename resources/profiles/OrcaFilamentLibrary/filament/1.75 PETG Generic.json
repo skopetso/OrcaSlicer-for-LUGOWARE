@@ -1,16 +1,13 @@
 {
     "type": "filament",
     "instantiation": "true",
-    "setting_id": "LGFG02",
-    "filament_id": "LGFG02",
+    "setting_id": "LGFN03",
+    "filament_id": "LGFN03",
     "filament_vendor": ["Lugoware"],
     "filament_type": ["PETG"],
     "compatible_printers": [],
-    "fan_max_speed": [
-        "70"
-    ],
-    "fan_min_speed": [
-        "70"
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
     ],
     "filament_cooling_final_speed": [
         "0"
@@ -20,9 +17,6 @@
     ],
     "filament_cooling_moves": [
         "0"
-    ],
-    "filament_extruder_variant": [
-        "Direct Drive Standard"
     ],
     "filament_flow_ratio": [
         "0.97"
@@ -37,10 +31,7 @@
         "0"
     ],
     "filament_settings_id": [
-        "1.75 Generic PETG"
-    ],
-    "filament_type": [
-        "PETG"
+        "1.75 PETG Generic"
     ],
     "filament_unloading_speed": [
         "35"
@@ -49,6 +40,12 @@
         "35"
     ],
     "from": "system",
+    "fan_max_speed": [
+        "70"
+    ],
+    "fan_min_speed": [
+        "70"
+    ],
     "full_fan_speed_layer": [
         "2"
     ],
@@ -59,12 +56,12 @@
         "60"
     ],
     "inherits": "fdm_filament_pet",
-    "name": "1.75 Generic PETG",
+    "name": "1.75 PETG Generic",
     "nozzle_temperature": [
-        "255"
+        "260"
     ],
     "nozzle_temperature_initial_layer": [
-        "255"
+        "260"
     ],
     "overhang_fan_speed": [
         "80"
@@ -81,5 +78,5 @@
     "slow_down_min_speed": [
         "20"
     ],
-    "version": "2.3.0.3"
+    "version": "2.3.2.51"
 }

@@ -2603,7 +2603,18 @@ void PrintConfigDef::init_fff_params()
     def->min = 0;
     def->max = 200;
     def->mode = comAdvanced;
-    def->set_default_value(new ConfigOptionFloats { 60. });
+    def->set_default_value(new ConfigOptionFloats { 70. });
+
+    def = this->add("filament_toolchange_slowdown_additional_temp", coFloats);
+    def->label = L("Slowdown additional temperature");
+    def->tooltip = L("Additional temperature applied during the toolchange slowdown distance. "
+                     "For example, if set to 5 and the filament temperature is 220, it will print at 225 during slowdown. "
+                     "Set to 0 to disable.");
+    def->sidetext = L("°C");
+    def->min = 0;
+    def->max = 30;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats { 5. });
 
     // LUGOWARE: Additional prime
     def = this->add("filament_additional_prime", coFloats);

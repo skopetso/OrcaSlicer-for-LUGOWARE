@@ -1,16 +1,13 @@
 {
     "type": "filament",
     "instantiation": "true",
-    "setting_id": "LGFG07",
-    "filament_id": "LGFG07",
+    "setting_id": "LGFN12",
+    "filament_id": "LGFN12",
     "filament_vendor": ["Lugoware"],
     "filament_type": ["TPU"],
     "compatible_printers": [],
-    "fan_max_speed": [
-        "70"
-    ],
-    "fan_min_speed": [
-        "70"
+    "filament_cell_zhop_height": [
+        "5"
     ],
     "filament_deretraction_speed": [
         "80"
@@ -25,19 +22,19 @@
         "Direct Drive Standard"
     ],
     "filament_flow_ratio": [
-        "0.8"
+        "0.82"
     ],
     "filament_heating_duration": [
         "7"
     ],
     "filament_max_volumetric_speed": [
-        "8"
+        "7"
     ],
     "filament_retract_when_changing_layer": [
         "0"
     ],
     "filament_retraction_length": [
-        "8"
+        "4"
     ],
     "filament_retraction_minimum_travel": [
         "13"
@@ -46,7 +43,7 @@
         "100"
     ],
     "filament_settings_id": [
-        "2.85 Generic Foaming TPU"
+        "2.85 Foaming TPU"
     ],
     "filament_start_gcode": [
         "; Filament gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=0.3"
@@ -58,8 +55,20 @@
         "Slope Lift"
     ],
     "from": "system",
+    "fan_max_speed": [
+        "70"
+    ],
+    "fan_min_speed": [
+        "70"
+    ],
     "inherits": "fdm_filament_tpu",
-    "name": "2.85 Generic Foaming TPU",
+    "name": "2.85 Foaming TPU",
+    "nozzle_temperature": [
+        "225"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "225"
+    ],
     "overhang_fan_speed": [
         "80"
     ],
@@ -75,5 +84,5 @@
     "temperature_vitrification": [
         "230"
     ],
-    "version": "2.3.0.3"
+    "version": "2.3.2.51"
 }

@@ -1,18 +1,27 @@
 {
     "type": "filament",
     "instantiation": "true",
-    "setting_id": "LGFL04",
-    "filament_id": "LGFL04",
+    "setting_id": "LGFN11",
+    "filament_id": "LGFN11",
     "filament_vendor": ["Lugoware"],
     "filament_type": ["Radiopaque"],
     "compatible_printers": [],
     "filament_extruder_variant": [
         "Direct Drive Standard"
     ],
+    "filament_flow_ratio": [
+        "0.95"
+    ],
     "filament_settings_id": [
         "1.75 PHANTOM-TISSUE"
     ],
     "from": "system",
+    "hot_plate_temp": [
+        "40"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "40"
+    ],
     "inherits": "fdm_filament_pet",
     "name": "1.75 PHANTOM-TISSUE",
     "version": "2.3.2.51"

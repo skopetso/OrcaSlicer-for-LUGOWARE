@@ -646,6 +646,7 @@ private:
     // LUGOWARE: Toolchange slowdown tracking
     double m_toolchange_remaining_slowdown_dist = 0.;
     double m_toolchange_slowdown_speed_ratio = 1.0;
+    int    m_toolchange_slowdown_original_temp = 0;
     bool   m_lugoware_first_tool_needs_tc_retract = false;
     bool m_need_change_layer_lift_z = false;
     int m_start_gcode_filament = -1;

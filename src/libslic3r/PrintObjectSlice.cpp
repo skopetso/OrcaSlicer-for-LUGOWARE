@@ -1182,15 +1182,7 @@ void PrintObject::slice_volumes()
         m_print->config().filament_diameter.size() > 1 && // BBS
         std::find_if(volumes.begin(), volumes.end(), [](const ModelVolume* v) { return !v->mmu_segmentation_facets.empty(); }) != volumes.end()) {
 
-        // If XY Size compensation is also enabled, notify the user that XY Size compensation
-        // would not be used because the object is multi-material painted.
-        if (m_config.xy_hole_compensation.value != 0.f || m_config.xy_contour_compensation.value != 0.f) {
-            this->active_step_add_warning(
-                PrintStateBase::WarningLevel::CRITICAL,
-                L("An object's XY size compensation will not be used because it is also color-painted.\nXY Size "
-                  "compensation cannot be combined with color-painting."));
-            BOOST_LOG_TRIVIAL(info) << "xy compensation will not work for object " << this->model_object()->name << " for multi filament.";
-        }
+        // LUGOWARE: XY compensation warning removed — we support XY compensation with color-painting
 
         BOOST_LOG_TRIVIAL(debug) << "Slicing volumes - MMU segmentation";
         apply_mm_segmentation(*this, [print]() { print->throw_if_canceled(); });

@@ -1,18 +1,30 @@
 {
     "type": "filament",
     "instantiation": "true",
-    "setting_id": "LGFL03",
-    "filament_id": "LGFL03",
+    "setting_id": "LGFN10",
+    "filament_id": "LGFN10",
     "filament_vendor": ["Lugoware"],
     "filament_type": ["Radiopaque"],
     "compatible_printers": [],
     "filament_extruder_variant": [
         "Direct Drive Standard"
     ],
+    "filament_flow_ratio": [
+        "0.95"
+    ],
+    "filament_max_volumetric_speed": [
+        "4"
+    ],
     "filament_settings_id": [
         "1.75 PHANTOM-SKIN"
     ],
     "from": "system",
+    "hot_plate_temp": [
+        "40"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "40"
+    ],
     "inherits": "fdm_filament_pet",
     "name": "1.75 PHANTOM-SKIN",
     "version": "2.3.2.51"

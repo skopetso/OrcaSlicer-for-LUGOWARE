@@ -1407,30 +1407,62 @@
         {
             "name": "COEX PLA+Silk @System",
             "sub_path": "filament/COEX/COEX PLA+Silk @System.json"
-        }
+        },
         {
             "name": "1.75 LPLA",
             "sub_path": "filament/1.75 LPLA.json"
         },
         {
-            "name": "1.75 LPET",
-            "sub_path": "filament/1.75 LPET.json"
+            "name": "1.75 PLA Generic",
+            "sub_path": "filament/1.75 PLA Generic.json"
+        },
+        {
+            "name": "1.75 PETG Generic",
+            "sub_path": "filament/1.75 PETG Generic.json"
+        },
+        {
+            "name": "1.75 PVA Generic",
+            "sub_path": "filament/1.75 PVA Generic.json"
+        },
+        {
+            "name": "1.75 Foaming TPU",
+            "sub_path": "filament/1.75 Foaming TPU.json"
+        },
+        {
+            "name": "1.75 TPU 85A Generic",
+            "sub_path": "filament/1.75 TPU 85A Generic.json"
+        },
+        {
+            "name": "1.75 TPU D Generic",
+            "sub_path": "filament/1.75 TPU D Generic.json"
         },
         {
             "name": "1.75 PHANTOM-BONE",
             "sub_path": "filament/1.75 PHANTOM-BONE.json"
         },
         {
-            "name": "1.75 PHANTOM-TISSUE",
-            "sub_path": "filament/1.75 PHANTOM-TISSUE.json"
+            "name": "1.75 PHANTOM-FAT",
+            "sub_path": "filament/1.75 PHANTOM-FAT.json"
         },
         {
             "name": "1.75 PHANTOM-SKIN",
             "sub_path": "filament/1.75 PHANTOM-SKIN.json"
         },
         {
-            "name": "1.75 PHANTOM-FAT",
-            "sub_path": "filament/1.75 PHANTOM-FAT.json"
+            "name": "1.75 PHANTOM-TISSUE",
+            "sub_path": "filament/1.75 PHANTOM-TISSUE.json"
+        },
+        {
+            "name": "2.85 Foaming TPU",
+            "sub_path": "filament/2.85 Foaming TPU.json"
+        },
+        {
+            "name": "2.85 TPU 60A",
+            "sub_path": "filament/2.85 TPU 60A.json"
+        },
+        {
+            "name": "2.85 TPU 70A",
+            "sub_path": "filament/2.85 TPU 70A.json"
         }
     ],
     "process_list": [],

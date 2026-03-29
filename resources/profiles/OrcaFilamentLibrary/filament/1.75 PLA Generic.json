@@ -1,16 +1,13 @@
 {
     "type": "filament",
     "instantiation": "true",
-    "setting_id": "LGFG01",
-    "filament_id": "LGFG01",
+    "setting_id": "LGFN02",
+    "filament_id": "LGFN02",
     "filament_vendor": ["Lugoware"],
     "filament_type": ["PLA"],
     "compatible_printers": [],
-    "fan_max_speed": [
-        "70"
-    ],
-    "fan_min_speed": [
-        "70"
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
     ],
     "filament_cooling_final_speed": [
         "0"
@@ -21,9 +18,6 @@
     "filament_cooling_moves": [
         "0"
     ],
-    "filament_extruder_variant": [
-        "Direct Drive Standard"
-    ],
     "filament_flow_ratio": [
         "0.96"
     ],
@@ -31,13 +25,13 @@
         "7"
     ],
     "filament_max_volumetric_speed": [
-        "25"
+        "13"
     ],
     "filament_minimal_purge_on_wipe_tower": [
         "0"
     ],
     "filament_settings_id": [
-        "1.75 Generic PLA"
+        "1.75 PLA Generic"
     ],
     "filament_unloading_speed": [
         "35"
@@ -46,6 +40,12 @@
         "35"
     ],
     "from": "system",
+    "fan_max_speed": [
+        "70"
+    ],
+    "fan_min_speed": [
+        "70"
+    ],
     "full_fan_speed_layer": [
         "2"
     ],
@@ -56,7 +56,7 @@
         "60"
     ],
     "inherits": "fdm_filament_pla",
-    "name": "1.75 Generic PLA",
+    "name": "1.75 PLA Generic",
     "nozzle_temperature": [
         "230"
     ],
@@ -78,5 +78,5 @@
     "slow_down_min_speed": [
         "20"
     ],
-    "version": "2.3.0.3"
+    "version": "2.3.2.51"
 }

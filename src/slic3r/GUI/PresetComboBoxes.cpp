@@ -1353,7 +1353,8 @@ void PlaterPresetComboBox::update()
     add_presets(nonsys_presets, selected_user_preset, L("User presets"), group_filament_presets_by);
     // BBS: move system to the end
     add_presets(system_presets, selected_system_preset, L("System presets"), _L("System"));
-    add_presets(uncompatible_presets, {}, L("Unsupported presets"), _L("Unsupported") + " ");
+    // LUGOWARE: hide unsupported presets
+    // add_presets(uncompatible_presets, {}, L("Unsupported presets"), _L("Unsupported") + " ");
 
     //BBS: remove unused pysical printer logic
     /*if (m_type == Preset::TYPE_PRINTER)

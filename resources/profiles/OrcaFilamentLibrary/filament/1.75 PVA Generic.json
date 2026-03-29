@@ -1,16 +1,13 @@
 {
     "type": "filament",
     "instantiation": "true",
-    "setting_id": "LGFG03",
-    "filament_id": "LGFG03",
+    "setting_id": "LGFN04",
+    "filament_id": "LGFN04",
     "filament_vendor": ["Lugoware"],
     "filament_type": ["PVA"],
     "compatible_printers": [],
-    "fan_max_speed": [
-        "70"
-    ],
-    "fan_min_speed": [
-        "70"
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
     ],
     "filament_cooling_final_speed": [
         "0"
@@ -21,9 +18,6 @@
     "filament_cooling_moves": [
         "0"
     ],
-    "filament_extruder_variant": [
-        "Direct Drive Standard"
-    ],
     "filament_flow_ratio": [
         "0.96"
     ],
@@ -31,16 +25,13 @@
         "7"
     ],
     "filament_max_volumetric_speed": [
-        "8"
+        "5"
     ],
     "filament_minimal_purge_on_wipe_tower": [
         "0"
     ],
     "filament_settings_id": [
-        "1.75 Generic PVA"
-    ],
-    "filament_type": [
-        "PVA"
+        "1.75 PVA Generic"
     ],
     "filament_unloading_speed": [
         "35"
@@ -49,6 +40,12 @@
         "35"
     ],
     "from": "system",
+    "fan_max_speed": [
+        "70"
+    ],
+    "fan_min_speed": [
+        "70"
+    ],
     "full_fan_speed_layer": [
         "2"
     ],
@@ -59,12 +56,12 @@
         "60"
     ],
     "inherits": "fdm_filament_pva",
-    "name": "1.75 Generic PVA",
+    "name": "1.75 PVA Generic",
     "nozzle_temperature": [
-        "210"
+        "215"
     ],
     "nozzle_temperature_initial_layer": [
-        "210"
+        "215"
     ],
     "overhang_fan_speed": [
         "80"
@@ -81,5 +78,5 @@
     "slow_down_min_speed": [
         "20"
     ],
-    "version": "2.3.0.3"
+    "version": "2.3.2.51"
 }

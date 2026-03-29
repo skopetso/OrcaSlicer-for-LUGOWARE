@@ -3961,6 +3961,7 @@ void TabFilament::build()
 
         optgroup->append_single_option_line("filament_toolchange_slowdown_speed_ratio");
         optgroup->append_single_option_line("filament_toolchange_slowdown_distance");
+        optgroup->append_single_option_line("filament_toolchange_slowdown_additional_temp");
         optgroup->append_single_option_line("filament_additional_prime");
         optgroup->append_single_option_line("filament_cell_zhop_height");
         optgroup->append_single_option_line("retract_restart_extra_toolchange");

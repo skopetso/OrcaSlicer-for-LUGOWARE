@@ -26,25 +26,20 @@ cmake --build build/arm64 --config RelWithDebInfo --target all --
 cmake --build build/arm64 --config RelWithDebInfo --target all --
 
 ```
-### Build test:
+### LUGOWARE 빌드 + 실행 (Windows)
+**레포 경로: `C:/Users/Huhn/OrcaSlicer-for-LUGOWARE`**
 
-**Always use this command to build the project when testing build issues on Windows.**
+**빌드:**
 ```bash
-cmake --build . --config %build_type% --target ALL_BUILD -- -m
+cd build && cmake --build . --config Release --target OrcaSlicer -- -m
 ```
-
-### Building on macOS
-**Always use this command to build the project when testing build issues on macOS.**
+**DLL 복사 + 실행:**
 ```bash
-cmake --build build/arm64 --config RelWithDebInfo --target all --
+taskkill //IM lugoware_orca.exe //F; sleep 2; cp build/src/Release/OrcaSlicer.dll build/OrcaSlicer/OrcaSlicer.dll; start "" "build\OrcaSlicer\lugoware_orca.exe"
 ```
-
-### Building on Linux
- **Always use this command to build the project when testing build issues on Linux.**
-```bash
-cmake --build build --config RelWithDebInfo --target all --
-
-```
+- 빌드 출력: `build/src/Release/OrcaSlicer.dll`
+- 실행 경로: `build/OrcaSlicer/lugoware_orca.exe` (DLL이 여기 있어야 로딩됨)
+- `build/src/Release/lugoware_orca.exe`에서 직접 실행하면 안 됨
 
 
 ### Build System
@@ -378,18 +373,72 @@ ctest --test-dir ./tests/sla_print/sla_print_tests
 - worktree 쓰지 마. 빌드 디렉토리가 메인에만 있음
 - 버전 변경은 기능 확정 후 마지막에 한 번만 (version.inc 바꾸면 거의 전체 리빌드)
 
-## 남은 숙제
+## C드라이브 vs D드라이브 차이점
+| 항목 | C드라이브 | D드라이브 |
+|------|----------|----------|
+| 레포 경로 | `C:\Users\Huhn\OrcaSlicer-for-LUGOWARE` | `D:\Claude\Slicer\OrcaSlicer-for-LUGOWARE` |
+| exe 이름 | `lugoware_orca.exe` | `orca-slicer.exe` |
+| git | 원본 (push/pull 여기서) | 복사본 (독립 git) |
+| deps | 자체 빌드 완료 | C에서 `OrcaSlicer_dep` 복사 |
+| build 상태 | 완전 동작 | 빌드 OK, 프리셋 일부 미해결 |
+| 코드 수정 | XY경고 제거, 콤마수정 적용 | XY경고 제거, Unsupported 숨기기, 콤마수정 적용 |
+
+**공유하는 것:**
+- `%APPDATA%\LugowareOrcaSlicer\` — 유저프리셋, 시스템프리셋 캐시, 설정, 로그 전부 공유
+- **동시 실행 금지** — 같은 AppData를 쓰므로 프리셋 충돌/덮어쓰기 발생
+
+**공유하지 않는 것:**
+- git 히스토리 (각각 독립)
+- build 디렉토리 (각각 독립)
+- `resources/profiles/` (각각 독립 — 코드 수정 시 양쪽 동기화 필요)
+- `build/OrcaSlicer/resources/` — install 시 복사되는 별도 복사본 (junction 아님, 수동 동기화 필요)
+
+**주의사항:**
+- D에서 코드 수정 후 C에도 반영하려면 git push/pull 또는 수동 복사
+- AppData system 폴더 날리면 양쪽 다 영향받음
+- 프리셋 파일 3곳 동기화 필수: `resources/`, `build/OrcaSlicer/resources/`, `AppData/system/`
+
+## D드라이브 이전 (Build 63 세션)
+- **레포 경로**: `D:/Claude/Slicer/OrcaSlicer-for-LUGOWARE` (C드라이브에서 복사)
+- **deps**: C드라이브 원본 `OrcaSlicer_dep` 폴더 복사 (OpenSSL/CURL deps 빌드 불가 — Perl 경로 문제)
+- **CMake 설정**: `CMAKE_PREFIX_PATH=D:/Claude/Slicer/OrcaSlicer-for-LUGOWARE/deps/build/OrcaSlicer_dep/usr/local`
+- **누락 DLL**: `libcrypto-3-x64.dll`, `libcurl.dll`, `libssl-3-x64.dll` — C드라이브 build에서 복사
+- **한글 경로 빌드 불가**: CGAL 빌드 실패 (STATUS_STACK_BUFFER_OVERRUN). 영문 경로 필수
+- **OrcaFilamentLibrary.json 콤마 누락 버그**: COEX PLA+Silk @System 뒤 콤마 빠짐 → 필라멘트 전체 로딩 실패. git에 원래 깨져있었음
+- **프리셋 3곳 동기화 필수**: resources/, build/OrcaSlicer/resources/, AppData/system/ — build/OrcaSlicer/resources는 install 시 별도 복사본 (junction 아님)
+- **AppData는 C드라이브 고정**: `%APPDATA%/LugowareOrcaSlicer/` — 앱 이름 하드코딩. D/C 동시 실행 금지
+- **참조폴더**: `D:\Claude\Appendix\slicer plus`
+
+## C-hop 컬러페인팅 분석 (Build 63 세션)
+- **C-hop v5 상태 유지** (커밋 c6e2e0d4)
+- **컬러페인팅에서 C-hop 미작동 원인**: 같은 lslice 안에서 색만 다른 영역 → cross-cell 판정 안 됨
+- **아일랜드 구조**: `ObjectByExtruder::Island`는 lslice 단위. 페인팅 영역은 같은 island의 `by_region`에 perimeter로 들어감
+- **contour-by-contour far_away 접근 시도 → 실패**: 같은 lslice 내 페인팅 영역은 bbox가 겹쳐서 far_away 감지 불가
+- **구조적 한계**: 같은 아일랜드 내 페인팅 영역을 구분할 방법 없음 → 보류
+
+## 코드 수정 현황 (미커밋)
+- **XY compensation 경고 제거**: `PrintObjectSlice.cpp` — 컬러페인팅+XY compensation 경고 메시지 삭제
+- **OrcaFilamentLibrary.json 콤마 수정**: COEX PLA+Silk @System 뒤 `},` 수정
+- **Unsupported 프리셋 숨기기**: `PresetComboBoxes.cpp` — D드라이브에만 적용, C드라이브 미적용
+
+## 남은 숙제 (필라멘트 시스템프리셋 재구성)
+- **필라멘트 시스템프리셋 교체**: `D:\Claude\참조\slicer plus\Preset\Filament\` 유저프리셋을 시스템프리셋으로 변환
+  - LUGOWARE.json 벤더 파일에 등록
+  - OrcaFilamentLibrary.json에서 기존 Lugoware 필라멘트 제거/교체
+  - inherits 참조 수정
 - **프린터 전환 크래시**: 다른 프린터→루고웨어 전환 후 소재 추가/삭제 시 튕김
-- **C-hop Setting Overrides 이동**: nullable 타입 호환성 문제로 Multimaterial에 유지 중. 해결하면 Setting Overrides > Retraction으로 이동
+- **C-hop Setting Overrides 이동**: nullable 타입 호환성 문제로 Multimaterial에 유지 중
 - **PrintFarm 서버 파일 배치**: node/ 폴더 NSIS 설치파일에 포함 필요
 - **버전 2.4.1301 확정**: 기능 확정 후 version.inc 업데이트
 - **Seam 경계 배치 재구현**: embedded_distance 대신 다른 extruder perimeter 거리 기반으로
-- **avoid_crossing_walls + 4번 툴 서포트 버그**: upstream 2.4.x 버그 추정, 서포트가 빔
+- **avoid_crossing_walls + 4번 툴 서포트 버그**: upstream 2.4.x 버그 추정
 - cell-by-cell 개선 (큰 아일랜드에서 벽→벽→벽→채움 패턴)
 - 멀티컬러 세팅 초기화 버그 (BBL↔LUGOWARE 전환 시)
 - Generic 필라멘트 드롭다운 alias 매칭 문제
 - Physical Printer IP 저장 문제
 - BBL 프린터 프린트팜 통합
 - P-point max depth 입력 UI 버그 (숫자 입력 이상)
-- NSIS 설치파일 로고 미확인 (어디가 안 바뀌었는지 확인 필요)
+- NSIS 설치파일 로고 미확인
 - 채움패턴 개발 (다음 작업)
+- **Unsupported 프리셋 숨기기**: C드라이브에도 적용 필요
+- **C-hop 컬러페인팅**: 구조적 한계로 보류
