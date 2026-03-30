@@ -7,6 +7,10 @@
 #include <wx/textctrl.h>
 #include <wx/stattext.h>
 #include <wx/radiobut.h>
+#include <wx/timer.h>
+#include <wx/progdlg.h>
+#include <atomic>
+#include <thread>
 #include "PrinterWebView.hpp"
 
 namespace Slic3r {
@@ -35,6 +39,9 @@ private:
     void on_client_connect();
     void start_server();
     void stop_server();
+    void copy_resources_to_appdata();
+    void poll_server_ready();
+    void on_poll_timer(wxTimerEvent&) { poll_server_ready(); }
 
     wxPanel*        m_setup_panel{nullptr};
     PrinterWebView* m_webview{nullptr};
@@ -42,6 +49,11 @@ private:
 
     wxTextCtrl*     m_server_url_input{nullptr};
     wxButton*       m_start_server_btn{nullptr};
+
+    wxProgressDialog* m_progress_dlg{nullptr};
+    wxTimer         m_poll_timer;
+    int             m_poll_count{0};
+    std::atomic<bool> m_copy_done{false};
 
     bool m_setup_done{false};
     bool m_server_running{false};

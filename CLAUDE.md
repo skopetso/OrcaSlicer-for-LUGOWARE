@@ -416,20 +416,65 @@ ctest --test-dir ./tests/sla_print/sla_print_tests
 - **contour-by-contour far_away 접근 시도 → 실패**: 같은 lslice 내 페인팅 영역은 bbox가 겹쳐서 far_away 감지 불가
 - **구조적 한계**: 같은 아일랜드 내 페인팅 영역을 구분할 방법 없음 → 보류
 
-## 코드 수정 현황 (미커밋)
-- **XY compensation 경고 제거**: `PrintObjectSlice.cpp` — 컬러페인팅+XY compensation 경고 메시지 삭제
-- **OrcaFilamentLibrary.json 콤마 수정**: COEX PLA+Silk @System 뒤 `},` 수정
-- **Unsupported 프리셋 숨기기**: `PresetComboBoxes.cpp` — D드라이브에만 적용, C드라이브 미적용
+### Build 64 (v2.4.1301)
 
-## 남은 숙제 (필라멘트 시스템프리셋 재구성)
-- **필라멘트 시스템프리셋 교체**: `D:\Claude\참조\slicer plus\Preset\Filament\` 유저프리셋을 시스템프리셋으로 변환
-  - LUGOWARE.json 벤더 파일에 등록
-  - OrcaFilamentLibrary.json에서 기존 Lugoware 필라멘트 제거/교체
-  - inherits 참조 수정
+#### 필라멘트 시스템프리셋 14종 교체
+- 기존 12종 삭제 (LPET, Generic PLA/PETG/PVA/TPU 85A/TPU 90-98A/TPU D, 2.85 Generic 4종, FOAM TPU @LUGOWARE)
+- 새 14종 등록 (OrcaFilamentLibrary, Lugoware 벤더):
+  - 1.75mm: LPLA, PLA Generic, PETG Generic, PVA Generic, Foaming TPU, TPU 85A Generic, TPU D Generic, PHANTOM-BONE/FAT/SKIN/TISSUE
+  - 2.85mm: Foaming TPU, TPU 60A, TPU 70A
+- 유저프리셋 오버라이드 값을 base에 머지, 전체 프린터 호환 (`compatible_printers: []`)
+- 유저프리셋 참조: `D:\Claude\Appendix\slicer plus\Preset\Filament\`
+
+#### 툴체인지 감속 온도 기능 (Slowdown additional temperature)
+- **감속 구간에서 설정온도 +N도로 출력, 감속 종료 시 원래 온도 복귀**
+- 설정: `filament_toolchange_slowdown_additional_temp` (coFloats, 기본 5, 0~30)
+- 위치: 필라멘트 > Multimaterial 탭 > Toolchange slowdown distance 바로 아래
+- 0이면 원래 온도 그대로 M104 출력 (스킵하지 않음)
+- 감속 기본 거리 60mm → 70mm로 변경
+- 관련 파일: PrintConfig.cpp/hpp, Preset.cpp, Tab.cpp, GCode.cpp, GCode.hpp
+- `m_toolchange_slowdown_original_temp` 멤버변수 (GCode.hpp)
+- 감속 초기화 2곳 + 감속 종료 3곳에서 온도 설정/복귀
+- `single_extruder_multi_material` 온도 설정이 감속 중일 때 스킵되도록 수정
+
+#### LUGOWARE 브랜딩 아이콘 교체
+- `D:\Claude\Appendix\slicer plus\image\icon\` → `resources/images/` 복사
+- OrcaSlicer.png/svg/ico, splash_logo.svg, OrcaSlicer_about.svg 등 12개 파일
+
+#### PrintFarm Setup UI 아이콘 개선
+- 이모지(Unicode) → SVG 비트맵으로 변경
+- `printfarm_setup.svg` 신규 생성 (서버 컴 1대 → 점선 → 클라이언트 컴 2대 연결 아이콘)
+- 카드 안 개별 아이콘 제거, 카드 위에 하나의 아이콘 배치 (155px)
+- 카드 높이 320→250으로 조정
+
+#### PrintFarm 서버 자동 배포 (진행중)
+- `on_start_server()`에 resources/printfarm → AppData 복사 로직 추가
+  - xcopy로 전체 복사, data.db/.env 백업 후 복원
+  - .env 자동 생성 (JWT_SECRET, PORT=46259, STORAGE_PATH)
+  - STORAGE_PATH 기본값: `%APPDATA%\LugowareOrcaSlicer\printfarm\storage`
+- 오르카 시작 시 기존 node.exe 자동 종료 (`stop_server()` in 생성자)
+- 서버 health check 폴링 (0.5초 간격, 최대 15초) — Admin0 register API로 확인
+- **현재 문제**: xcopy 복사 실패 (원인 미파악), UI 동기 대기로 화면 얼어붙음
+- **TODO**: 타이머 기반 비동기 방식으로 전환 (wxTimer health check)
+
+### 대화 스타일
+- 반말로 대화. 짧게 답변
+- "행님"으로 호칭
+- 빌드 전 변경사항 브리핑 후 컨펌
+- 빌드/롤백 완료 = DLL 복사 + 재시작 + 확인까지
+- git index.lock 에러 시 `rm .git/index.lock`
+- 메모리 저장 시 알리지 말고 조용히
+- /clear 전에 반드시 메모리 저장
+- worktree 쓰지 마. 빌드 디렉토리가 메인에만 있음
+- 버전 변경은 기능 확정 후 마지막에 한 번만 (version.inc 바꾸면 거의 전체 리빌드)
+- 플랜모드 쓰지 마. 채팅에 직접 써
+- 이모지 사용 금지
+
+## 남은 숙제
+- **PrintFarm 서버 배포 완성**: xcopy 실패 원인 해결, 비동기 로딩 전환
 - **프린터 전환 크래시**: 다른 프린터→루고웨어 전환 후 소재 추가/삭제 시 튕김
 - **C-hop Setting Overrides 이동**: nullable 타입 호환성 문제로 Multimaterial에 유지 중
 - **PrintFarm 서버 파일 배치**: node/ 폴더 NSIS 설치파일에 포함 필요
-- **버전 2.4.1301 확정**: 기능 확정 후 version.inc 업데이트
 - **Seam 경계 배치 재구현**: embedded_distance 대신 다른 extruder perimeter 거리 기반으로
 - **avoid_crossing_walls + 4번 툴 서포트 버그**: upstream 2.4.x 버그 추정
 - cell-by-cell 개선 (큰 아일랜드에서 벽→벽→벽→채움 패턴)
