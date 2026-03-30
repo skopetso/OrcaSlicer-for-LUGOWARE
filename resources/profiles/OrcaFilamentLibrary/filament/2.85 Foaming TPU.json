@@ -3,8 +3,12 @@
     "instantiation": "true",
     "setting_id": "LGFN12",
     "filament_id": "LGFN12",
-    "filament_vendor": ["Lugoware"],
-    "filament_type": ["TPU"],
+    "filament_vendor": [
+        "Lugoware"
+    ],
+    "filament_type": [
+        "TPU"
+    ],
     "compatible_printers": [],
     "filament_cell_zhop_height": [
         "5"
@@ -25,7 +29,7 @@
         "0.82"
     ],
     "filament_heating_duration": [
-        "7"
+        "0"
     ],
     "filament_max_volumetric_speed": [
         "7"

@@ -3,8 +3,12 @@
     "instantiation": "true",
     "setting_id": "LGFN14",
     "filament_id": "LGFN14",
-    "filament_vendor": ["Lugoware"],
-    "filament_type": ["TPU"],
+    "filament_vendor": [
+        "Lugoware"
+    ],
+    "filament_type": [
+        "TPU"
+    ],
     "compatible_printers": [],
     "fan_cooling_layer_time": [
         "2"
@@ -28,7 +32,7 @@
         "1.05"
     ],
     "filament_heating_duration": [
-        "7"
+        "0"
     ],
     "filament_max_volumetric_speed": [
         "8"

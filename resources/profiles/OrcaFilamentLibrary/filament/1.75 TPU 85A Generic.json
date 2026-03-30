@@ -3,8 +3,12 @@
     "instantiation": "true",
     "setting_id": "LGFN06",
     "filament_id": "LGFN06",
-    "filament_vendor": ["Lugoware"],
-    "filament_type": ["TPU"],
+    "filament_vendor": [
+        "Lugoware"
+    ],
+    "filament_type": [
+        "TPU"
+    ],
     "compatible_printers": [],
     "filament_extruder_variant": [
         "Direct Drive Standard"
@@ -13,7 +17,7 @@
         "1.03"
     ],
     "filament_heating_duration": [
-        "7"
+        "0"
     ],
     "filament_max_volumetric_speed": [
         "6"

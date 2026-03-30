@@ -3,8 +3,12 @@
     "instantiation": "true",
     "setting_id": "LGFN04",
     "filament_id": "LGFN04",
-    "filament_vendor": ["Lugoware"],
-    "filament_type": ["PVA"],
+    "filament_vendor": [
+        "Lugoware"
+    ],
+    "filament_type": [
+        "PVA"
+    ],
     "compatible_printers": [],
     "filament_extruder_variant": [
         "Direct Drive Standard"
@@ -22,7 +26,7 @@
         "0.96"
     ],
     "filament_heating_duration": [
-        "7"
+        "0"
     ],
     "filament_max_volumetric_speed": [
         "5"

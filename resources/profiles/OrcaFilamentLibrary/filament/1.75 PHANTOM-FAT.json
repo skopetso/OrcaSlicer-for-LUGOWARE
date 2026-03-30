@@ -16,7 +16,7 @@
         "0.82"
     ],
     "filament_heating_duration": [
-        "10"
+        "0"
     ],
     "filament_max_volumetric_speed": [
         "4"
@@ -34,10 +34,10 @@
         "1.75 PHANTOM-FAT"
     ],
     "filament_toolchange_slowdown_distance": [
-        "80"
+        "70"
     ],
     "filament_toolchange_slowdown_speed_ratio": [
-        "35"
+        "50"
     ],
     "from": "system",
     "hot_plate_temp": [

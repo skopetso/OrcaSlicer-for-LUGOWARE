@@ -31,7 +31,7 @@
         "1.15"
     ],
     "filament_heating_duration": [
-        "7"
+        "0"
     ],
     "filament_max_volumetric_speed": [
         "7"
@@ -58,7 +58,7 @@
         "\n"
     ],
     "filament_toolchange_slowdown_distance": [
-        "80"
+        "70"
     ],
     "from": "system",
     "inherits": "fdm_filament_tpu",

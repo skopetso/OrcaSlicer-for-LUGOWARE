@@ -22,7 +22,7 @@
         "1.75 PHANTOM-BONE"
     ],
     "filament_toolchange_slowdown_distance": [
-        "40"
+        "70"
     ],
     "from": "system",
     "hot_plate_temp": [
