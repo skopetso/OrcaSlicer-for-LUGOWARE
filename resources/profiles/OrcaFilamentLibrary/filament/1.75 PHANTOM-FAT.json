@@ -3,8 +3,12 @@
     "instantiation": "true",
     "setting_id": "LGFN09",
     "filament_id": "LGFN09",
-    "filament_vendor": ["Lugoware"],
-    "filament_type": ["Radiopaque"],
+    "filament_vendor": [
+        "Lugoware"
+    ],
+    "filament_type": [
+        "Radiopaque"
+    ],
     "compatible_printers": [],
     "filament_additional_prime": [
         "4"
@@ -16,7 +20,7 @@
         "0.82"
     ],
     "filament_heating_duration": [
-        "0"
+        "7"
     ],
     "filament_max_volumetric_speed": [
         "4"

@@ -17,7 +17,7 @@
         "0.5"
     ],
     "filament_heating_duration": [
-        "0"
+        "7"
     ],
     "filament_max_volumetric_speed": [
         "7"
@@ -46,5 +46,8 @@
     "overhang_fan_speed": [
         "70"
     ],
-    "version": "2.3.2.51"
+    "version": "2.3.2.51",
+    "filament_toolchange_slowdown_distance": [
+        "70"
+    ]
 }

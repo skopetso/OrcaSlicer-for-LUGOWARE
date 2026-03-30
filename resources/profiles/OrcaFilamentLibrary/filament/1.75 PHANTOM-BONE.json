@@ -3,8 +3,12 @@
     "instantiation": "true",
     "setting_id": "LGFN08",
     "filament_id": "LGFN08",
-    "filament_vendor": ["Lugoware"],
-    "filament_type": ["Radiopaque"],
+    "filament_vendor": [
+        "Lugoware"
+    ],
+    "filament_type": [
+        "Radiopaque"
+    ],
     "compatible_printers": [],
     "filament_additional_prime": [
         "2"
@@ -33,5 +37,8 @@
     ],
     "inherits": "fdm_filament_pet",
     "name": "1.75 PHANTOM-BONE",
-    "version": "2.3.2.51"
+    "version": "2.3.2.51",
+    "filament_heating_duration": [
+        "7"
+    ]
 }
