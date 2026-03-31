@@ -7745,6 +7745,15 @@ void PrintConfigDef::handle_legacy(t_config_option_key &opt_key, std::string &va
         value = "tree(auto)";
     } else if (opt_key == "support_base_pattern" && value == "none") {
         value = "hollow";
+    } else if (opt_key == "xy_hole_compensation_layer_step" ||
+               opt_key == "xy_hole_compensation_layer_step_thickness" ||
+               opt_key == "xy_hole_compensation_layer_step_start_on" ||
+               opt_key == "xy_contour_compensation_layer_step" ||
+               opt_key == "xy_contour_compensation_layer_step_thickness" ||
+               opt_key == "xy_contour_compensation_layer_step_start_on") {
+        // LUGOWARE: Ignore compensation step settings from 3MF to prevent
+        // multicolor region clipping issues when step != 1.
+        opt_key = "";
     } else if (opt_key == "different_settings_to_system") {
         std::string copy_value = value;
         copy_value.erase(std::remove(copy_value.begin(), copy_value.end(), '\"'), copy_value.end()); // remove '"' in string
