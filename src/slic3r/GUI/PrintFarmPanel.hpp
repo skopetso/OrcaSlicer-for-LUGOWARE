@@ -46,6 +46,9 @@ private:
     wxPanel*        m_setup_panel{nullptr};
     PrinterWebView* m_webview{nullptr};
     wxBoxSizer*     m_main_sizer{nullptr};
+    wxPanel*        m_server_toolbar{nullptr};
+    wxButton*       m_restart_btn{nullptr};
+    wxButton*       m_stop_btn{nullptr};
 
     wxTextCtrl*     m_server_url_input{nullptr};
     wxButton*       m_start_server_btn{nullptr};

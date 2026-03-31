@@ -36,6 +36,53 @@ PrintFarmPanel::PrintFarmPanel(wxWindow* parent)
     // Create setup panel
     build_setup_page();
 
+    // Create server toolbar (shown when server is running)
+    m_server_toolbar = new wxPanel(this, wxID_ANY);
+    m_server_toolbar->SetBackgroundColour(wxColour(30, 33, 40));
+    auto* tb_sizer = new wxBoxSizer(wxHORIZONTAL);
+    tb_sizer->AddStretchSpacer();
+    wxFont btn_font_sm = wxFont(9, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
+    m_restart_btn = new wxButton(m_server_toolbar, wxID_ANY, _L("Restart Server"), wxDefaultPosition, wxSize(120, 30));
+    m_restart_btn->SetBackgroundColour(wxColour(0, 150, 136));
+    m_restart_btn->SetForegroundColour(*wxWHITE);
+    m_restart_btn->SetFont(btn_font_sm);
+    m_stop_btn = new wxButton(m_server_toolbar, wxID_ANY, _L("Stop Server"), wxDefaultPosition, wxSize(120, 30));
+    m_stop_btn->SetBackgroundColour(wxColour(180, 60, 60));
+    m_stop_btn->SetForegroundColour(*wxWHITE);
+    m_stop_btn->SetFont(btn_font_sm);
+    tb_sizer->Add(m_restart_btn, 0, wxALL, 4);
+    tb_sizer->Add(m_stop_btn, 0, wxALL, 4);
+    m_server_toolbar->SetSizer(tb_sizer);
+    m_main_sizer->Add(m_server_toolbar, 0, wxEXPAND);
+    m_server_toolbar->Hide();
+
+    m_restart_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+        wxBusyCursor wait;
+        auto* dlg = new wxProgressDialog(_L("PrintFarm"), _L("Restarting server..."),
+            100, this, wxPD_APP_MODAL | wxPD_AUTO_HIDE | wxPD_SMOOTH);
+        dlg->Pulse(_L("Restarting server..."));
+        stop_server();
+        m_server_running = false;
+        wxMilliSleep(1000);
+        copy_resources_to_appdata();
+        dlg->Pulse(_L("Restarting server..."));
+        start_server();
+        m_server_running = true;
+        wxMilliSleep(3000);
+        dlg->Destroy();
+        std::string url = wxGetApp().app_config->get("printfarm_url");
+        if (url.empty()) url = "http://localhost:46259";
+        load_url(wxString(url));
+    });
+    m_stop_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+        stop_server();
+        m_server_running = false;
+        m_server_toolbar->Hide();
+        show_setup();
+        wxGetApp().app_config->set("printfarm_mode", "");
+        update_tab_label();
+    });
+
     // Create webview
     m_webview = new PrinterWebView(this);
     m_main_sizer->Add(m_webview, 1, wxEXPAND);
@@ -47,18 +94,44 @@ PrintFarmPanel::PrintFarmPanel(wxWindow* parent)
     auto* config = wxGetApp().app_config;
     std::string mode = config->get("printfarm_mode");
 
-    // Kill any leftover node.exe from previous crash
-    stop_server();
+    if (mode == "server") {
+        m_setup_done = true;
+        std::string url = config->get("printfarm_url");
+        if (url.empty()) url = "http://localhost:46259";
 
-    if (mode == "server" || mode == "client") {
+        // Health check: is server already running?
+        bool server_alive = false;
+        try {
+            Slic3r::Http::get("http://localhost:46259/api/health")
+                .timeout_connect(2)
+                .timeout_max(3)
+                .on_complete([&](std::string, unsigned status) {
+                    if (status == 200) server_alive = true;
+                })
+                .on_error([](std::string, std::string, unsigned) {})
+                .perform_sync();
+        } catch (...) {}
+
+        if (server_alive) {
+            // Server already running, just connect
+            m_server_running = true;
+            show_webview();
+            load_url(wxString(url));
+        } else {
+            // Server not running, start it
+            start_server();
+            m_server_running = true;
+            show_webview();
+            // Delay load to give server time to start
+            wxMilliSleep(3000);
+            load_url(wxString(url));
+        }
+        update_tab_label();
+    } else if (mode == "client") {
         m_setup_done = true;
         std::string url = config->get("printfarm_url");
         if (!url.empty()) {
             show_webview();
-            if (mode == "server") {
-                start_server();
-                m_server_running = true;
-            }
             load_url(wxString(url));
         } else {
             show_setup();
@@ -174,19 +247,19 @@ void PrintFarmPanel::build_setup_page()
 
     // --- Event bindings ---
     m_start_server_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
-        wxMessageBox(_L("PrintFarm is currently under preparation.\nIt will be available in a future update."),
-            _L("PrintFarm"), wxOK | wxICON_INFORMATION, this);
+        on_start_server();
     });
 
     connect_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
-        wxMessageBox(_L("PrintFarm is currently under preparation.\nIt will be available in a future update."),
-            _L("PrintFarm"), wxOK | wxICON_INFORMATION, this);
+        on_client_connect();
     });
 }
 
 void PrintFarmPanel::show_setup()
 {
     m_webview->Hide();
+    if (m_server_toolbar)
+        m_server_toolbar->Hide();
     m_setup_panel->Show();
     m_main_sizer->Layout();
 }
@@ -195,6 +268,8 @@ void PrintFarmPanel::show_webview()
 {
     m_setup_panel->Hide();
     m_webview->Show();
+    if (m_server_running && m_server_toolbar)
+        m_server_toolbar->Show();
     m_main_sizer->Layout();
 }
 
@@ -205,11 +280,11 @@ void PrintFarmPanel::copy_resources_to_appdata()
 #ifdef _WIN32
     const char* appdata = std::getenv("APPDATA");
     if (appdata)
-        appdata_dir = boost::filesystem::path(appdata) / "LugowareOrcaSlicer" / "printfarm";
+        appdata_dir = boost::filesystem::path(appdata) / "printfarm";
 #else
     const char* home = std::getenv("HOME");
     if (home)
-        appdata_dir = boost::filesystem::path(home) / ".LugowareOrcaSlicer" / "printfarm";
+        appdata_dir = boost::filesystem::path(home) / ".printfarm";
 #endif
     if (appdata_dir.empty()) {
         BOOST_LOG_TRIVIAL(error) << "PrintFarm: Cannot determine AppData path";
@@ -422,28 +497,32 @@ void PrintFarmPanel::start_server()
 #ifdef _WIN32
         const char* appdata = std::getenv("APPDATA");
         if (appdata) {
-            appdata_dir = boost::filesystem::path(appdata) / "LugowareOrcaSlicer" / "printfarm";
+            appdata_dir = boost::filesystem::path(appdata) / "printfarm";
         } else {
             BOOST_LOG_TRIVIAL(error) << "PrintFarm: APPDATA not found for server start";
             return;
         }
 
+        boost::filesystem::path vbs_path = appdata_dir / "start-hidden.vbs";
         boost::filesystem::path node_exe = appdata_dir / "node" / "node.exe";
         boost::filesystem::path index_js = appdata_dir / "server" / "src" / "index.js";
 
-        if (boost::filesystem::exists(node_exe) && boost::filesystem::exists(index_js)) {
-            wxString command = wxString::Format("\"%s\" \"%s\"", node_exe.string(), index_js.string());
+        if (boost::filesystem::exists(vbs_path)) {
+            wxString command = wxString::Format("wscript \"%s\"", vbs_path.string());
             BOOST_LOG_TRIVIAL(info) << "PrintFarm: Starting server with: " << command.ToStdString();
+            wxExecute(command, wxEXEC_ASYNC);
+        } else if (boost::filesystem::exists(node_exe) && boost::filesystem::exists(index_js)) {
+            wxString command = wxString::Format("\"%s\" \"%s\"", node_exe.string(), index_js.string());
+            BOOST_LOG_TRIVIAL(info) << "PrintFarm: Starting server (direct) with: " << command.ToStdString();
             wxExecute(command, wxEXEC_ASYNC | wxEXEC_HIDE_CONSOLE);
         } else {
-            BOOST_LOG_TRIVIAL(warning) << "PrintFarm: Server files not found. node="
-                << node_exe.string() << " index=" << index_js.string();
+            BOOST_LOG_TRIVIAL(warning) << "PrintFarm: Server files not found in " << appdata_dir.string();
         }
 
 #else
         const char* home = std::getenv("HOME");
         if (home) {
-            appdata_dir = boost::filesystem::path(home) / ".LugowareOrcaSlicer" / "printfarm";
+            appdata_dir = boost::filesystem::path(home) / ".printfarm";
         } else {
             BOOST_LOG_TRIVIAL(error) << "PrintFarm: HOME not found for server start";
             return;
@@ -526,11 +605,9 @@ void PrintFarmPanel::stop_server()
 
 void PrintFarmPanel::shutdown_server()
 {
-    if (m_server_running) {
-        stop_server();
-        m_server_running = false;
-        BOOST_LOG_TRIVIAL(info) << "PrintFarm: Server shutdown on app exit";
-    }
+    // Server keeps running after Orca exits (independent process).
+    // Only "Stop Server" button explicitly kills it.
+    BOOST_LOG_TRIVIAL(info) << "PrintFarm: Orca closing, server left running";
 }
 
 void PrintFarmPanel::update_tab_label()
