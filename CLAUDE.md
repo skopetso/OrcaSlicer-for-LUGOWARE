@@ -508,7 +508,23 @@ ctest --test-dir ./tests/sla_print/sla_print_tests
 - 접근법: 턴 포인트를 line_spacing 그리드에 스냅
 - 관련 코드: `traverse_graph_generate_polylines()` 라인 1403+, `slice_region_by_vertical_lines()`
 
+### Build 69 (v2.4.1301)
+
+#### Lugolinear 턴 포인트 외벽 정렬
+- **인필 턴을 외벽에서 수행**: inner offset을 outer offset에 맞춤 (`snap_turns_to_grid` 파라미터)
+- **0도/90도 vline 그리드 정렬**: reference point를 원점 고정으로 양 방향 그리드 일치
+- Lugolinear에서만 활성화 (`fill_surface_by_lines`에 `snap_turns_to_grid=true` 전달)
+- 관련 파일: FillRectilinear.cpp/hpp
+
+#### XY compensation 외벽 강제 생성
+- XY compensation 활성 레이어에서 `wall_loops=0`이어도 **외벽 1개 강제 생성**
+- `should_apply_step()` 로직을 PerimeterGenerator (classic/arachne) 양쪽에 추가
+- geometry compensation을 **모든 레이어에 적용** (step≠0이면 항상) — 인필 턴 위치 전 레이어 일치
+- step은 외벽 생성 여부만 제어 (PrintObjectSlice.cpp에서 step 분기 제거)
+- 관련 파일: PerimeterGenerator.cpp, PrintObjectSlice.cpp
+
 ## 남은 숙제
+- **인접 객체 벽 연결**: 맞닿는 객체의 벽을 분리하지 않고 연속 벽으로 생성
 - **PrintFarm 서버 배포 완성**: xcopy 실패 원인 해결, 비동기 로딩 전환
 - **PrintFarm 서버 파일 배치**: node/ 폴더 NSIS 설치파일에 포함 필요
 - **Seam 경계 배치 재구현**: embedded_distance 대신 다른 extruder perimeter 거리 기반으로
