@@ -2554,8 +2554,7 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("filament_heating_duration", coFloats);
     def->label = L("Heating duration");
-    def->tooltip = L("Time to wait for the filament to heat up during tool change. "
-                   "This value can be used in G-code as {filament_heating_duration}.");
+    def->tooltip = L("");
     def->sidetext = L("s");
     def->min = 0;
     def->mode = comAdvanced;
@@ -2588,8 +2587,7 @@ void PrintConfigDef::init_fff_params()
     // LUGOWARE: Toolchange slowdown
     def = this->add("filament_toolchange_slowdown_speed_ratio", coFloats);
     def->label = L("Toolchange slowdown speed (%)");
-    def->tooltip = L("Speed ratio applied after a tool change. 50 means 50% of normal speed. "
-                     "This helps the new filament adhere properly after switching.");
+    def->tooltip = L("");
     def->sidetext = "%";
     def->min = 10;
     def->max = 100;
@@ -2598,8 +2596,7 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("filament_toolchange_slowdown_distance", coFloats);
     def->label = L("Toolchange slowdown distance");
-    def->tooltip = L("Distance to travel at reduced speed after a tool change. "
-                     "After this distance, speed returns to normal.");
+    def->tooltip = L("");
     def->sidetext = L("mm");
     def->min = 0;
     def->max = 200;
@@ -2608,9 +2605,7 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("filament_toolchange_slowdown_additional_temp", coFloats);
     def->label = L("Slowdown additional temperature");
-    def->tooltip = L("Additional temperature applied during the toolchange slowdown distance. "
-                     "For example, if set to 5 and the filament temperature is 220, it will print at 225 during slowdown. "
-                     "Set to 0 to disable.");
+    def->tooltip = L("");
     def->sidetext = L("°C");
     def->min = 0;
     def->max = 30;
@@ -2620,8 +2615,7 @@ void PrintConfigDef::init_fff_params()
     // LUGOWARE: Additional prime
     def = this->add("filament_additional_prime", coFloats);
     def->label = L("Additional prime amount");
-    def->tooltip = L("Extra prime amount after tool change. This value is passed to Klipper "
-                     "as A_P parameter in the CHANGE_TOOL macro.");
+    def->tooltip = L("");
     def->sidetext = L("mm");
     def->min = 0;
     def->max = 50;
@@ -2631,9 +2625,7 @@ void PrintConfigDef::init_fff_params()
     // LUGOWARE: C-hop
     def = this->add("filament_cell_zhop_height", coFloats);
     def->label = L("C-hop height");
-    def->tooltip = L("When traveling between different cells (islands), perform a single diagonal "
-                     "XYZ move instead of separate Z-up, XY-travel, Z-down moves. "
-                     "Set to 0 to disable. Within the same cell, normal Z-hop is used.");
+    def->tooltip = L("");
     def->sidetext = L("mm");
     def->min = 0;
     def->max = 50;
@@ -6758,20 +6750,14 @@ void PrintConfigDef::init_fff_params()
     def = this->add("p_point_generation", coBool);
     def->label = L("P-point generation");
     def->category = L("Others");
-    def->tooltip = L("Generate P-points (pre-move and post-move points) for each island during printing. "
-                     "Before starting extrusion on an island, the head moves to P1 (a point inside the internal fill area, "
-                     "farthest from outer walls). After finishing, it moves to P2 before lifting Z. "
-                     "This helps achieve cleaner start and end points by moving within internal areas. "
-                     "Movement order: P1 -> Z-hop down -> Start -> Print -> End -> P2 -> Z-hop up -> Next island.");
+    def->tooltip = L("");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("p_point_max_depth", coInt);
     def->label = L("P-point max depth");
     def->category = L("Others");
-    def->tooltip = L("Maximum depth (mm) for virtual wall offset when generating P-points. "
-                     "Higher values place P-points deeper inside the model, farther from outer walls. "
-                     "The algorithm tries from this depth down to 1mm, using the deepest successful offset.");
+    def->tooltip = L("");
     def->sidetext = L("mm");
     def->min = 2;
     def->max = 50;
