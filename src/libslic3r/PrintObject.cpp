@@ -643,6 +643,28 @@ void PrintObject::prepare_infill()
     this->combine_infill();
     m_print->throw_if_canceled();
 
+    // LUGOWARE: Convert all solid infill to sparse when disable_solid_infill is enabled
+    for (size_t region_id = 0; region_id < this->num_printing_regions(); ++region_id) {
+        const PrintRegionConfig &region_config = this->printing_region(region_id).config();
+        if (region_config.disable_solid_infill.value) {
+            for (Layer *layer : m_layers) {
+                LayerRegion *layerm = layer->m_regions[region_id];
+                for (Surface &surface : layerm->fill_surfaces.surfaces) {
+                    if (surface.surface_type == stTop ||
+                        surface.surface_type == stBottom ||
+                        surface.surface_type == stBottomBridge ||
+                        surface.surface_type == stInternalSolid ||
+                        surface.surface_type == stInternalBridge ||
+                        surface.surface_type == stSecondInternalBridge ||
+                        surface.surface_type == stInternalAfterExternalBridge) {
+                        surface.surface_type = stInternal;
+                    }
+                }
+            }
+        }
+    }
+    m_print->throw_if_canceled();
+
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
     for (size_t region_id = 0; region_id < this->num_printing_regions(); ++ region_id) {
         for (const Layer *layer : m_layers) {

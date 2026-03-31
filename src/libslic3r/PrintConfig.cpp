@@ -225,6 +225,7 @@ static t_config_enum_values s_keys_map_InfillPattern {
     { "tpmsd", ipTpmsD },
     { "tpmsfk", ipTpmsFK },
     { "gyroid", ipGyroid },
+    { "lugolinear", ipLugolinear },
     { "concentric", ipConcentric },
     { "hilbertcurve", ipHilbertCurve },
     { "archimedeanchords", ipArchimedeanChords },
@@ -2842,6 +2843,25 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(45));
 
+    def           = this->add("lugolinear_step_layers", coInt);
+    def->label    = L("Lugolinear step layers");
+    def->category = L("Strength");
+    def->tooltip  = L("Number of layers per phase for Lugolinear infill grid transition. "
+                      "0 means no transitions (grid stays fixed). "
+                      "For example, 5 means the grid alternates between fixed and natural every 5 layers.");
+    def->min      = 0;
+    def->max      = 100;
+    def->mode     = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(0));
+
+    def = this->add("disable_solid_infill", coBool);
+    def->label = L("Disable solid infill");
+    def->category = L("Strength");
+    def->tooltip = L("Convert all solid infill (top, bottom, bridge, internal solid) to sparse infill. "
+                     "Useful for flexible or foam structures where only sparse infill is desired.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("sparse_infill_density", coPercent);
     def->label = L("Sparse infill density");
     def->category = L("Strength");
@@ -2903,6 +2923,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_values.push_back("tpmsd");
     def->enum_values.push_back("tpmsfk");
     def->enum_values.push_back("gyroid");
+    def->enum_values.push_back("lugolinear");
     def->enum_values.push_back("concentric");
     def->enum_values.push_back("hilbertcurve");
     def->enum_values.push_back("archimedeanchords");
@@ -2929,6 +2950,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels.push_back(L("TPMS-D"));
     def->enum_labels.push_back(L("TPMS-FK"));
     def->enum_labels.push_back(L("Gyroid"));
+    def->enum_labels.push_back(L("Lugolinear"));
     def->enum_labels.push_back(L("Concentric"));
     def->enum_labels.push_back(L("Hilbert Curve"));
     def->enum_labels.push_back(L("Archimedean Chords"));
