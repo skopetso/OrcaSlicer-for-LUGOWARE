@@ -26,7 +26,7 @@ cmake --build build/arm64 --config RelWithDebInfo --target all --
 cmake --build build/arm64 --config RelWithDebInfo --target all --
 
 ```
-### LUGOWARE 빌드 + 실행 (Windows)
+### LUGOWARE 빌드 + 실행 (Windows, C드라이브)
 **레포 경로: `C:/Users/Huhn/OrcaSlicer-for-LUGOWARE`**
 
 **빌드:**
@@ -40,6 +40,20 @@ taskkill //IM lugoware_orca.exe //F; sleep 2; cp build/src/Release/OrcaSlicer.dl
 - 빌드 출력: `build/src/Release/OrcaSlicer.dll`
 - 실행 경로: `build/OrcaSlicer/lugoware_orca.exe` (DLL이 여기 있어야 로딩됨)
 - `build/src/Release/lugoware_orca.exe`에서 직접 실행하면 안 됨
+
+### D드라이브 빌드 + 실행
+**레포 경로: `D:/Claude/Slicer/OrcaSlicer-for-LUGOWARE`**
+
+**빌드:**
+```bash
+cd D:/Claude/Slicer/OrcaSlicer-for-LUGOWARE/build && cmake --build . --config Release --target OrcaSlicer -- -m
+```
+**DLL 복사 + 실행 (C드라이브 오르카도 먼저 종료해야 함!):**
+```bash
+taskkill //IM lugoware_orca.exe //F; taskkill //IM orca-slicer.exe //F; sleep 3; cp D:/Claude/Slicer/OrcaSlicer-for-LUGOWARE/build/src/Release/OrcaSlicer.dll D:/Claude/Slicer/OrcaSlicer-for-LUGOWARE/build/OrcaSlicer/OrcaSlicer.dll; start "" "D:\Claude\Slicer\OrcaSlicer-for-LUGOWARE\build\OrcaSlicer\orca-slicer.exe"
+```
+- exe 이름: `orca-slicer.exe` (C드라이브는 `lugoware_orca.exe`)
+- `lugoware_orca.exe`(C)가 D드라이브 DLL도 잠그므로 반드시 먼저 종료
 
 
 ### Build System
@@ -386,6 +400,7 @@ ctest --test-dir ./tests/sla_print/sla_print_tests
 **공유하는 것:**
 - `%APPDATA%\LugowareOrcaSlicer\` — 유저프리셋, 시스템프리셋 캐시, 설정, 로그 전부 공유
 - **동시 실행 금지** — 같은 AppData를 쓰므로 프리셋 충돌/덮어쓰기 발생
+- **DLL 잠금 주의** — `lugoware_orca.exe`(C)가 D드라이브 `OrcaSlicer.dll`도 잠글 수 있음. D드라이브 DLL 복사 전 C드라이브 오르카도 종료 필요 (`taskkill //IM lugoware_orca.exe //F`)
 
 **공유하지 않는 것:**
 - git 히스토리 (각각 독립)
@@ -470,13 +485,33 @@ ctest --test-dir ./tests/sla_print/sla_print_tests
 - 플랜모드 쓰지 마. 채팅에 직접 써
 - 이모지 사용 금지
 
+### Build 68 (Build 66 base)
+
+#### Lugolinear 인필 패턴 (신규)
+- `ipLugolinear` enum + `FillLugolinear` 클래스 (FillRectilinear 상속)
+- `has_consistent_pattern() = true` → 오브젝트 bbox 고정 → 곡면 전환점 제거
+- **step layers**: `lugolinear_step_layers` 설정 (0=전환없음, N=N레이어마다 교대)
+  - traversal flip 방식: `traverse_graph_generate_polylines()`의 `forward_pass` 토글
+  - `(i_vline2 + traversal_flip) % 2 == 0`으로 연결 방향 뒤집기
+  - fill_surface에서 `phase = layer_id / step`으로 flip 결정
+- 파일: PrintConfig.hpp/cpp, FillRectilinear.hpp/cpp, FillBase.cpp, Preset.cpp, Tab.cpp
+- **주의**: rotation template이 비어있어야 step 작동 (fixed_angle=true면 _layer_angle 무시됨)
+- **3mf 호환성**: 오리지널 오르카에서 저장한 3mf 파일은 설정 꼬임 가능 → STL로 재저장 후 사용
+
+#### disable_solid_infill (Build 67에서 재적용)
+- `disable_solid_infill` (coBool) — 모든 solid surface를 stInternal로 변환
+- PrintObject.cpp `prepare_infill()` 끝에서 surface_type 변환
+
+#### 다음 작업: Lugolinear 턴 포인트 정렬
+- 0도/90도 레이어의 턴(연결) 포인트를 같은 그리드에 정렬
+- 목표: 옆면에서 볼 때 깔끔한 체커보드/벽돌 패턴
+- 접근법: 턴 포인트를 line_spacing 그리드에 스냅
+- 관련 코드: `traverse_graph_generate_polylines()` 라인 1403+, `slice_region_by_vertical_lines()`
+
 ## 남은 숙제
 - **PrintFarm 서버 배포 완성**: xcopy 실패 원인 해결, 비동기 로딩 전환
-- **프린터 전환 크래시**: 다른 프린터→루고웨어 전환 후 소재 추가/삭제 시 튕김
-- **C-hop Setting Overrides 이동**: nullable 타입 호환성 문제로 Multimaterial에 유지 중
 - **PrintFarm 서버 파일 배치**: node/ 폴더 NSIS 설치파일에 포함 필요
 - **Seam 경계 배치 재구현**: embedded_distance 대신 다른 extruder perimeter 거리 기반으로
-- **avoid_crossing_walls + 4번 툴 서포트 버그**: upstream 2.4.x 버그 추정
 - cell-by-cell 개선 (큰 아일랜드에서 벽→벽→벽→채움 패턴)
 - 멀티컬러 세팅 초기화 버그 (BBL↔LUGOWARE 전환 시)
 - Generic 필라멘트 드롭다운 alias 매칭 문제
@@ -484,6 +519,4 @@ ctest --test-dir ./tests/sla_print/sla_print_tests
 - BBL 프린터 프린트팜 통합
 - P-point max depth 입력 UI 버그 (숫자 입력 이상)
 - NSIS 설치파일 로고 미확인
-- 채움패턴 개발 (다음 작업)
 - **Unsupported 프리셋 숨기기**: C드라이브에도 적용 필요
-- **C-hop 컬러페인팅**: 구조적 한계로 보류

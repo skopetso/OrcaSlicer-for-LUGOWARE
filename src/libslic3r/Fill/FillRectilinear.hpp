@@ -20,7 +20,7 @@ public:
 
 protected:
     // Fill by single directional lines, interconnect the lines along perimeters.
-	bool fill_surface_by_lines(const Surface *surface, const FillParams &params, float angleBase, float pattern_shift, Polylines &polylines_out, int traversal_flip = 0);
+	bool fill_surface_by_lines(const Surface *surface, const FillParams &params, float angleBase, float pattern_shift, Polylines &polylines_out, int traversal_flip = 0, bool snap_turns_to_grid = false);
 
 
     // Fill by multiple sweeps of differing directions.

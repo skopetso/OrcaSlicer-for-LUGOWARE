@@ -756,7 +756,7 @@ enum DirectionMask
     DIR_BACKWARD = 2
 };
 
-static std::vector<SegmentedIntersectionLine> slice_region_by_vertical_lines(const ExPolygonWithOffset &poly_with_offset, size_t n_vlines, coord_t x0, coord_t line_spacing)
+static std::vector<SegmentedIntersectionLine> slice_region_by_vertical_lines(const ExPolygonWithOffset &poly_with_offset, size_t n_vlines, coord_t x0, coord_t line_spacing, bool snap_inner_to_grid = false)
 {
     // Allocate storage for the segments.
     std::vector<SegmentedIntersectionLine> segs(n_vlines, SegmentedIntersectionLine());
@@ -2749,7 +2749,7 @@ BoundingBox FillRectilinear::extended_object_bounding_box() const {
     return out.scaled(sqrt(2.));
 }
 
-bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillParams &params, float angleBase, float pattern_shift, Polylines &polylines_out, int traversal_flip)
+bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillParams &params, float angleBase, float pattern_shift, Polylines &polylines_out, int traversal_flip, bool snap_turns_to_grid)
 {
     // At the end, only the new polylines will be rotated back.
     size_t n_polylines_out_initial = polylines_out.size();
@@ -2769,11 +2769,18 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
     coord_t line_spacing = coord_t(scale_(this->spacing) / params.density);
 
     // On the polygons of poly_with_offset, the infill lines will be connected.
+    float outer_offset = float(scale_(this->overlap - 0.5f * this->spacing));
+    float inner_offset = float(scale_(this->overlap - (0.5 - INFILL_OVERLAP_OVER_SPACING) * this->spacing));
+    if (snap_turns_to_grid) {
+        // For Lugolinear: align turn points with outer wall by minimizing inner-outer gap.
+        // A tiny epsilon keeps the inner contour valid for zig-zag connections.
+        inner_offset = outer_offset + float(SCALED_EPSILON);
+    }
     ExPolygonWithOffset poly_with_offset(
-        surface->expolygon, 
-        - rotate_vector.first, 
-        float(scale_(this->overlap - (0.5 - INFILL_OVERLAP_OVER_SPACING) * this->spacing)),
-        float(scale_(this->overlap - 0.5f * this->spacing)));
+        surface->expolygon,
+        - rotate_vector.first,
+        inner_offset,
+        outer_offset);
     if (poly_with_offset.n_contours_inner == 0) {
         // Not a single infill line fits.
         //FIXME maybe one shall trigger the gap fill here?
@@ -2793,12 +2800,16 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
         // extend bounding box so that our pattern will be aligned with other layers
         // Transform the reference point to the rotated coordinate system.
         Point refpt = rotate_vector.second.rotated(- rotate_vector.first);
+        if (snap_turns_to_grid) {
+            // For Lugolinear: use origin so 0° and 90° vline grids align identically.
+            refpt = Point(0, 0);
+        }
         // align_to_grid will not work correctly with positive pattern_shift.
         coord_t pattern_shift_scaled = coord_t(scale_(pattern_shift)) % line_spacing;
         refpt.x() -= (pattern_shift_scaled >= 0) ? pattern_shift_scaled : (line_spacing + pattern_shift_scaled);
         bounding_box.merge(align_to_grid(
-            bounding_box.min, 
-            Point(line_spacing, line_spacing), 
+            bounding_box.min,
+            Point(line_spacing, line_spacing),
             refpt));
     }
 
@@ -2827,7 +2838,7 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
     }
     iRun ++;
 #endif /* SLIC3R_DEBUG */
-    std::vector<SegmentedIntersectionLine> segs = slice_region_by_vertical_lines(poly_with_offset, n_vlines, x0, line_spacing);
+    std::vector<SegmentedIntersectionLine> segs = slice_region_by_vertical_lines(poly_with_offset, n_vlines, x0, line_spacing, snap_turns_to_grid);
     // Connect by horizontal / vertical links, classify the links based on link_max_length as too long.
 	connect_segment_intersections_by_contours(poly_with_offset, segs, params, link_max_length);
 
@@ -3337,7 +3348,7 @@ Polylines FillLugolinear::fill_surface(const Surface *surface, const FillParams 
 
     Polylines polylines_out;
     if (params.full_infill() || params.multiline == 1) {
-        if (!fill_surface_by_lines(surface, params, 0.f, 0.f, polylines_out, flip))
+        if (!fill_surface_by_lines(surface, params, 0.f, 0.f, polylines_out, flip, true))
             BOOST_LOG_TRIVIAL(error) << "FillLugolinear::fill_surface() failed to fill a region.";
     } else {
         if (!fill_surface_by_multilines(surface, params, {{0.f, 0.f}}, polylines_out))
