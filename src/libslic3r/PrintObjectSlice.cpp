@@ -1249,8 +1249,11 @@ void PrintObject::slice_volumes()
 	                        return pos_in_step >= (step - t);
 	                    }
 	                };
-	                const float effective_xy_hole_scaled = should_apply_step(xy_hole_layer_step, xy_hole_layer_step_thickness, xy_hole_layer_step_start_on, layer_id) ? xy_hole_scaled : 0.f;
-	                const float effective_xy_contour_scaled = should_apply_step(xy_contour_layer_step, xy_contour_layer_step_thickness, xy_contour_layer_step_start_on, layer_id) ? xy_contour_scaled : 0.f;
+	                // LUGOWARE: Always apply compensation to geometry so infill reaches the
+	                // compensated boundary on every layer. The layer step only controls
+	                // whether a forced outer wall is generated (handled in PerimeterGenerator).
+	                const float effective_xy_hole_scaled = (xy_hole_layer_step != 0) ? xy_hole_scaled : 0.f;
+	                const float effective_xy_contour_scaled = (xy_contour_layer_step != 0) ? xy_contour_scaled : 0.f;
 	                // Apply size compensation and perform clipping of multi-part objects.
 	                float elfoot = elephant_foot_compensation_scaled > 0 && layer_id < m_config.elefant_foot_compensation_layers.value ?
                         elephant_foot_compensation_scaled - (elephant_foot_compensation_scaled / m_config.elefant_foot_compensation_layers.value) * layer_id :

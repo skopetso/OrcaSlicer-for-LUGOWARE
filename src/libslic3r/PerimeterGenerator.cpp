@@ -1204,6 +1204,26 @@ void PerimeterGenerator::process_classic()
         if (loop_number > 0 && config->only_one_wall_top && this->upper_slices == nullptr)
             loop_number = 0;
 
+        // LUGOWARE: Force at least 1 outer wall when XY compensation is active on this layer
+        if (loop_number < 0 && object_config) {
+            auto xy_comp_active_on_layer = [](float comp_val, int step, int thickness, bool start_on, size_t lid) -> bool {
+                if (comp_val == 0.f || step == 0) return false;
+                if (step == 1) return true;
+                int t = std::min(std::max(thickness, 1), step);
+                int pos = (int)lid % step;
+                return start_on ? (pos < t) : (pos >= (step - t));
+            };
+            if (xy_comp_active_on_layer(object_config->xy_hole_compensation.value,
+                    object_config->xy_hole_compensation_layer_step.value,
+                    object_config->xy_hole_compensation_layer_step_thickness.value,
+                    object_config->xy_hole_compensation_layer_step_start_on.value, this->layer_id) ||
+                xy_comp_active_on_layer(object_config->xy_contour_compensation.value,
+                    object_config->xy_contour_compensation_layer_step.value,
+                    object_config->xy_contour_compensation_layer_step_thickness.value,
+                    object_config->xy_contour_compensation_layer_step_start_on.value, this->layer_id))
+                loop_number = 0;
+        }
+
         ExPolygons last        = union_ex(surface.expolygon.simplify_p(surface_simplify_resolution));
         ExPolygons gaps;
         ExPolygons top_fills;
@@ -2123,7 +2143,27 @@ void PerimeterGenerator::process_arachne()
         const bool is_topmost_layer = (this->upper_slices == nullptr) ? true : false;
         if (is_topmost_layer && loop_number > 0 && config->only_one_wall_top)
             loop_number = 0;
-        
+
+        // LUGOWARE: Force at least 1 outer wall when XY compensation is active on this layer
+        if (loop_number < 0 && object_config) {
+            auto xy_comp_active_on_layer = [](float comp_val, int step, int thickness, bool start_on, size_t lid) -> bool {
+                if (comp_val == 0.f || step == 0) return false;
+                if (step == 1) return true;
+                int t = std::min(std::max(thickness, 1), step);
+                int pos = (int)lid % step;
+                return start_on ? (pos < t) : (pos >= (step - t));
+            };
+            if (xy_comp_active_on_layer(object_config->xy_hole_compensation.value,
+                    object_config->xy_hole_compensation_layer_step.value,
+                    object_config->xy_hole_compensation_layer_step_thickness.value,
+                    object_config->xy_hole_compensation_layer_step_start_on.value, this->layer_id) ||
+                xy_comp_active_on_layer(object_config->xy_contour_compensation.value,
+                    object_config->xy_contour_compensation_layer_step.value,
+                    object_config->xy_contour_compensation_layer_step_thickness.value,
+                    object_config->xy_contour_compensation_layer_step_start_on.value, this->layer_id))
+                loop_number = 0;
+        }
+
         auto apply_precise_outer_wall = config->precise_outer_wall && config->wall_sequence == WallSequence::InnerOuter;
         // Orca: properly adjust offset for the outer wall if precise_outer_wall is enabled.
         ExPolygons last = offset_ex(surface.expolygon.simplify_p(surface_simplify_resolution),
