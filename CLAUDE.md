@@ -508,7 +508,7 @@ ctest --test-dir ./tests/sla_print/sla_print_tests
 - 접근법: 턴 포인트를 line_spacing 그리드에 스냅
 - 관련 코드: `traverse_graph_generate_polylines()` 라인 1403+, `slice_region_by_vertical_lines()`
 
-### Build 69 (v2.4.1301)
+### Build 69 (v2.4.1302)
 
 #### Lugolinear 턴 포인트 외벽 정렬
 - **인필 턴을 외벽에서 수행**: inner offset을 outer offset에 맞춤 (`snap_turns_to_grid` 파라미터)
@@ -516,16 +516,41 @@ ctest --test-dir ./tests/sla_print/sla_print_tests
 - Lugolinear에서만 활성화 (`fill_surface_by_lines`에 `snap_turns_to_grid=true` 전달)
 - 관련 파일: FillRectilinear.cpp/hpp
 
-#### XY compensation 외벽 강제 생성
+#### Build 69-1: XY compensation 외벽 강제 생성
 - XY compensation 활성 레이어에서 `wall_loops=0`이어도 **외벽 1개 강제 생성**
 - `should_apply_step()` 로직을 PerimeterGenerator (classic/arachne) 양쪽에 추가
 - geometry compensation을 **모든 레이어에 적용** (step≠0이면 항상) — 인필 턴 위치 전 레이어 일치
 - step은 외벽 생성 여부만 제어 (PrintObjectSlice.cpp에서 step 분기 제거)
 - 관련 파일: PerimeterGenerator.cpp, PrintObjectSlice.cpp
 
+#### Build 69-2: PrintFarm 서버 통합 (ORCA_INTEGRATION.md 기준 재구현)
+- 설치 경로 `%APPDATA%/printfarm/`로 변경
+- Start Server/Connect 버튼 실제 핸들러 연결 (placeholder 제거)
+- start-hidden.vbs 우선 사용, fallback으로 직접 node 실행
+- 오르카 시작 시 health check → 서버 돌면 바로 연결, 안 돌면 시작
+- 오르카 종료 시 서버 안 죽임 (독립 프로세스)
+- **Restart Server / Stop Server 버튼** webview 상단에 추가
+- Restart 시 로딩창 + resources 재복사
+- 관련 파일: PrintFarmPanel.cpp/hpp
+
+#### Build 69-3: LUGOWARE 전용 설정 tooltip 제거
+- toolchange slowdown / additional prime / C-hop / heating duration tooltip 비움
+- p_point_generation / p_point_max_depth tooltip 비움
+- 관련 파일: PrintConfig.cpp
+
+#### Build 70: 정리
+- version.inc → 2.4.1302
+- GUI_Factories.cpp에 XY compensation layer_step 관련 6개 설정을 객체별 오버라이드 옵션에 추가
+- 3MF handle_legacy 수정 시도 후 복구 (저장된 step 값 보존 위해 원래 동작 유지)
+
+#### 알려진 이슈
+- **XY compensation step≠1 + 멀티컬러**: step이 1이 아닌 값이면 레이어마다 geometry 크기가 달라져 멀티컬러 region 클리핑 깨짐. 멀티컬러에서는 step=1만 사용할 것
+- **Lugolinear 턴 포인트 정렬 한계**: 0도/90도 vline 그리드는 맞추지만, 외벽 위치가 line_spacing 배수가 아니면 완벽 정렬 불가 (구조적 한계)
+- **D드라이브 cmake 주의**: version.inc 변경 시 `cmake -S .. -B .` 하면 deps cmake 파일의 C드라이브 하드코딩 경로 문제 발생. deps/build/OrcaSlicer_dep/usr/local/lib/cmake/occt/OpenCASCADEVisualizationTargets.cmake와 deps/build/OrcaSlicer_dep/usr/local/x64/vc17/staticlib/OpenCVModules.cmake에 C경로 하드코딩 있음 → D경로로 수정 필요
+
 ## 남은 숙제
+- **XY compensation step + 멀티컬러 근본 수정**: step≠1에서 멀티컬러 region 깨지는 문제
 - **인접 객체 벽 연결**: 맞닿는 객체의 벽을 분리하지 않고 연속 벽으로 생성
-- **PrintFarm 서버 배포 완성**: xcopy 실패 원인 해결, 비동기 로딩 전환
 - **PrintFarm 서버 파일 배치**: node/ 폴더 NSIS 설치파일에 포함 필요
 - **Seam 경계 배치 재구현**: embedded_distance 대신 다른 extruder perimeter 거리 기반으로
 - cell-by-cell 개선 (큰 아일랜드에서 벽→벽→벽→채움 패턴)
