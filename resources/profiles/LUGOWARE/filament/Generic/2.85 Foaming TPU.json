@@ -1,0 +1,83 @@
+{
+    "compatible_printers": [
+        "FLEX4 M 0.4 nozzle",
+        "FLEX4 M 0.6 nozzle",
+        "FLEX4 L 0.4 nozzle",
+        "FLEX4 L 0.6 nozzle",
+        "FLEX4 W 0.4 nozzle",
+        "FLEX4 W 0.6 nozzle"
+    ],
+    "fan_max_speed": [
+        "70"
+    ],
+    "fan_min_speed": [
+        "70"
+    ],
+    "filament_deretraction_speed": [
+        "80"
+    ],
+    "filament_diameter": [
+        "2.85"
+    ],
+    "filament_end_gcode": [
+        "; filament end gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=1"
+    ],
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_flow_ratio": [
+        "0.8"
+    ],
+    "filament_heating_duration": [
+        "7"
+    ],
+    "filament_max_volumetric_speed": [
+        "6"
+    ],
+    "filament_retract_when_changing_layer": [
+        "0"
+    ],
+    "filament_retraction_length": [
+        "8"
+    ],
+    "filament_retraction_minimum_travel": [
+        "13"
+    ],
+    "filament_retraction_speed": [
+        "100"
+    ],
+    "filament_settings_id": [
+        "~2.85 Foaming TPU"
+    ],
+    "filament_start_gcode": [
+        "; Filament gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=0.3"
+    ],
+    "filament_vendor": [
+        "Recreus"
+    ],
+    "filament_z_hop": [
+        "0.2"
+    ],
+    "filament_z_hop_types": [
+        "Slope Lift"
+    ],
+    "from": "User",
+    "inherits": "Generic TPU @System",
+    "name": "~2.85 Foaming TPU",
+    "overhang_fan_speed": [
+        "80"
+    ],
+    "overhang_fan_threshold": [
+        "75%"
+    ],
+    "pellet_flow_coefficient": [
+        "0.156755"
+    ],
+    "slow_down_layer_time": [
+        "0"
+    ],
+    "temperature_vitrification": [
+        "230"
+    ],
+    "version": "2.3.0.3"
+}

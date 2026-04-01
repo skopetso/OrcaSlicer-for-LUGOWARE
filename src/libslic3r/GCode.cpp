@@ -5311,10 +5311,26 @@ LayerResult GCode::process_layer(
                             }
                         };
 
-                        // Collect infills
+                        // Collect infills (only from regions that have perimeters — contour matching)
                         std::vector<InfillEntry> infills;
                         for (size_t region_idx = 0; region_idx < by_region_specific.size(); ++region_idx) {
                             const auto &region = by_region_specific[region_idx];
+                            if (region.perimeters.empty()) {
+                                // LUGOWARE: Region with no perimeters (e.g. modifier wall_loops=0).
+                                // Extrude its infill directly with correct region config, skip contour matching.
+                                m_config.apply(print.get_print_region(region_idx).config());
+                                for (ExtrusionEntity *ee : region.infills) {
+                                    if (ee->role() == erIroning) continue;
+                                    auto *eec = dynamic_cast<const ExtrusionEntityCollection*>(ee);
+                                    if (eec) {
+                                        for (ExtrusionEntity *sub : eec->chained_path_from(m_last_pos).entities)
+                                            gcode += this->extrude_entity(*sub, "infill");
+                                    } else {
+                                        gcode += this->extrude_entity(*ee, "infill");
+                                    }
+                                }
+                                continue;
+                            }
                             for (ExtrusionEntity *ee : region.infills)
                                 if (ee->role() != erIroning)
                                     infills.push_back({region_idx, ee, ee->first_point()});

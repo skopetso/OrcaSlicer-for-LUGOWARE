@@ -1,0 +1,53 @@
+{
+    "compatible_printers": [
+        "FLEX4 M 0.4 nozzle",
+        "FLEX4 M 0.6 nozzle",
+        "FLEX4 L 0.4 nozzle",
+        "FLEX4 L 0.6 nozzle",
+        "FLEX4 W 0.4 nozzle",
+        "FLEX4 W 0.6 nozzle"
+    ],
+    "fan_max_speed": [
+        "70"
+    ],
+    "fan_min_speed": [
+        "70"
+    ],
+    "filament_diameter": [
+        "2.85"
+    ],
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_flow_ratio": [
+        "1.05"
+    ],
+    "filament_heating_duration": [
+        "7"
+    ],
+    "filament_max_volumetric_speed": [
+        "6"
+    ],
+    "filament_retraction_length": [
+        "1.2"
+    ],
+    "filament_settings_id": [
+        "~2.85 TPU 85A"
+    ],
+    "from": "User",
+    "inherits": "Generic TPU @System",
+    "name": "~2.85 TPU 85A",
+    "nozzle_temperature": [
+        "250"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "250"
+    ],
+    "overhang_fan_speed": [
+        "70"
+    ],
+    "pellet_flow_coefficient": [
+        "0.156755"
+    ],
+    "version": "2.3.0.3"
+}
