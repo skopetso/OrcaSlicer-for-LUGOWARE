@@ -3967,6 +3967,7 @@ void TabFilament::build()
         optgroup->append_single_option_line("filament_toolchange_slowdown_additional_temp");
         optgroup->append_single_option_line("filament_additional_prime");
         optgroup->append_single_option_line("filament_cell_zhop_height");
+        optgroup->append_single_option_line("filament_dhop_ratio");
         optgroup->append_single_option_line("filament_heating_duration");
 
     page = add_options_page(L("Dependencies"), "advanced");

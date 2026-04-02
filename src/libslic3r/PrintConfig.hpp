@@ -1427,6 +1427,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloats,              filament_additional_prime))
     // LUGOWARE: C-hop (diagonal XYZ move between cells)
     ((ConfigOptionFloats,              filament_cell_zhop_height))
+    // LUGOWARE: D-hop (ACP detour shortcut via C-hop)
+    ((ConfigOptionFloats,              filament_dhop_ratio))
 )
 
 // This object is mapped to Perl as Slic3r::Config::Print.

@@ -7409,6 +7409,46 @@ std::string GCode::travel_to(const Point& point, ExtrusionRole role, std::string
         // check again whether the new travel path still needs a retraction
         needs_retraction = this->needs_retraction(travel, role, lift_type);
         //if (needs_retraction && m_layer_index > 1) exit(0);
+
+        // LUGOWARE: D-hop — if straight distance / ACP detour ≤ dhop_ratio, use C-hop direct line
+        if (travel.size() > 2 && m_layer != nullptr) {
+            double cell_zhop = FILAMENT_CONFIG(filament_cell_zhop_height);
+            double dhop_ratio = FILAMENT_CONFIG(filament_dhop_ratio) / 100.0;
+            if (cell_zhop > 0 && dhop_ratio > 0) {
+                double straight_dist = (point - this->last_pos()).cast<double>().norm();
+                double detour_dist = travel.length();
+                if (straight_dist > 0 && detour_dist > 0 && (straight_dist / detour_dist) <= dhop_ratio) {
+                    // Replace ACP path with straight line + C-hop
+                    Vec2d target_gcode = this->point_to_gcode(point);
+                    Vec2d cur_gcode = this->point_to_gcode(this->last_pos());
+                    double travel_dist = (target_gcode - cur_gcode).norm();
+                    double effective_chop = std::min(cell_zhop, travel_dist * 0.25);
+                    double target_z = m_layer->print_z + effective_chop;
+
+                    // 1. Retract
+                    gcode += this->retract(false, false, LiftType::NormalLift, false, erNone, true);
+                    // 2. Z-hop up
+                    double zhop_height = m_writer.config.z_hop.get_at(m_writer.filament()->id());
+                    double zhop_z = m_layer->print_z + zhop_height;
+                    if (zhop_height > 0)
+                        gcode += m_writer.travel_to_z(zhop_z, "z-hop before D-hop");
+                    // 3. Diagonal XYZ move
+                    gcode += m_writer.travel_to_xyz(Vec3d(target_gcode.x(), target_gcode.y(), target_z), "D-hop");
+                    this->set_last_pos(point);
+                    // 4. Z down to z-hop height
+                    if (zhop_height > 0)
+                        gcode += m_writer.travel_to_z(zhop_z, "z-hop after D-hop");
+                    // 5. Z down to layer
+                    gcode += m_writer.unlift_to(m_layer->print_z);
+                    gcode += "; D-hop\n";
+                    // 6. Unretract
+                    gcode += this->unretract();
+
+                    m_avoid_crossing_perimeters.reset_once_modifiers();
+                    return gcode;
+                }
+            }
+        }
     }
 
     // Re-allow reduce_crossing_wall for the next travel moves
