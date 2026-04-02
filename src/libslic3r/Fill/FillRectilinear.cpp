@@ -3337,6 +3337,39 @@ Polylines FillLugolinear::fill_surface(const Surface *surface, const FillParams 
     if (params.config)
         m_step_layers = params.config->lugolinear_step_layers.value;
 
+    // LUGOWARE: On XY compensation active layers, expand surface so infill
+    // turnpoints extend outward to the compensated boundary.
+    Surface expanded_surface = *surface;
+    bool use_expanded = false;
+    if (this->print_object_config && this->layer_id != size_t(-1)) {
+        auto xy_comp_active_on_layer = [](float comp_val, int step, int thickness, bool start_on, size_t lid) -> bool {
+            if (comp_val == 0.f || step == 0) return false;
+            if (step == 1) return true;
+            int t = std::min(std::max(thickness, 1), step);
+            int pos = (int)lid % step;
+            return start_on ? (pos < t) : (pos >= (step - t));
+        };
+        float comp = 0.f;
+        if (xy_comp_active_on_layer(float(this->print_object_config->xy_contour_compensation.value),
+                this->print_object_config->xy_contour_compensation_layer_step.value,
+                this->print_object_config->xy_contour_compensation_layer_step_thickness.value,
+                this->print_object_config->xy_contour_compensation_layer_step_start_on.value, this->layer_id))
+            comp = std::max(comp, float(std::abs(this->print_object_config->xy_contour_compensation.value)));
+        if (xy_comp_active_on_layer(float(this->print_object_config->xy_hole_compensation.value),
+                this->print_object_config->xy_hole_compensation_layer_step.value,
+                this->print_object_config->xy_hole_compensation_layer_step_thickness.value,
+                this->print_object_config->xy_hole_compensation_layer_step_start_on.value, this->layer_id))
+            comp = std::max(comp, float(std::abs(this->print_object_config->xy_hole_compensation.value)));
+        if (comp > 0.f) {
+            ExPolygons expanded = offset_ex(surface->expolygon, float(scale_(comp)));
+            if (!expanded.empty()) {
+                expanded_surface.expolygon = expanded.front();
+                use_expanded = true;
+            }
+        }
+    }
+    const Surface *fill_surface = use_expanded ? &expanded_surface : surface;
+
     // Step: flip traversal connection direction every N layers.
     // Lines stay at the same positions, only connection endpoints swap.
     int flip = 0;
@@ -3348,10 +3381,10 @@ Polylines FillLugolinear::fill_surface(const Surface *surface, const FillParams 
 
     Polylines polylines_out;
     if (params.full_infill() || params.multiline == 1) {
-        if (!fill_surface_by_lines(surface, params, 0.f, 0.f, polylines_out, flip, true))
+        if (!fill_surface_by_lines(fill_surface, params, 0.f, 0.f, polylines_out, flip, true))
             BOOST_LOG_TRIVIAL(error) << "FillLugolinear::fill_surface() failed to fill a region.";
     } else {
-        if (!fill_surface_by_multilines(surface, params, {{0.f, 0.f}}, polylines_out))
+        if (!fill_surface_by_multilines(fill_surface, params, {{0.f, 0.f}}, polylines_out))
             BOOST_LOG_TRIVIAL(error) << "FillLugolinear::fill_surface() failed to fill a region.";
     }
     return polylines_out;
