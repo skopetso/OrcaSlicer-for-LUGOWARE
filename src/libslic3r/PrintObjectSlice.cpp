@@ -1249,8 +1249,6 @@ void PrintObject::slice_volumes()
 	                        return pos_in_step >= (step - t);
 	                    }
 	                };
-	                // LUGOWARE: Apply compensation only on step-active layers.
-	                // Lugolinear infill handles its own expansion independently.
 	                const float effective_xy_hole_scaled = should_apply_step(xy_hole_layer_step, xy_hole_layer_step_thickness, xy_hole_layer_step_start_on, layer_id) ? xy_hole_scaled : 0.f;
 	                const float effective_xy_contour_scaled = should_apply_step(xy_contour_layer_step, xy_contour_layer_step_thickness, xy_contour_layer_step_start_on, layer_id) ? xy_contour_scaled : 0.f;
 	                // Apply size compensation and perform clipping of multi-part objects.

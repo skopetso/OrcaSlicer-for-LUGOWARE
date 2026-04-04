@@ -9,6 +9,7 @@
     "inherits": "0.4 Support + FLEXIBLE(0.25)",
     "name": "0.4 Support + FOAMING TPU(0.25)",
     "p_point_generation": "1",
+    "raft_layers": "0",
     "p_point_max_depth": "30",
     "print_extruder_id": [
         "1"

@@ -79,7 +79,6 @@ enum InfillPattern : int {
     ipCubic, ipAdaptiveCubic, ipQuarterCubic, ipSupportCubic, ipLightning,
     ipHoneycomb, ip3DHoneycomb, ipLateralHoneycomb, ipLateralLattice,
     ipCrossHatch, ipTpmsD, ipTpmsFK, ipGyroid,
-    ipLugolinear,
     ipConcentric, ipHilbertCurve, ipArchimedeanChords, ipOctagramSpiral,
     ipSupportBase, ipConcentricInternal,
     ipCount,
@@ -1072,7 +1071,9 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                 symmetric_infill_y_axis))
     ((ConfigOptionFloat,                infill_shift_step))
     ((ConfigOptionString,               sparse_infill_rotate_template))
-    ((ConfigOptionInt,                  lugolinear_step_layers))
+    ((ConfigOptionInt,                  inverse_infill_step_layers))
+    ((ConfigOptionInt,                  crosszag_rotation_step_layers))
+    ((ConfigOptionFloat,                crosszag_rotation_angle))
     ((ConfigOptionBool,                 disable_solid_infill))
     ((ConfigOptionPercent,              sparse_infill_density))
     ((ConfigOptionEnum<InfillPattern>,  sparse_infill_pattern))

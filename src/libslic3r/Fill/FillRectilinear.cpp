@@ -756,7 +756,7 @@ enum DirectionMask
     DIR_BACKWARD = 2
 };
 
-static std::vector<SegmentedIntersectionLine> slice_region_by_vertical_lines(const ExPolygonWithOffset &poly_with_offset, size_t n_vlines, coord_t x0, coord_t line_spacing, bool snap_inner_to_grid = false)
+static std::vector<SegmentedIntersectionLine> slice_region_by_vertical_lines(const ExPolygonWithOffset &poly_with_offset, size_t n_vlines, coord_t x0, coord_t line_spacing)
 {
     // Allocate storage for the segments.
     std::vector<SegmentedIntersectionLine> segs(n_vlines, SegmentedIntersectionLine());
@@ -2749,7 +2749,7 @@ BoundingBox FillRectilinear::extended_object_bounding_box() const {
     return out.scaled(sqrt(2.));
 }
 
-bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillParams &params, float angleBase, float pattern_shift, Polylines &polylines_out, int traversal_flip, bool snap_turns_to_grid)
+bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillParams &params, float angleBase, float pattern_shift, Polylines &polylines_out, int traversal_flip)
 {
     // At the end, only the new polylines will be rotated back.
     size_t n_polylines_out_initial = polylines_out.size();
@@ -2771,11 +2771,6 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
     // On the polygons of poly_with_offset, the infill lines will be connected.
     float outer_offset = float(scale_(this->overlap - 0.5f * this->spacing));
     float inner_offset = float(scale_(this->overlap - (0.5 - INFILL_OVERLAP_OVER_SPACING) * this->spacing));
-    if (snap_turns_to_grid) {
-        // For Lugolinear: align turn points with outer wall by minimizing inner-outer gap.
-        // A tiny epsilon keeps the inner contour valid for zig-zag connections.
-        inner_offset = outer_offset + float(SCALED_EPSILON);
-    }
     ExPolygonWithOffset poly_with_offset(
         surface->expolygon,
         - rotate_vector.first,
@@ -2800,10 +2795,6 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
         // extend bounding box so that our pattern will be aligned with other layers
         // Transform the reference point to the rotated coordinate system.
         Point refpt = rotate_vector.second.rotated(- rotate_vector.first);
-        if (snap_turns_to_grid) {
-            // For Lugolinear: use origin so 0° and 90° vline grids align identically.
-            refpt = Point(0, 0);
-        }
         // align_to_grid will not work correctly with positive pattern_shift.
         coord_t pattern_shift_scaled = coord_t(scale_(pattern_shift)) % line_spacing;
         refpt.x() -= (pattern_shift_scaled >= 0) ? pattern_shift_scaled : (line_spacing + pattern_shift_scaled);
@@ -2838,7 +2829,7 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
     }
     iRun ++;
 #endif /* SLIC3R_DEBUG */
-    std::vector<SegmentedIntersectionLine> segs = slice_region_by_vertical_lines(poly_with_offset, n_vlines, x0, line_spacing, snap_turns_to_grid);
+    std::vector<SegmentedIntersectionLine> segs = slice_region_by_vertical_lines(poly_with_offset, n_vlines, x0, line_spacing);
     // Connect by horizontal / vertical links, classify the links based on link_max_length as too long.
 	connect_segment_intersections_by_contours(poly_with_offset, segs, params, link_max_length);
 
@@ -3331,62 +3322,51 @@ Polylines FillRectilinear::fill_surface(const Surface *surface, const FillParams
     return polylines_out;
 }
 
-Polylines FillLugolinear::fill_surface(const Surface *surface, const FillParams &params)
+Polylines FillZigZag::fill_surface(const Surface *surface, const FillParams &params)
 {
-    // Read step layers setting from config
     if (params.config)
-        m_step_layers = params.config->lugolinear_step_layers.value;
+        m_inverse_infill_step_layers = params.config->inverse_infill_step_layers.value;
 
-    // LUGOWARE: On XY compensation active layers, expand surface so infill
-    // turnpoints extend outward to the compensated boundary.
-    Surface expanded_surface = *surface;
-    bool use_expanded = false;
-    if (this->print_object_config && this->layer_id != size_t(-1)) {
-        auto xy_comp_active_on_layer = [](float comp_val, int step, int thickness, bool start_on, size_t lid) -> bool {
-            if (comp_val == 0.f || step == 0) return false;
-            if (step == 1) return true;
-            int t = std::min(std::max(thickness, 1), step);
-            int pos = (int)lid % step;
-            return start_on ? (pos < t) : (pos >= (step - t));
-        };
-        float comp = 0.f;
-        if (xy_comp_active_on_layer(float(this->print_object_config->xy_contour_compensation.value),
-                this->print_object_config->xy_contour_compensation_layer_step.value,
-                this->print_object_config->xy_contour_compensation_layer_step_thickness.value,
-                this->print_object_config->xy_contour_compensation_layer_step_start_on.value, this->layer_id))
-            comp = std::max(comp, float(std::abs(this->print_object_config->xy_contour_compensation.value)));
-        if (xy_comp_active_on_layer(float(this->print_object_config->xy_hole_compensation.value),
-                this->print_object_config->xy_hole_compensation_layer_step.value,
-                this->print_object_config->xy_hole_compensation_layer_step_thickness.value,
-                this->print_object_config->xy_hole_compensation_layer_step_start_on.value, this->layer_id))
-            comp = std::max(comp, float(std::abs(this->print_object_config->xy_hole_compensation.value)));
-        if (comp > 0.f) {
-            ExPolygons expanded = offset_ex(surface->expolygon, float(scale_(comp)));
-            if (!expanded.empty()) {
-                expanded_surface.expolygon = expanded.front();
-                use_expanded = true;
-            }
-        }
-    }
-    const Surface *fill_surface = use_expanded ? &expanded_surface : surface;
-
-    // Step: flip traversal connection direction every N layers.
-    // Lines stay at the same positions, only connection endpoints swap.
     int flip = 0;
-    if (m_step_layers > 0 && this->layer_id != size_t(-1)) {
-        size_t phase = this->layer_id / m_step_layers;
+    if (m_inverse_infill_step_layers > 0 && this->layer_id != size_t(-1)) {
+        size_t phase = this->layer_id / m_inverse_infill_step_layers;
         if (phase % 2 == 1)
             flip = 1;
     }
 
     Polylines polylines_out;
-    if (params.full_infill() || params.multiline == 1) {
-        if (!fill_surface_by_lines(fill_surface, params, 0.f, 0.f, polylines_out, flip, true))
-            BOOST_LOG_TRIVIAL(error) << "FillLugolinear::fill_surface() failed to fill a region.";
-    } else {
-        if (!fill_surface_by_multilines(fill_surface, params, {{0.f, 0.f}}, polylines_out))
-            BOOST_LOG_TRIVIAL(error) << "FillLugolinear::fill_surface() failed to fill a region.";
+    if (!fill_surface_by_lines(surface, params, 0.f, 0.f, polylines_out, flip))
+        BOOST_LOG_TRIVIAL(error) << "FillZigZag::fill_surface() failed to fill a region.";
+    return polylines_out;
+}
+
+Polylines FillCrossZag::fill_surface(const Surface *surface, const FillParams &params)
+{
+    if (params.config) {
+        m_inverse_infill_step_layers = params.config->inverse_infill_step_layers.value;
+        m_crosszag_rotation_step_layers = params.config->crosszag_rotation_step_layers.value;
+        m_crosszag_rotation_angle    = float(params.config->crosszag_rotation_angle.value);
     }
+
+    // CrossZag calls fill_surface twice per printed layer, so layer_id counts at 2x rate.
+    const size_t printed_layer = this->layer_id / 2;
+
+    int flip = 0;
+    if (m_inverse_infill_step_layers > 0 && this->layer_id != size_t(-1)) {
+        size_t phase = printed_layer / m_inverse_infill_step_layers;
+        if (phase % 2 == 1)
+            flip = 1;
+    }
+
+    float angle_base = 0.f;
+    if (m_crosszag_rotation_step_layers > 0 && this->layer_id != size_t(-1)) {
+        size_t step = printed_layer / m_crosszag_rotation_step_layers;
+        angle_base = float(step) * m_crosszag_rotation_angle * float(M_PI) / 180.f;
+    }
+
+    Polylines polylines_out;
+    if (!fill_surface_by_lines(surface, params, angle_base, 0.f, polylines_out, flip))
+        BOOST_LOG_TRIVIAL(error) << "FillCrossZag::fill_surface() failed to fill a region.";
     return polylines_out;
 }
 

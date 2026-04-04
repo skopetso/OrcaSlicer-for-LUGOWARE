@@ -20,7 +20,7 @@ public:
 
 protected:
     // Fill by single directional lines, interconnect the lines along perimeters.
-	bool fill_surface_by_lines(const Surface *surface, const FillParams &params, float angleBase, float pattern_shift, Polylines &polylines_out, int traversal_flip = 0, bool snap_turns_to_grid = false);
+	bool fill_surface_by_lines(const Surface *surface, const FillParams &params, float angleBase, float pattern_shift, Polylines &polylines_out, int traversal_flip = 0);
 
 
     // Fill by multiple sweeps of differing directions.
@@ -44,20 +44,6 @@ public:
 protected:
     // Always generate infill at the same angle.
     virtual float _layer_angle(size_t idx) const override { return 0.f; }
-};
-
-class FillLugolinear : public FillRectilinear
-{
-public:
-    Fill* clone() const override { return new FillLugolinear(*this); }
-    ~FillLugolinear() override = default;
-    Polylines fill_surface(const Surface *surface, const FillParams &params) override;
-
-    // Always use object bbox for consistent vline grid.
-    bool has_consistent_pattern() const override { return true; }
-
-private:
-    mutable int m_step_layers = 0;
 };
 
 class FillMonotonic : public FillRectilinear
@@ -208,8 +194,12 @@ class FillZigZag : public FillRectilinear
 public:
     Fill* clone() const override { return new FillZigZag(*this); }
     ~FillZigZag() override = default;
+    Polylines fill_surface(const Surface *surface, const FillParams &params) override;
 
     bool has_consistent_pattern() const override { return true; }
+
+private:
+    mutable int m_inverse_infill_step_layers = 0;
 };
 
 class FillCrossZag : public FillRectilinear
@@ -217,8 +207,14 @@ class FillCrossZag : public FillRectilinear
 public:
     Fill *clone() const override { return new FillCrossZag(*this); }
     ~FillCrossZag() override = default;
+    Polylines fill_surface(const Surface *surface, const FillParams &params) override;
 
     bool has_consistent_pattern() const override { return true; }
+
+private:
+    mutable int   m_inverse_infill_step_layers = 0;
+    mutable int   m_crosszag_rotation_step_layers = 0;
+    mutable float m_crosszag_rotation_angle    = 90.f;
 };
 
 class FillLockedZag : public FillRectilinear
