@@ -27,8 +27,8 @@
     "detect_thin_wall": "1",
     "enable_support": "1",
     "support_style": "snug",
-    "support_filament": "1",
-    "support_interface_filament": "1",
+    "support_filament": "0",
+    "support_interface_filament": "0",
     "support_on_build_plate_only": "1",
     "support_threshold_angle": "40",
     "flush_into_infill": "0",
@@ -62,13 +62,13 @@
     "raft_layers": "1",
     "skirt_height": "1",
     "min_skirt_length": "0",
-    "support_base_pattern_spacing": "4",
+    "support_base_pattern_spacing": "1.6",
     "support_bottom_interface_spacing": "0",
     "support_bottom_z_distance": "0",
     "support_interface_spacing": "0",
     "support_line_width": "0.4",
     "support_object_first_layer_gap": "0.15",
-    "support_object_xy_distance": "0.15",
+    "support_object_xy_distance": "0.25",
     "support_top_z_distance": "0",
     "compatible_printers": [
         "FLEX4 M 0.4 nozzle",
@@ -97,5 +97,5 @@
     "support_interface_top_layers": "2",
     "support_speed": "250",
     "support_type": "normal(manual)",
-    "version": "2.5.0.0"
+    "support_interface_pattern": "concentric"
 }

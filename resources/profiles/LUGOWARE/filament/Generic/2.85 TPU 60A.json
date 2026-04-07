@@ -1,6 +1,6 @@
 {
     "type": "filament",
-    "name": "2.85 Foaming TPU",
+    "name": "2.85 TPU 60A",
     "from": "system",
     "instantiation": "true",
     "activate_air_filtration": [
@@ -55,7 +55,7 @@
         "30"
     ],
     "fan_cooling_layer_time": [
-        "100"
+        "3"
     ],
     "fan_max_speed": [
         "70"
@@ -70,13 +70,13 @@
         "1.24"
     ],
     "filament_deretraction_speed": [
-        "80"
+        "30"
     ],
     "filament_diameter": [
         "2.85"
     ],
     "filament_flow_ratio": [
-        "0.82"
+        "1.15"
     ],
     "filament_flush_temp": [
         "0"
@@ -124,7 +124,7 @@
         "nil"
     ],
     "filament_retract_restart_extra": [
-        "nil"
+        "0.13"
     ],
     "filament_retract_when_changing_layer": [
         "0"
@@ -136,16 +136,16 @@
         "nil"
     ],
     "filament_retraction_length": [
-        "4"
+        "2.7"
     ],
     "filament_retraction_minimum_travel": [
-        "13"
+        "3"
     ],
     "filament_retraction_speed": [
-        "100"
+        "40"
     ],
     "filament_settings_id": [
-        "2.85 Foaming TPU"
+        "2.85 TPU 60A"
     ],
     "filament_soluble": [
         "0"
@@ -166,10 +166,10 @@
         "45"
     ],
     "filament_z_hop": [
-        "0.2"
+        "nil"
     ],
     "filament_z_hop_types": [
-        "Slope Lift"
+        "nil"
     ],
     "full_fan_speed_layer": [
         "0"
@@ -229,13 +229,13 @@
         "200"
     ],
     "nozzle_temperature_range_high": [
-        "250"
+        "280"
     ],
     "nozzle_temperature": [
-        "230"
+        "225"
     ],
     "nozzle_temperature_initial_layer": [
-        "230"
+        "225"
     ],
     "overhang_fan_speed": [
         "80"
@@ -262,13 +262,13 @@
         "1"
     ],
     "slow_down_layer_time": [
-        "0"
+        "3"
     ],
     "slow_down_min_speed": [
         "10"
     ],
     "temperature_vitrification": [
-        "230"
+        "30"
     ],
     "textured_plate_temp": [
         "35"
@@ -283,10 +283,10 @@
         "FLEX4 W 0.4 nozzle"
     ],
     "filament_start_gcode": [
-        "; Filament gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=0.3"
+        "\n"
     ],
     "filament_end_gcode": [
-        "; filament end gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=1"
+        ""
     ],
     "filament_adaptive_volumetric_speed": [
         "0"
@@ -297,18 +297,15 @@
     "filament_adhesiveness_category": [
         "600"
     ],
-    "setting_id": "LGFN12",
-    "filament_id": "LGFN12",
-    "filament_cell_zhop_height": [
-        "5"
-    ],
+    "setting_id": "LGFN13",
+    "filament_id": "LGFN13",
     "filament_heating_duration": [
         "7"
     ],
-    "pellet_flow_coefficient": [
-        "0.156755"
-    ],
     "filament_toolchange_slowdown_distance": [
         "70"
+    ],
+    "pellet_flow_coefficient": [
+        "0.156755"
     ]
 }

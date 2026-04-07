@@ -1,28 +1,28 @@
 {
     "type": "filament",
-    "name": "2.85 Foaming TPU",
+    "name": "1.75 BONE_phantom",
     "from": "system",
     "instantiation": "true",
     "activate_air_filtration": [
         "0"
     ],
     "additional_cooling_fan_speed": [
-        "70"
+        "0"
     ],
     "chamber_temperatures": [
         "0"
     ],
     "close_fan_the_first_x_layers": [
-        "1"
+        "3"
     ],
     "complete_print_exhaust_fan_speed": [
         "70"
     ],
     "cool_plate_temp": [
-        "30"
+        "60"
     ],
     "cool_plate_temp_initial_layer": [
-        "30"
+        "60"
     ],
     "counter_coef_1": [
         "0"
@@ -49,34 +49,34 @@
         "50"
     ],
     "eng_plate_temp": [
-        "30"
+        "0"
     ],
     "eng_plate_temp_initial_layer": [
-        "30"
+        "0"
     ],
     "fan_cooling_layer_time": [
-        "100"
-    ],
-    "fan_max_speed": [
-        "70"
-    ],
-    "fan_min_speed": [
-        "70"
-    ],
-    "filament_cost": [
         "20"
     ],
+    "fan_max_speed": [
+        "100"
+    ],
+    "fan_min_speed": [
+        "20"
+    ],
+    "filament_cost": [
+        "30"
+    ],
     "filament_density": [
-        "1.24"
+        "1.27"
     ],
     "filament_deretraction_speed": [
-        "80"
+        "nil"
     ],
     "filament_diameter": [
-        "2.85"
+        "1.75"
     ],
     "filament_flow_ratio": [
-        "0.82"
+        "0.94"
     ],
     "filament_flush_temp": [
         "0"
@@ -94,7 +94,7 @@
         "nil"
     ],
     "filament_max_volumetric_speed": [
-        "6"
+        "8"
     ],
     "filament_ramming_volumetric_speed": [
         "-1"
@@ -127,7 +127,7 @@
         "nil"
     ],
     "filament_retract_when_changing_layer": [
-        "0"
+        "nil"
     ],
     "filament_retraction_distances_when_cut": [
         "nil"
@@ -136,22 +136,22 @@
         "nil"
     ],
     "filament_retraction_length": [
-        "4"
+        "nil"
     ],
     "filament_retraction_minimum_travel": [
-        "13"
+        "nil"
     ],
     "filament_retraction_speed": [
-        "100"
+        "nil"
     ],
     "filament_settings_id": [
-        "2.85 Foaming TPU"
+        "1.75 BONE_phantom"
     ],
     "filament_soluble": [
         "0"
     ],
     "filament_type": [
-        "TPU"
+        "Radiopaque"
     ],
     "filament_vendor": [
         "Lugoware"
@@ -166,10 +166,10 @@
         "45"
     ],
     "filament_z_hop": [
-        "0.2"
+        "nil"
     ],
     "filament_z_hop_types": [
-        "Slope Lift"
+        "nil"
     ],
     "full_fan_speed_layer": [
         "0"
@@ -199,10 +199,10 @@
         "0"
     ],
     "hot_plate_temp": [
-        "35"
+        "40"
     ],
     "hot_plate_temp_initial_layer": [
-        "35"
+        "40"
     ],
     "hole_coef_1": [
         "0"
@@ -226,22 +226,22 @@
         "0"
     ],
     "nozzle_temperature_range_low": [
-        "200"
+        "220"
     ],
     "nozzle_temperature_range_high": [
-        "250"
+        "260"
     ],
     "nozzle_temperature": [
-        "230"
+        "255"
     ],
     "nozzle_temperature_initial_layer": [
-        "230"
+        "255"
     ],
     "overhang_fan_speed": [
-        "80"
+        "100"
     ],
     "overhang_fan_threshold": [
-        "75%"
+        "95%"
     ],
     "reduce_fan_stop_start_freq": [
         "1"
@@ -253,28 +253,28 @@
         "0"
     ],
     "supertack_plate_temp": [
-        "0"
+        "70"
     ],
     "supertack_plate_temp_initial_layer": [
-        "0"
+        "70"
     ],
     "slow_down_for_layer_cooling": [
         "1"
     ],
     "slow_down_layer_time": [
-        "0"
+        "8"
     ],
     "slow_down_min_speed": [
         "10"
     ],
     "temperature_vitrification": [
-        "230"
+        "70"
     ],
     "textured_plate_temp": [
-        "35"
+        "80"
     ],
     "textured_plate_temp_initial_layer": [
-        "35"
+        "80"
     ],
     "filament_velocity_adaptation_factor": [
         "1"
@@ -283,10 +283,10 @@
         "FLEX4 W 0.4 nozzle"
     ],
     "filament_start_gcode": [
-        "; Filament gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=0.3"
+        "; filament start gcode\n{if (bed_temperature[current_extruder] >45)||(bed_temperature_initial_layer[current_extruder] >45)}M106 P3 S180\n{elsif (bed_temperature[current_extruder] >50)||(bed_temperature_initial_layer[current_extruder] >50)}M106 P3 S255\n{endif};Prevent PLA from jamming\n\n{if activate_air_filtration[current_extruder] && support_air_filtration}\nM106 P3 S{during_print_exhaust_fan_speed_num[current_extruder]} \n{endif}"
     ],
     "filament_end_gcode": [
-        "; filament end gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=1"
+        "; filament end gcode \n\n"
     ],
     "filament_adaptive_volumetric_speed": [
         "0"
@@ -295,20 +295,17 @@
         "0 0 0 0 0 0"
     ],
     "filament_adhesiveness_category": [
-        "600"
+        "300"
     ],
-    "setting_id": "LGFN12",
-    "filament_id": "LGFN12",
-    "filament_cell_zhop_height": [
-        "5"
-    ],
-    "filament_heating_duration": [
-        "7"
-    ],
-    "pellet_flow_coefficient": [
-        "0.156755"
+    "setting_id": "LGFN08",
+    "filament_id": "LGFN08",
+    "filament_additional_prime": [
+        "2"
     ],
     "filament_toolchange_slowdown_distance": [
         "70"
+    ],
+    "filament_heating_duration": [
+        "7"
     ]
 }

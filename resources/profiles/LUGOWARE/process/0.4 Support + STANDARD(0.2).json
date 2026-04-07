@@ -62,13 +62,13 @@
     "raft_layers": "0",
     "skirt_height": "1",
     "min_skirt_length": "0",
-    "support_base_pattern_spacing": "4",
+    "support_base_pattern_spacing": "1.6",
     "support_bottom_interface_spacing": "0",
     "support_bottom_z_distance": "0",
     "support_interface_spacing": "0",
     "support_line_width": "0.4",
     "support_object_first_layer_gap": "0.15",
-    "support_object_xy_distance": "0.15",
+    "support_object_xy_distance": "0.25",
     "support_top_z_distance": "0",
     "compatible_printers": [
         "FLEX4 M 0.4 nozzle",
@@ -99,6 +99,5 @@
     "support_interface_top_layers": "2",
     "support_speed": "250",
     "support_type": "normal(manual)",
-    "top_shell_layers": "5",
-    "version": "2.2.0.4"
+    "top_shell_layers": "5"
 }
