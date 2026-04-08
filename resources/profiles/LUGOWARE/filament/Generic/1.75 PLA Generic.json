@@ -316,6 +316,9 @@
         "35"
     ],
     "filament_toolchange_slowdown_distance": [
-        "70"
+        "80"
+    ],
+    "filament_toolchange_slowdown_additional_temp": [
+        "8"
     ]
 }

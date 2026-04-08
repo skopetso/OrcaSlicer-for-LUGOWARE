@@ -1,6 +1,6 @@
 {
     "name": "LUGOWARE",
-    "version": "02.05.00.00",
+    "version": "02.05.02.00",
     "force_update": "0",
     "description": "LUGOWARE printer configurations",
     "machine_model_list": [
@@ -53,8 +53,8 @@
             "sub_path": "process/fdm_process_lugoware_common.json"
         },
         {
-            "name": "FLEXIBLE(0.25)",
-            "sub_path": "process/FLEXIBLE(0.25).json"
+            "name": "TPU(0.25)",
+            "sub_path": "process/TPU(0.25).json"
         },
         {
             "name": "STANDARD(0.2)",
@@ -73,8 +73,8 @@
             "sub_path": "process/STRONGEST PARTS(0.25).json"
         },
         {
-            "name": "0.4 Support + FLEXIBLE(0.25)",
-            "sub_path": "process/0.4 Support + FLEXIBLE(0.25).json"
+            "name": "0.4 Support + TPU(0.25)",
+            "sub_path": "process/0.4 Support + TPU(0.25).json"
         },
         {
             "name": "0.4 Support + STANDARD(0.2)",
@@ -89,13 +89,82 @@
             "sub_path": "process/0.4 Support + STRONGEST PARTS(0.2).json"
         },
         {
-            "name": "FOAMING TPU(0.25)",
-            "sub_path": "process/FOAMING TPU(0.25).json"
+            "name": "FOAM(0.25)",
+            "sub_path": "process/FOAM(0.25).json"
         },
         {
-            "name": "0.4 Support + FOAMING TPU(0.25)",
-            "sub_path": "process/0.4 Support + FOAMING TPU(0.25).json"
+            "name": "0.4 Support + FOAM(0.25)",
+            "sub_path": "process/0.4 Support + FOAM(0.25).json"
+        },
+        {
+            "name": "0.4 Support + SHOE(0.25)",
+            "sub_path": "process/0.4 Support + SHOE(0.25).json"
         }
     ],
-    "filament_list": []
+    "filament_list": [
+        {
+            "name": "1.75 BONE_phantom",
+            "sub_path": "filament/Generic/1.75 BONE_phantom.json"
+        },
+        {
+            "name": "1.75 FAT_phantom",
+            "sub_path": "filament/Generic/1.75 FAT_phantom.json"
+        },
+        {
+            "name": "1.75 Foaming TPU",
+            "sub_path": "filament/Generic/1.75 Foaming TPU.json"
+        },
+        {
+            "name": "1.75 LPLA",
+            "sub_path": "filament/Generic/1.75 LPLA.json"
+        },
+        {
+            "name": "1.75 PETG Generic",
+            "sub_path": "filament/Generic/1.75 PETG Generic.json"
+        },
+        {
+            "name": "1.75 PLA Generic",
+            "sub_path": "filament/Generic/1.75 PLA Generic.json"
+        },
+        {
+            "name": "1.75 PVA Generic",
+            "sub_path": "filament/Generic/1.75 PVA Generic.json"
+        },
+        {
+            "name": "1.75 SKIN_phantom",
+            "sub_path": "filament/Generic/1.75 SKIN_phantom.json"
+        },
+        {
+            "name": "1.75 TISSUE_phantom",
+            "sub_path": "filament/Generic/1.75 TISSUE_phantom.json"
+        },
+        {
+            "name": "1.75 TPU 85A Generic",
+            "sub_path": "filament/Generic/1.75 TPU 85A Generic.json"
+        },
+        {
+            "name": "1.75 TPU 95A Generic",
+            "sub_path": "filament/Generic/1.75 TPU 95A Generic.json"
+        },
+        {
+            "name": "1.75 TPU D Generic",
+            "sub_path": "filament/Generic/1.75 TPU D Generic.json"
+        },
+        {
+            "name": "2.85 Foaming TPU",
+            "sub_path": "filament/Generic/2.85 Foaming TPU.json"
+        },
+        {
+            "name": "2.85 TPU 60A",
+            "sub_path": "filament/Generic/2.85 TPU 60A.json"
+        },
+        {
+            "name": "2.85 TPU 70A",
+            "sub_path": "filament/Generic/2.85 TPU 70A.json"
+        },
+        {
+            "name": "2.85 TPU 80A",
+            "sub_path": "filament/Generic/2.85 TPU 80A.json"
+        }
+    ]
 }

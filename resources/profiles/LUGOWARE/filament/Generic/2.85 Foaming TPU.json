@@ -279,9 +279,7 @@
     "filament_velocity_adaptation_factor": [
         "1"
     ],
-    "compatible_printers": [
-        "FLEX4 W 0.4 nozzle"
-    ],
+    "compatible_printers": [],
     "filament_start_gcode": [
         "; Filament gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=0.3"
     ],
@@ -300,15 +298,18 @@
     "setting_id": "LGFN12",
     "filament_id": "LGFN12",
     "filament_cell_zhop_height": [
-        "5"
+        "8"
     ],
     "filament_heating_duration": [
-        "7"
+        "8"
     ],
     "pellet_flow_coefficient": [
         "0.156755"
     ],
     "filament_toolchange_slowdown_distance": [
-        "70"
+        "80"
+    ],
+    "filament_toolchange_slowdown_additional_temp": [
+        "10"
     ]
 }

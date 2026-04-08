@@ -1,8 +1,8 @@
 {
-    "reduce_crossing_wall": "0",
+    "reduce_crossing_wall": "1",
     "independent_support_layer_height": "0",
     "type": "process",
-    "name": "0.4 Support + FLEXIBLE(0.25)",
+    "name": "0.4 Support + TPU(0.25)",
     "from": "system",
     "instantiation": "true",
     "default_acceleration": "8000",
@@ -88,14 +88,16 @@
     "print_extruder_variant": [
         "Direct Drive Standard"
     ],
-    "print_settings_id": "0.4 Support + FLEXIBLE(0.25)",
+    "print_settings_id": "0.4 Support + TPU(0.25)",
     "skirt_loops": "0",
     "sparse_infill_line_width": "110%",
     "support_angle": "21",
     "support_interface_bottom_layers": "2",
-    "support_interface_speed": "250",
+    "support_interface_speed": "50",
     "support_interface_top_layers": "2",
     "support_speed": "250",
     "support_type": "normal(manual)",
-    "support_interface_pattern": "concentric"
+    "support_interface_pattern": "concentric",
+    "dhop_ratio": "30",
+    "p_point_max_depth": "30"
 }

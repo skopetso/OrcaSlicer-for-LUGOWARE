@@ -139,7 +139,7 @@
         "2"
     ],
     "filament_retraction_minimum_travel": [
-        "nil"
+        "80"
     ],
     "filament_retraction_speed": [
         "nil"
@@ -298,9 +298,12 @@
     "setting_id": "LGFN05",
     "filament_id": "LGFN05",
     "filament_heating_duration": [
-        "7"
+        "8"
     ],
     "filament_toolchange_slowdown_distance": [
-        "70"
+        "150"
+    ],
+    "filament_cell_zhop_height": [
+        "8"
     ]
 }

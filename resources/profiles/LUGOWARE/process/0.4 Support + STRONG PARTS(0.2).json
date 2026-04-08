@@ -94,7 +94,7 @@
     "skirt_loops": "0",
     "sparse_infill_line_width": "110%",
     "support_angle": "21",
-    "support_interface_speed": "250",
+    "support_interface_speed": "50",
     "support_interface_top_layers": "2",
     "support_speed": "250",
     "support_type": "normal(manual)",

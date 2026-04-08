@@ -2,7 +2,7 @@
     "reduce_crossing_wall": "1",
     "independent_support_layer_height": "0",
     "type": "process",
-    "name": "FOAMING TPU(0.25)",
+    "name": "TPU(0.25)",
     "from": "system",
     "instantiation": "true",
     "default_acceleration": "8000",
@@ -25,7 +25,7 @@
     "wall_generator": "classic",
     "wall_direction": "cw",
     "detect_thin_wall": "1",
-    "enable_support": "1",
+    "enable_support": "0",
     "support_style": "snug",
     "support_filament": "0",
     "support_interface_filament": "0",
@@ -50,7 +50,7 @@
     "ensure_vertical_shell_thickness": "ensure_moderate",
     "fuzzy_skin_point_distance": "0.15",
     "fuzzy_skin_thickness": "0.15",
-    "gap_fill_target": "nowhere",
+    "gap_fill_target": "topbottom",
     "only_one_wall_top": "1",
     "min_width_top_surface": "200%",
     "overhang_2_4_speed": "30",
@@ -66,7 +66,7 @@
     "support_bottom_interface_spacing": "0",
     "support_bottom_z_distance": "0.13",
     "support_interface_spacing": "0",
-    "support_line_width": "0.4",
+    "support_line_width": "100%",
     "support_object_first_layer_gap": "0.25",
     "support_object_xy_distance": "0.25",
     "support_top_z_distance": "0.13",
@@ -80,7 +80,7 @@
     ],
     "bottom_shell_layers": "4",
     "bridge_speed": "50",
-    "filter_out_gap_fill": "100",
+    "filter_out_gap_fill": "5",
     "internal_bridge_speed": "200%",
     "print_extruder_id": [
         "1"
@@ -88,15 +88,14 @@
     "print_extruder_variant": [
         "Direct Drive Standard"
     ],
-    "print_settings_id": "FOAMING TPU(0.25)",
+    "print_settings_id": "TPU(0.25)",
     "skirt_loops": "0",
     "sparse_infill_line_width": "110%",
     "support_angle": "21",
     "support_interface_bottom_layers": "0",
-    "support_interface_speed": "250",
+    "support_interface_speed": "50",
     "support_interface_top_layers": "0",
     "support_speed": "250",
     "support_type": "normal(manual)",
-    "p_point_generation": "1",
-    "p_point_max_depth": "30"
+    "dhop_ratio": "30"
 }

@@ -279,9 +279,7 @@
     "filament_velocity_adaptation_factor": [
         "1"
     ],
-    "compatible_printers": [
-        "FLEX4 W 0.4 nozzle"
-    ],
+    "compatible_printers": [],
     "filament_start_gcode": [
         "SET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=0.377\n"
     ],
@@ -306,6 +304,15 @@
         "0.156755"
     ],
     "filament_toolchange_slowdown_distance": [
-        "70"
+        "80"
+    ],
+    "filament_cell_zhop_height": [
+        "3"
+    ],
+    "filament_dhop_ratio": [
+        "30"
+    ],
+    "filament_toolchange_slowdown_additional_temp": [
+        "8"
     ]
 }

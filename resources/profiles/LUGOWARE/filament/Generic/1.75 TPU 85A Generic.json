@@ -1,6 +1,6 @@
 {
     "type": "filament",
-    "name": "1.75 TPU 83A Generic",
+    "name": "1.75 TPU 85A Generic",
     "from": "system",
     "instantiation": "true",
     "activate_air_filtration": [
@@ -145,7 +145,7 @@
         "nil"
     ],
     "filament_settings_id": [
-        "1.75 TPU 83A Generic"
+        "1.75 TPU 85A Generic"
     ],
     "filament_soluble": [
         "0"
@@ -279,9 +279,7 @@
     "filament_velocity_adaptation_factor": [
         "1"
     ],
-    "compatible_printers": [
-        "FLEX4 W 0.4 nozzle"
-    ],
+    "compatible_printers": [],
     "filament_start_gcode": [
         "; filament start gcode\n{if  (bed_temperature[current_extruder] >35)||(bed_temperature_initial_layer[current_extruder] >35)}M106 P3 S255\n{elsif(bed_temperature[current_extruder] >30)||(bed_temperature_initial_layer[current_extruder] >30)}M106 P3 S180\n{endif}\n\n{if activate_air_filtration[current_extruder] && support_air_filtration}\nM106 P3 S{during_print_exhaust_fan_speed_num[current_extruder]} \n{endif}"
     ],
@@ -303,6 +301,15 @@
         "7"
     ],
     "filament_toolchange_slowdown_distance": [
-        "70"
+        "80"
+    ],
+    "filament_cell_zhop_height": [
+        "2.5"
+    ],
+    "filament_dhop_ratio": [
+        "30"
+    ],
+    "filament_toolchange_slowdown_additional_temp": [
+        "8"
     ]
 }

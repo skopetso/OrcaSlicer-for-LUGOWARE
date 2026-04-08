@@ -94,7 +94,7 @@
         "nil"
     ],
     "filament_max_volumetric_speed": [
-        "25"
+        "20"
     ],
     "filament_ramming_volumetric_speed": [
         "-1"
@@ -279,9 +279,7 @@
     "filament_velocity_adaptation_factor": [
         "1"
     ],
-    "compatible_printers": [
-        "FLEX4 W 0.4 nozzle"
-    ],
+    "compatible_printers": [],
     "filament_start_gcode": [
         "; filament start gcode\n{if  (bed_temperature[current_extruder] >45)||(bed_temperature_initial_layer[current_extruder] >45)}M106 P3 S255\n{elsif(bed_temperature[current_extruder] >35)||(bed_temperature_initial_layer[current_extruder] >35)}M106 P3 S180\n{endif}\n\n{if activate_air_filtration[current_extruder] && support_air_filtration}\nM106 P3 S{during_print_exhaust_fan_speed_num[current_extruder]} \n{endif}"
     ],
@@ -300,7 +298,7 @@
     "setting_id": "LGFN01",
     "filament_id": "LGFN01",
     "filament_cell_zhop_height": [
-        "10"
+        "1"
     ],
     "filament_cooling_final_speed": [
         "0"
@@ -321,6 +319,9 @@
         "35"
     ],
     "filament_toolchange_slowdown_distance": [
-        "70"
+        "80"
+    ],
+    "filament_toolchange_slowdown_additional_temp": [
+        "8"
     ]
 }
