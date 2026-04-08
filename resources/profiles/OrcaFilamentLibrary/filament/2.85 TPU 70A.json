@@ -32,10 +32,10 @@
         "1.05"
     ],
     "filament_heating_duration": [
-        "7"
+        "0"
     ],
     "filament_max_volumetric_speed": [
-        "6"
+        "8"
     ],
     "filament_retraction_length": [
         "2.7"
@@ -61,8 +61,5 @@
     "slow_down_layer_time": [
         "2"
     ],
-    "version": "2.3.2.51",
-    "filament_toolchange_slowdown_distance": [
-        "70"
-    ]
+    "version": "2.3.2.51"
 }

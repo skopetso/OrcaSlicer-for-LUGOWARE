@@ -17,7 +17,7 @@
         "0.97"
     ],
     "filament_heating_duration": [
-        "7"
+        "0"
     ],
     "filament_max_volumetric_speed": [
         "6"
@@ -46,8 +46,5 @@
     "nozzle_temperature_initial_layer": [
         "235"
     ],
-    "version": "2.3.2.51",
-    "filament_toolchange_slowdown_distance": [
-        "70"
-    ]
+    "version": "2.3.2.51"
 }

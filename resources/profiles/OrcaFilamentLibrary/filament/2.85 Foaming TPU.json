@@ -29,10 +29,10 @@
         "0.82"
     ],
     "filament_heating_duration": [
-        "7"
+        "0"
     ],
     "filament_max_volumetric_speed": [
-        "6"
+        "7"
     ],
     "filament_retract_when_changing_layer": [
         "0"
@@ -88,8 +88,5 @@
     "temperature_vitrification": [
         "230"
     ],
-    "version": "2.3.2.51",
-    "filament_toolchange_slowdown_distance": [
-        "70"
-    ]
+    "version": "2.3.2.51"
 }
