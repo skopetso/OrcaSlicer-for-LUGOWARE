@@ -242,7 +242,7 @@ jobs:
         if: contains(inputs.os, 'macos') && inputs.macos-combine-only
         uses: actions/upload-artifact@v6
         with:
-          name: LUGOWARE-ORCA_slicer_Mac_universal_${{ env.ver }}
+          name: Lugorca_slicer_V${{ env.ver }}_Mac
           path: ${{ github.workspace }}/OrcaSlicer_Mac_universal_${{ env.ver }}.dmg
 
       - name: Upload OrcaSlicer_profile_validator DMG mac
@@ -316,15 +316,15 @@ jobs:
         if: inputs.os == 'windows-latest'
         uses: actions/upload-artifact@v6
         with:
-          name: LUGOWARE-ORCA_slicer_Windows_${{ env.ver }}_portable
+          name: Lugorca_slicer_V${{ env.ver }}_Windows_portable
           path: ${{ github.workspace }}/build/OrcaSlicer
 
       - name: Upload artifacts Win installer
         if: inputs.os == 'windows-latest'
         uses: actions/upload-artifact@v6
         with:
-          name: LUGOWARE-ORCA_slicer_Windows_${{ env.ver }}
-          path: ${{ github.workspace }}/build/OrcaSlicer*.exe
+          name: Lugorca_slicer_V${{ env.ver }}_Windows
+          path: ${{ github.workspace }}/build/Lugorca_slicer*.exe
 
       - name: Upload artifacts Win PDB
         if: inputs.os == 'windows-latest'
@@ -419,7 +419,7 @@ jobs:
           ubuntu-ver-str: ${{ (inputs.os == 'ubuntu-24.04' && '_Ubuntu2404') || '' }}
         uses: actions/upload-artifact@v6
         with:
-          name: LUGOWARE-ORCA_slicer_Linux_ubuntu_${{ env.ubuntu-ver }}_${{ env.ver }}
+          name: Lugorca_slicer_V${{ env.ver }}_Linux_ubuntu_${{ env.ubuntu-ver }}
           path: './build/LugowareOrcaSlicer_Linux_AppImage${{ env.ubuntu-ver-str }}_${{ env.ver }}.AppImage'
 
       - name: Upload OrcaSlicer_profile_validator Ubuntu
