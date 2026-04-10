@@ -344,6 +344,9 @@ std::vector<PerExtruderAdjustments> CoolingBuffer::parse_layer_gcode(const std::
         unsigned int            extruder_id = m_extruder_ids[i];
         adj.extruder_id               = extruder_id;
         adj.cooling_slow_down_enabled = m_config.slow_down_for_layer_cooling.get_at(extruder_id);
+        // LUGOWARE: All speed override disables cooling slowdown
+        if (m_config.filament_all_speed_override.get_at(extruder_id) > 0)
+            adj.cooling_slow_down_enabled = false;
         adj.slow_down_layer_time = float(m_config.slow_down_layer_time.get_at(extruder_id));
         adj.slow_down_min_speed           = float(m_config.slow_down_min_speed.get_at(extruder_id));
         // ORCA: To enable dont slow down external perimeters feature per filament (extruder)

@@ -3971,6 +3971,7 @@ void TabFilament::build()
         optgroup->append_single_option_line("filament_cell_zhop_height");
         optgroup->append_single_option_line("filament_dhop_ratio");
         optgroup->append_single_option_line("filament_heating_duration");
+        optgroup->append_single_option_line("filament_all_speed_override");
 
     page = add_options_page(L("Dependencies"), "advanced");
         optgroup = page->new_optgroup(L("Compatible printers"), "param_dependencies_printers");

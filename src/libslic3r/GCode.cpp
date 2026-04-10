@@ -6588,6 +6588,7 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
             throw Slic3r::InvalidArgument("Invalid speed");
         }
     }
+
     //BBS: if not set the speed, then use the filament_max_volumetric_speed directly
     double filament_max_volumetric_speed = FILAMENT_CONFIG(filament_max_volumetric_speed);
     if (FILAMENT_CONFIG(filament_adaptive_volumetric_speed)){
@@ -6736,6 +6737,16 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
             }
             variable_speed = std::any_of(new_points.begin(), new_points.end(),
                                          [speed](const ProcessedPoint &p) { return fabs(double(p.speed) - speed) > 1; }); // Ignore small speed variations (under 1mm/sec)
+    }
+
+    // LUGOWARE: All speed override — force all extrusion speeds to a single value per filament
+    // Applied last so it overrides everything. Only toolchange slowdown survives (applied to F after this).
+    {
+        double all_speed = FILAMENT_CONFIG(filament_all_speed_override);
+        if (all_speed > 0) {
+            speed = all_speed;
+            variable_speed = false;
+        }
     }
 
     double F = speed * 60;  // convert mm/sec to mm/min
