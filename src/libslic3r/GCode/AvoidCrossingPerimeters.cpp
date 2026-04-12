@@ -1315,7 +1315,7 @@ Polyline AvoidCrossingPerimeters::travel_to(const GCode &gcodegen, const Point &
 
 // ************************************* AvoidCrossingPerimeters::init_layer() *****************************************
 
-void AvoidCrossingPerimeters::init_layer(const Layer &layer)
+void AvoidCrossingPerimeters::init_layer(const Layer &layer, double offset_mm)
 {
     m_internal.clear();
     m_external.clear();
@@ -1325,7 +1325,7 @@ void AvoidCrossingPerimeters::init_layer(const Layer &layer)
     for (auto coeff : {0.6f, 0.5f, 0.45f}) {
         m_lslices_offset = offset_ex(layer.lslices, -get_external_perimeter_width(layer) * coeff);
         if (!m_lslices_offset.empty()) break;
-    }    
+    }
     m_lslices_offset_bboxes.reserve(m_lslices_offset.size());
     for (const auto &ex_polygon : m_lslices_offset) m_lslices_offset_bboxes.emplace_back(get_extents(ex_polygon));
 
@@ -1335,6 +1335,47 @@ void AvoidCrossingPerimeters::init_layer(const Layer &layer)
     m_grid_lslice.set_bbox(bbox_slice);
     //FIXME 1mm grid?
     m_grid_lslice.create(m_lslices_offset, coord_t(scale_(1.)));
+
+    // LUGOWARE: ACP offset — routing boundary + per-lslice adaptive offset
+    m_offset_data.clear();
+    if (offset_mm > 0) {
+        coord_t os = scale_(offset_mm);
+        m_offset_data.resize(layer.lslices.size());
+        for (size_t li = 0; li < layer.lslices.size(); ++li) {
+            ExPolygons result = offset_ex(layer.lslices[li], -os);
+            if (!result.empty()) {
+                m_offset_data[li].inner_line = std::move(result);
+                m_offset_data[li].actual_offset = offset_mm;
+            } else {
+                coord_t lo = scale_(0.5), hi = os, best = 0;
+                ExPolygons best_result;
+                while (lo <= hi) {
+                    coord_t mid = (lo + hi) / 2;
+                    ExPolygons t = offset_ex(layer.lslices[li], -mid);
+                    if (!t.empty()) { best = mid; best_result = std::move(t); lo = mid + scale_(0.2); }
+                    else { hi = mid - scale_(0.2); }
+                }
+                m_offset_data[li].inner_line = std::move(best_result);
+                m_offset_data[li].actual_offset = unscale<double>(best);
+            }
+        }
+        // Set ACP routing boundary with offset
+        float perimeter_spacing = get_perimeter_spacing(layer);
+        m_internal.boundaries = to_polygons(get_boundary(layer, perimeter_spacing * float(std::max(offset_mm, 0.1))));
+        m_external.boundaries = get_boundary_external(layer);
+        BoundingBox bbox_int(get_extents(m_internal.boundaries));
+        bbox_int.offset(SCALED_EPSILON);
+        BoundingBox bbox_ext = get_extents(m_external.boundaries);
+        bbox_ext.offset(SCALED_EPSILON);
+        m_internal.bbox = BoundingBoxf(bbox_int.min.cast<double>(), bbox_int.max.cast<double>());
+        m_external.bbox = BoundingBoxf(bbox_ext.min.cast<double>(), bbox_ext.max.cast<double>());
+        m_internal.grid.set_bbox(bbox_int);
+        m_internal.grid.create(m_internal.boundaries, coord_t(scale_(1.)));
+        m_external.grid.set_bbox(bbox_ext);
+        m_external.grid.create(m_external.boundaries, coord_t(scale_(1.)));
+        init_boundary_distances(&m_internal);
+        init_boundary_distances(&m_external);
+    }
 }
 
 #if 0

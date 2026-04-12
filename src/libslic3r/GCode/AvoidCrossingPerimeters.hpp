@@ -24,7 +24,9 @@ public:
     bool        disabled_once() const   { return m_disabled_once; }
     void        reset_once_modifiers()  { m_use_external_mp_once = false; m_disabled_once = false; }
 
-    void        init_layer(const Layer &layer);
+    void        init_layer(const Layer &layer, double offset_mm = 0);
+    struct OffsetData { ExPolygons inner_line; double actual_offset = 0; };
+    const std::vector<OffsetData>& offset_data() const { return m_offset_data; }
 
     Polyline    travel_to(const GCode& gcodegen, const Point& point)
     {
@@ -68,6 +70,7 @@ private:
     Boundary m_internal;
     // Store all needed data for travels outside object
     Boundary m_external;
+    std::vector<OffsetData> m_offset_data;
 };
 
 } // namespace Slic3r

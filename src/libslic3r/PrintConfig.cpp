@@ -870,6 +870,16 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloatOrPercent(0., false));
 
+    def = this->add("avoid_crossing_wall_offset", coFloat);
+    def->label = L("Avoid crossing walls - Offset");
+    def->category = L("Quality");
+    def->tooltip = L("");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 10;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.));
+
     // BBS
     def = this->add("supertack_plate_temp", coInts);
     def->label = L("Other layers");
