@@ -5447,8 +5447,14 @@ LayerResult GCode::process_layer(
                             if (p2.has_value()) {
                                 // 1. Normal wipe + retract, but skip z-hop
                                 gcode += this->retract(false, false, LiftType::NormalLift, false, erNone, true);
-                                // 2. Move to P2 on bed (retracted, no extrusion)
-                                gcode += m_writer.travel_to_xy(this->point_to_gcode(*p2), "move to P2");
+                                // 2. Move to P2 on bed (retracted, no extrusion) — use avoid crossing perimeters
+                                if (m_config.reduce_crossing_wall && m_writer.is_current_position_clear()) {
+                                    Polyline end_to_p2 = m_avoid_crossing_perimeters.travel_to(*this, *p2);
+                                    for (size_t i = 1; i < end_to_p2.size(); ++i)
+                                        gcode += m_writer.travel_to_xy(this->point_to_gcode(end_to_p2.points[i]), "end to P2 (avoid crossing)");
+                                } else {
+                                    gcode += m_writer.travel_to_xy(this->point_to_gcode(*p2), "move to P2");
+                                }
                                 this->set_last_pos(*p2);
                                 // 3. Z-hop up at P2
                                 gcode += m_writer.eager_lift(LiftType::NormalLift);
