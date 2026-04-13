@@ -582,6 +582,20 @@ void Preset::save(DynamicPrintConfig* parent_config)
         DynamicPrintConfig temp_config;
         std::vector<std::string> dirty_options = config.diff(*parent_config);
 
+        // LUGOWARE: exclude host options from dirty check (saved in AppConfig)
+        {
+            static const std::set<std::string> host_skip = {
+                "host_type", "printer_agent", "print_host", "print_host_webui",
+                "printhost_apikey", "printhost_cafile", "printhost_port",
+                "printhost_authorization_type", "printhost_user", "printhost_password",
+                "printhost_ssl_ignore_revoke"
+            };
+            dirty_options.erase(
+                std::remove_if(dirty_options.begin(), dirty_options.end(),
+                    [&](const std::string& s) { return host_skip.count(s) > 0; }),
+                dirty_options.end());
+        }
+
         std::string extruder_id_name, extruder_variant_name;
         std::set<std::string> *key_set1 = nullptr, *key_set2 = nullptr;
         Preset::get_extruder_names_and_keysets(type, extruder_id_name, extruder_variant_name, &key_set1, &key_set2);
@@ -3013,7 +3027,13 @@ inline t_config_option_keys deep_diff(const ConfigBase &config_this, const Confi
 
 static constexpr const std::initializer_list<const char*> optional_keys { "compatible_prints", "compatible_printers" };
 //BBS: skip these keys for dirty check
-static std::set<std::string> skipped_in_dirty = {"printer_settings_id", "print_settings_id", "filament_settings_id"};
+static std::set<std::string> skipped_in_dirty = {"printer_settings_id", "print_settings_id", "filament_settings_id",
+    // LUGOWARE: host options saved in AppConfig, not in preset
+    "host_type", "printer_agent", "print_host", "print_host_webui",
+    "printhost_apikey", "printhost_cafile", "printhost_port",
+    "printhost_authorization_type", "printhost_user", "printhost_password",
+    "printhost_ssl_ignore_revoke"
+};
 
 bool PresetCollection::is_dirty(const Preset *edited, const Preset *reference)
 {

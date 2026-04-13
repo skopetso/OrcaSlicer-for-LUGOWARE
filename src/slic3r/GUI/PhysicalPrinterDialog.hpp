@@ -67,6 +67,9 @@ public:
     void        update_ports();
     void        update_webui();
 
+    // LUGOWARE: Load host settings from AppConfig
+    static void apply_host_from_app_config(DynamicPrintConfig& config, const std::string& preset_name);
+
 protected:
     void on_dpi_changed(const wxRect& suggested_rect) override;
     void on_sys_color_changed() override {};

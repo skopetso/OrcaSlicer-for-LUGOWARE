@@ -6361,7 +6361,7 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
             // C-hop height = min(setting, travel_distance * 0.25)
             Vec2d cur_gcode = this->point_to_gcode(m_last_pos);
             double travel_dist = (target_gcode - cur_gcode).norm();
-            double effective_chop = std::min(cell_zhop, travel_dist * 0.25);
+            double effective_chop = std::min(cell_zhop, travel_dist * 0.10);
             double target_z = m_layer->print_z + effective_chop;
 
             // 1. Retract without z-hop
@@ -6746,12 +6746,22 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
     }
 
     // LUGOWARE: All speed override — force all extrusion speeds to a single value per filament
-    // Applied last so it overrides everything. Only toolchange slowdown survives (applied to F after this).
+    // MVS cap uses nozzle_width * layer_height for uniform max speed across all line types.
     {
         double all_speed = FILAMENT_CONFIG(filament_all_speed_override);
         if (all_speed > 0) {
             speed = all_speed;
             variable_speed = false;
+            // MVS cap: uniform max speed = MVS / (nozzle_width * layer_height)
+            double mvs = FILAMENT_CONFIG(filament_max_volumetric_speed);
+            if (mvs > 0 && m_layer != nullptr) {
+                double nozzle_w = m_config.nozzle_diameter.get_at(0);
+                double layer_h = m_layer->height;
+                if (nozzle_w > 0 && layer_h > 0) {
+                    double mvs_max_speed = mvs / (nozzle_w * layer_h);
+                    speed = std::min(speed, mvs_max_speed);
+                }
+            }
         }
     }
 
@@ -7455,7 +7465,7 @@ std::string GCode::travel_to(const Point& point, ExtrusionRole role, std::string
                     Vec2d target_gcode = this->point_to_gcode(point);
                     Vec2d cur_gcode = this->point_to_gcode(this->last_pos());
                     double travel_dist = (target_gcode - cur_gcode).norm();
-                    double effective_chop = std::min(cell_zhop, travel_dist * 0.25);
+                    double effective_chop = std::min(cell_zhop, travel_dist * 0.10);
                     double target_z = m_layer->print_z + effective_chop;
 
                     // 1. Retract

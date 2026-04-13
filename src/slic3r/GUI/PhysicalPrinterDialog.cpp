@@ -820,13 +820,56 @@ void PhysicalPrinterDialog::check_host_key_valid()
 
 void PhysicalPrinterDialog::OnOK(wxEvent& event)
 {
-    wxGetApp().get_tab(Preset::TYPE_PRINTER)->save_preset("", false, false, true, m_preset_name);
+    // LUGOWARE: Save host settings to AppConfig instead of creating user preset
+    if (m_config) {
+        std::string section = "physical_printer:" + m_preset_name;
+        static const std::vector<std::string> host_keys = {
+            "host_type", "printer_agent", "print_host", "print_host_webui",
+            "printhost_apikey", "printhost_cafile", "printhost_port",
+            "printhost_authorization_type", "printhost_user", "printhost_password",
+            "printhost_ssl_ignore_revoke"
+        };
+        auto* app_config = wxGetApp().app_config;
+        for (const auto& key : host_keys) {
+            auto* opt = m_config->option(key);
+            if (opt)
+                app_config->set(section, key, opt->serialize());
+        }
+        app_config->save();
+        // Apply to current printer tab config
+        auto* tab = wxGetApp().get_tab(Preset::TYPE_PRINTER);
+        if (tab) {
+            tab->load_config(*m_config);
+            tab->update_dirty();
+        }
+    }
     event.Skip();
 
     // Defer printer agent switch to ensure preset save completes first
     wxGetApp().CallAfter([] {
         wxGetApp().switch_printer_agent();
     });
+}
+
+// LUGOWARE: Load host settings from AppConfig for a given preset name
+void PhysicalPrinterDialog::apply_host_from_app_config(DynamicPrintConfig& config, const std::string& preset_name)
+{
+    std::string section = "physical_printer:" + preset_name;
+    auto* app_config = wxGetApp().app_config;
+    static const std::vector<std::string> host_keys = {
+        "host_type", "printer_agent", "print_host", "print_host_webui",
+        "printhost_apikey", "printhost_cafile", "printhost_port",
+        "printhost_authorization_type", "printhost_user", "printhost_password",
+        "printhost_ssl_ignore_revoke"
+    };
+    for (const auto& key : host_keys) {
+        std::string val = app_config->get(section, key);
+        if (!val.empty()) {
+            auto* opt = config.option(key, false);
+            if (opt)
+                opt->deserialize(val);
+        }
+    }
 }
 
 }}    // namespace Slic3r::GUI

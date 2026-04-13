@@ -1,6 +1,7 @@
 // #include "libslic3r/GCodeSender.hpp"
 //#include "slic3r/Utils/Serial.hpp"
 #include "Tab.hpp"
+#include "PhysicalPrinterDialog.hpp"
 #include "PresetHints.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/PrintConfig.hpp"
@@ -930,6 +931,21 @@ void Tab::update_changed_ui()
             || m_type == Preset::TYPE_SLA_MATERIAL || m_type == Preset::TYPE_MODEL);
     auto dirty_options = m_presets->current_dirty_options(deep_compare);
     auto nonsys_options = m_presets->current_different_from_parent_options(deep_compare);
+    // LUGOWARE: exclude host options from dirty check (saved in AppConfig)
+    if (m_type == Preset::TYPE_PRINTER) {
+        static const std::set<std::string> host_skip = {
+            "host_type", "printer_agent", "print_host", "print_host_webui",
+            "printhost_apikey", "printhost_cafile", "printhost_port",
+            "printhost_authorization_type", "printhost_user", "printhost_password",
+            "printhost_ssl_ignore_revoke"
+        };
+        auto remove_host = [&](std::vector<std::string>& v) {
+            v.erase(std::remove_if(v.begin(), v.end(),
+                [&](const std::string& s) { return host_skip.count(s) > 0; }), v.end());
+        };
+        remove_host(dirty_options);
+        remove_host(nonsys_options);
+    }
     if (m_type == Preset::TYPE_PRINTER && static_cast<TabPrinter*>(this)->m_printer_technology == ptFFF) {
         TabPrinter* tab = static_cast<TabPrinter*>(this);
         if (tab->m_initial_extruders_count != tab->m_extruders_count)
@@ -5296,6 +5312,8 @@ void Tab::load_current_preset()
 
     update();
     if (m_type == Slic3r::Preset::TYPE_PRINTER) {
+        // LUGOWARE: Load host settings from AppConfig for this printer preset
+        PhysicalPrinterDialog::apply_host_from_app_config(*m_config, preset.name);
         // For the printer profile, generate the extruder pages.
         if (preset.printer_technology() == ptFFF) {
             prev_variant_list = static_cast<TabPrinter*>(this)->m_extruder_variant_list;

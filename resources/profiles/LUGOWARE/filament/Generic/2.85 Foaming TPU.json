@@ -1,4 +1,5 @@
 {
+    "filament_all_speed_override": ["100"],
     "type": "filament",
     "name": "2.85 Foaming TPU",
     "from": "system",

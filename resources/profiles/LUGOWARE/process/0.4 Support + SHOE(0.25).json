@@ -1,5 +1,6 @@
 {
     "reduce_crossing_wall": "1",
+    "avoid_crossing_wall_offset": "1.5",
     "independent_support_layer_height": "0",
     "type": "process",
     "name": "0.4 Support + SHOE(0.25)",
@@ -80,7 +81,8 @@
     ],
     "bottom_shell_layers": "4",
     "bridge_speed": "50",
-    "filter_out_gap_fill": "100",
+    "filter_out_gap_fill": "15",
+    "infill_wall_overlap": "45%",
     "internal_bridge_speed": "200%",
     "print_extruder_id": [
         "1"
