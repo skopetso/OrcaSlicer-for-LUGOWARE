@@ -281,7 +281,7 @@
     ],
     "compatible_printers": [],
     "filament_start_gcode": [
-        "SET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=0.377\n"
+        "; filament start gcode\n"
     ],
     "filament_end_gcode": [
         "SET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=1"

@@ -1,5 +1,7 @@
 {
-    "filament_all_speed_override": ["100"],
+    "filament_all_speed_override": [
+        "100"
+    ],
     "type": "filament",
     "name": "2.85 Foaming TPU",
     "from": "system",
@@ -282,7 +284,7 @@
     ],
     "compatible_printers": [],
     "filament_start_gcode": [
-        "; Filament gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=0.3"
+        "; filament start gcode\n"
     ],
     "filament_end_gcode": [
         "; filament end gcode\nSET_GCODE_VARIABLE MACRO=TOOL_STATE VARIABLE=extrude_factor VALUE=1"

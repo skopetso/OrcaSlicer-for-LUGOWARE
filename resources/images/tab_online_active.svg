@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+  <!-- Globe -->
+  <circle cx="10" cy="9" r="6.5" style="fill:none;stroke:#fff;stroke-miterlimit:10"/>
+  <ellipse cx="10" cy="9" rx="3" ry="6.5" style="fill:none;stroke:#fff;stroke-miterlimit:10"/>
+  <line x1="3.5" y1="9" x2="16.5" y2="9" style="fill:none;stroke:#fff;stroke-linecap:round"/>
+  <line x1="4.5" y1="6" x2="15.5" y2="6" style="fill:none;stroke:#fff;stroke-linecap:round"/>
+  <line x1="4.5" y1="12" x2="15.5" y2="12" style="fill:none;stroke:#fff;stroke-linecap:round"/>
+  <!-- Underline -->
+  <line x1="4" y1="17.5" x2="16" y2="17.5" style="fill:none;stroke:#fff;stroke-linecap:round"/>
+</svg>

@@ -45,4 +45,4 @@ test.js
 .clangd
 internal_docs/
 *.flatpak
-/flatpak-repo/
+/flatpak-repo/.claude/worktrees/

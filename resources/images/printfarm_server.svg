@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 64" width="80" height="64">
+  <!-- Server monitor -->
+  <rect x="8" y="14" width="28" height="22" rx="2.5" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+  <rect x="11" y="17" width="22" height="15" fill="none" stroke="#ffffff" stroke-width="1.2"/>
+  <line x1="22" y1="36" x2="22" y2="42" stroke="#ffffff" stroke-width="2.5"/>
+  <line x1="14" y1="42" x2="30" y2="42" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Dashed line going right -->
+  <line x1="36" y1="25" x2="78" y2="25" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="6,4" stroke-linecap="round"/>
+</svg>

@@ -281,7 +281,7 @@
     ],
     "compatible_printers": [],
     "filament_start_gcode": [
-        "\n"
+        "; filament start gcode\n"
     ],
     "filament_end_gcode": [
         ""
