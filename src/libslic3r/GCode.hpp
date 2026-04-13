@@ -642,6 +642,7 @@ private:
     // BBS
     Print* m_curr_print = nullptr;
     unsigned int m_toolchange_count;
+    bool         m_just_toolchanged = false; // LUGOWARE: skip C-hop on first island after toolchange
     coordf_t m_nominal_z;
     // LUGOWARE: Toolchange slowdown tracking
     double m_toolchange_remaining_slowdown_dist = 0.;

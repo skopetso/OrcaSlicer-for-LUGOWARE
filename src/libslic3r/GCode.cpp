@@ -781,6 +781,7 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
 
         //BBS: increase toolchange count
         gcodegen.m_toolchange_count++;
+        gcodegen.m_just_toolchanged = true; // LUGOWARE: skip C-hop on first island after toolchange
 
         std::string toolchange_gcode_str;
 
@@ -5276,8 +5277,20 @@ LayerResult GCode::process_layer(
                     };
 
                     // P-point: initialize for this island
-                    m_p_point_enabled = m_config.p_point_generation.value && m_layer != nullptr;
-                    m_p_point_max_depth = m_config.p_point_max_depth.value;
+                    // LUGOWARE: read per-object override from model_object config
+                    {
+                        bool pp_gen = m_config.p_point_generation.value;
+                        int pp_depth = m_config.p_point_max_depth.value;
+                        const auto* mo = instance_to_print.print_object.model_object();
+                        if (mo) {
+                            auto* opt_gen = mo->config.option("p_point_generation");
+                            if (opt_gen) pp_gen = opt_gen->getBool();
+                            auto* opt_depth = mo->config.option("p_point_max_depth");
+                            if (opt_depth) pp_depth = opt_depth->getInt();
+                        }
+                        m_p_point_enabled = pp_gen && m_layer != nullptr;
+                        m_p_point_max_depth = pp_depth;
+                    }
                     m_island_first_extrusion = true;
                     m_prev_island_lslice_idx = m_current_island_lslice_idx;
                     m_prev_island_layer = m_layer;
@@ -6329,6 +6342,8 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
     // LUGOWARE: C-hop + P-point P1 processing on first extrusion of island
     if (m_island_first_extrusion && m_layer != nullptr) {
         m_island_first_extrusion = false;
+        bool skip_chop_this_island = m_just_toolchanged;
+        m_just_toolchanged = false;
 
         // Find which lslice this island belongs to
         m_current_island_lslice_idx = find_lslice_index(path.first_point(), *m_layer);
@@ -6341,7 +6356,7 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
         if (m_prev_island_layer == nullptr || m_prev_island_obj_copy.first == nullptr) {
             // Very first island of the print — skip
         } else if (m_prev_island_obj_copy.first != m_current_island_obj_copy.first) {
-            // Different object — always cross-cell
+            // Different object (toolchange) — cross-cell but skip C-hop
             is_cross_cell = true;
         } else if (m_prev_island_lslice_idx >= 0 && m_prev_island_lslice_idx != m_current_island_lslice_idx) {
             // Same object, same layer, different island
@@ -6358,38 +6373,61 @@ std::string GCode::_extrude(const ExtrusionPath &path, std::string description, 
 
             Point target = landing_pt.has_value() ? *landing_pt : path.first_point();
             Vec2d target_gcode = this->point_to_gcode(target);
-            // C-hop height = min(setting, travel_distance * 0.25)
-            Vec2d cur_gcode = this->point_to_gcode(m_last_pos);
-            double travel_dist = (target_gcode - cur_gcode).norm();
-            double effective_chop = std::min(cell_zhop, travel_dist * 0.10);
-            double target_z = m_layer->print_z + effective_chop;
 
-            // 1. Retract without z-hop
-            gcode += this->retract(false, false, LiftType::NormalLift, false, erNone, true);
-            // 2. Z-hop up (normal z-hop height)
-            double zhop_height = m_writer.config.z_hop.get_at(m_writer.filament()->id());
-            double zhop_z = m_layer->print_z + zhop_height;
-            if (zhop_height > 0)
-                gcode += m_writer.travel_to_z(zhop_z, "z-hop before C-hop");
-            // 3. Diagonal XYZ move to target at C-hop height
-            gcode += m_writer.travel_to_xyz(Vec3d(target_gcode.x(), target_gcode.y(), target_z), "C-hop");
-            this->set_last_pos(target);
-            // 4. Z down to z-hop height
-            if (zhop_height > 0)
-                gcode += m_writer.travel_to_z(zhop_z, "z-hop after C-hop");
-            // 5. Z down to layer
-            gcode += m_writer.unlift_to(m_layer->print_z);
-            gcode += "; C-hop\n";
-            // 4. If landed on P1, move to start point
-            if (landing_pt.has_value() && target != path.first_point()) {
-                if (m_config.reduce_crossing_wall && m_writer.is_current_position_clear()) {
-                    Polyline p1_to_start = m_avoid_crossing_perimeters.travel_to(*this, path.first_point());
-                    for (size_t i = 1; i < p1_to_start.size(); ++i)
-                        gcode += m_writer.travel_to_xy(this->point_to_gcode(p1_to_start.points[i]), "P1 to start (avoid crossing)");
-                } else {
-                    gcode += m_writer.travel_to_xy(this->point_to_gcode(path.first_point()), "P1 to start point");
+            if (skip_chop_this_island) {
+                // LUGOWARE: toolchange直後 — C-hop skip, P1 landing only
+                m_writer.set_zhop(0);
+                gcode += this->retract(false, false, LiftType::NormalLift, false, erNone, true);
+                // XY move to P1 or start (stay at current Z)
+                gcode += m_writer.travel_to_xy(target_gcode, "post-TC travel");
+                this->set_last_pos(target);
+                // Z down to layer
+                gcode += m_writer.travel_to_z(m_layer->print_z, "post-TC Z");
+                if (landing_pt.has_value())
+                    gcode += "; P1 point used\n";
+                // P1 to start
+                if (landing_pt.has_value() && target != path.first_point()) {
+                    if (m_config.reduce_crossing_wall && m_writer.is_current_position_clear()) {
+                        Polyline p1_to_start = m_avoid_crossing_perimeters.travel_to(*this, path.first_point());
+                        for (size_t i = 1; i < p1_to_start.size(); ++i)
+                            gcode += m_writer.travel_to_xy(this->point_to_gcode(p1_to_start.points[i]), "P1 to start (avoid crossing)");
+                    } else {
+                        gcode += m_writer.travel_to_xy(this->point_to_gcode(path.first_point()), "P1 to start point");
+                    }
+                    this->set_last_pos(path.first_point());
                 }
-                this->set_last_pos(path.first_point());
+            } else {
+                // Normal C-hop — diagonal XYZ move
+                Vec2d cur_gcode = this->point_to_gcode(m_last_pos);
+                double travel_dist = (target_gcode - cur_gcode).norm();
+                double effective_chop = std::min(cell_zhop, travel_dist * 0.10);
+                double target_z = m_layer->print_z + effective_chop;
+                double zhop_height = m_writer.config.z_hop.get_at(m_writer.filament()->id());
+                double zhop_z = m_layer->print_z + zhop_height;
+
+                m_writer.set_zhop(0);
+                gcode += this->retract(false, false, LiftType::NormalLift, false, erNone, true);
+                // Z-hop up
+                if (zhop_height > 0)
+                    gcode += m_writer.travel_to_z(zhop_z, "z-hop before C-hop");
+                // Diagonal XYZ
+                gcode += m_writer.travel_to_xyz(Vec3d(target_gcode.x(), target_gcode.y(), target_z), "C-hop");
+                this->set_last_pos(target);
+                // Z down
+                if (zhop_height > 0)
+                    gcode += m_writer.travel_to_z(zhop_z, "z-hop after C-hop");
+                gcode += m_writer.unlift_to(m_layer->print_z);
+                gcode += "; C-hop\n";
+                if (landing_pt.has_value() && target != path.first_point()) {
+                    if (m_config.reduce_crossing_wall && m_writer.is_current_position_clear()) {
+                        Polyline p1_to_start = m_avoid_crossing_perimeters.travel_to(*this, path.first_point());
+                        for (size_t i = 1; i < p1_to_start.size(); ++i)
+                            gcode += m_writer.travel_to_xy(this->point_to_gcode(p1_to_start.points[i]), "P1 to start (avoid crossing)");
+                    } else {
+                        gcode += m_writer.travel_to_xy(this->point_to_gcode(path.first_point()), "P1 to start point");
+                    }
+                    this->set_last_pos(path.first_point());
+                }
             }
             cell_zhop_done = true;
         }
@@ -7583,6 +7621,17 @@ int GCode::find_lslice_index(const Point& point, const Layer& layer)
     for (int i = 0; i < (int)layer.lslices.size(); ++i)
         if (layer.lslices[i].contour.contains(point))
             return i;
+    // LUGOWARE: fallback — find nearest lslice if point is on contour edge
+    int best = -1;
+    double best_dist = std::numeric_limits<double>::max();
+    for (int i = 0; i < (int)layer.lslices.size(); ++i) {
+        Point cp = layer.lslices[i].contour.point_projection(point);
+        double d = (cp - point).cast<double>().squaredNorm();
+        if (d < best_dist) { best_dist = d; best = i; }
+    }
+    // Only use fallback if very close (within 1mm)
+    if (best >= 0 && best_dist < scale_(1.0) * scale_(1.0))
+        return best;
     return -1;
 }
 
@@ -7896,6 +7945,7 @@ std::string GCode::set_extruder(unsigned int new_filament_id, double print_z, bo
 
     // BBS. Should be placed before retract.
     m_toolchange_count++;
+    m_just_toolchanged = true; // LUGOWARE: skip C-hop on first island after toolchange
 
     // prepend retraction on the current extruder
     std::string gcode = this->retract(true, false);
