@@ -117,27 +117,27 @@ jobs:
         if: contains(inputs.os, 'macos') && !inputs.macos-combine-only
         working-directory: ${{ github.workspace }}
         run: |
-          tar -czvf LUGOWARE-ORCA_slicer_Mac_bundle_${{ inputs.arch }}_${{ github.sha }}.tar.gz -C build/${{ inputs.arch }} OrcaSlicer
+          tar -czvf Lugorca_slicer_Mac_bundle_${{ inputs.arch }}_${{ github.sha }}.tar.gz -C build/${{ inputs.arch }} OrcaSlicer
 
       - name: Upload macOS app bundle ${{ inputs.arch }}
         if: contains(inputs.os, 'macos') && !inputs.macos-combine-only
         uses: actions/upload-artifact@v6
         with:
-          name: LUGOWARE-ORCA_slicer_Mac_bundle_${{ inputs.arch }}_${{ github.sha }}
-          path: ${{ github.workspace }}/LUGOWARE-ORCA_slicer_Mac_bundle_${{ inputs.arch }}_${{ github.sha }}.tar.gz
+          name: Lugorca_slicer_Mac_bundle_${{ inputs.arch }}_${{ github.sha }}
+          path: ${{ github.workspace }}/Lugorca_slicer_Mac_bundle_${{ inputs.arch }}_${{ github.sha }}.tar.gz
 
       - name: Download macOS arm64 app bundle
         if: contains(inputs.os, 'macos') && inputs.macos-combine-only
         uses: actions/download-artifact@v7
         with:
-          name: LUGOWARE-ORCA_slicer_Mac_bundle_arm64_${{ github.sha }}
+          name: Lugorca_slicer_Mac_bundle_arm64_${{ github.sha }}
           path: ${{ github.workspace }}/mac_bundles/arm64
 
       - name: Download macOS x86_64 app bundle
         if: contains(inputs.os, 'macos') && inputs.macos-combine-only
         uses: actions/download-artifact@v7
         with:
-          name: LUGOWARE-ORCA_slicer_Mac_bundle_x86_64_${{ github.sha }}
+          name: Lugorca_slicer_Mac_bundle_x86_64_${{ github.sha }}
           path: ${{ github.workspace }}/mac_bundles/x86_64
 
       - name: Extract macOS app bundles
@@ -161,8 +161,8 @@ jobs:
         uses: geekyeggo/delete-artifact@v5
         with:
           name: |
-            LUGOWARE-ORCA_slicer_Mac_bundle_arm64_${{ github.sha }}
-            LUGOWARE-ORCA_slicer_Mac_bundle_x86_64_${{ github.sha }}
+            Lugorca_slicer_Mac_bundle_arm64_${{ github.sha }}
+            Lugorca_slicer_Mac_bundle_x86_64_${{ github.sha }}
 
  # Thanks to RaySajuuk, it's working now
       - name: Sign app and notary
@@ -196,8 +196,8 @@ jobs:
           rm -rf ${{ github.workspace }}/build/universal/OrcaSlicer_dmg/*
           cp -R ${{ github.workspace }}/build/universal/OrcaSlicer/OrcaSlicer.app ${{ github.workspace }}/build/universal/OrcaSlicer_dmg/
           ln -sfn /Applications ${{ github.workspace }}/build/universal/OrcaSlicer_dmg/Applications
-          hdiutil create -volname "OrcaSlicer" -srcfolder ${{ github.workspace }}/build/universal/OrcaSlicer_dmg -ov -format UDZO OrcaSlicer_Mac_universal_${{ env.ver }}.dmg
-          codesign --deep --force --verbose --options runtime --timestamp --entitlements ${{ github.workspace }}/scripts/disable_validation.entitlements --sign "$CERTIFICATE_ID" OrcaSlicer_Mac_universal_${{ env.ver }}.dmg
+          hdiutil create -volname "Lugorca Slicer" -srcfolder ${{ github.workspace }}/build/universal/OrcaSlicer_dmg -ov -format UDZO Lugorca_slicer_Mac_universal_${{ env.ver }}.dmg
+          codesign --deep --force --verbose --options runtime --timestamp --entitlements ${{ github.workspace }}/scripts/disable_validation.entitlements --sign "$CERTIFICATE_ID" Lugorca_slicer_Mac_universal_${{ env.ver }}.dmg
           
           # Create separate OrcaSlicer_profile_validator DMG if the app exists
           if [ -f "${{ github.workspace }}/build/universal/OrcaSlicer/OrcaSlicer_profile_validator.app/Contents/MacOS/OrcaSlicer_profile_validator" ]; then
@@ -210,8 +210,8 @@ jobs:
           fi
           
           # Notarize main DMG
-          xcrun notarytool submit "OrcaSlicer_Mac_universal_${{ env.ver }}.dmg" --apple-id "${{ secrets.APPLE_DEV_ACCOUNT }}" --team-id "${{ secrets.TEAM_ID }}" --password "${{ secrets.APP_PWD }}" --wait
-          xcrun stapler staple OrcaSlicer_Mac_universal_${{ env.ver }}.dmg
+          xcrun notarytool submit "Lugorca_slicer_Mac_universal_${{ env.ver }}.dmg" --apple-id "${{ secrets.APPLE_DEV_ACCOUNT }}" --team-id "${{ secrets.TEAM_ID }}" --password "${{ secrets.APP_PWD }}" --wait
+          xcrun stapler staple Lugorca_slicer_Mac_universal_${{ env.ver }}.dmg
 
           # Notarize profile validator DMG if it exists
           if [ -f "OrcaSlicer_profile_validator_Mac_universal_${{ env.ver }}.dmg" ]; then
@@ -227,7 +227,7 @@ jobs:
           rm -rf ${{ github.workspace }}/build/universal/OrcaSlicer_dmg/*
           cp -R ${{ github.workspace }}/build/universal/OrcaSlicer/OrcaSlicer.app ${{ github.workspace }}/build/universal/OrcaSlicer_dmg/
           ln -sfn /Applications ${{ github.workspace }}/build/universal/OrcaSlicer_dmg/Applications
-          hdiutil create -volname "OrcaSlicer" -srcfolder ${{ github.workspace }}/build/universal/OrcaSlicer_dmg -ov -format UDZO OrcaSlicer_Mac_universal_${{ env.ver }}.dmg
+          hdiutil create -volname "Lugorca Slicer" -srcfolder ${{ github.workspace }}/build/universal/OrcaSlicer_dmg -ov -format UDZO Lugorca_slicer_Mac_universal_${{ env.ver }}.dmg
           
           # Create separate OrcaSlicer_profile_validator DMG if the app exists
           if [ -f "${{ github.workspace }}/build/universal/OrcaSlicer/OrcaSlicer_profile_validator.app/Contents/MacOS/OrcaSlicer_profile_validator" ]; then
@@ -243,7 +243,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: Lugorca_slicer_${{ env.ver }}_Mac
-          path: ${{ github.workspace }}/OrcaSlicer_Mac_universal_${{ env.ver }}.dmg
+          path: ${{ github.workspace }}/Lugorca_slicer_Mac_universal_${{ env.ver }}.dmg
 
       - name: Upload OrcaSlicer_profile_validator DMG mac
         if: contains(inputs.os, 'macos') && inputs.macos-combine-only
@@ -259,7 +259,7 @@ jobs:
         with:
           upload_url: https://uploads.github.com/repos/OrcaSlicer/OrcaSlicer/releases/137995723/assets{?name,label}
           release_id: 137995723
-          asset_path: ${{ github.workspace }}/OrcaSlicer_Mac_universal_${{ env.ver }}.dmg
+          asset_path: ${{ github.workspace }}/Lugorca_slicer_Mac_universal_${{ env.ver }}.dmg
           asset_name: LUGOWARE-ORCA_slicer_Mac_universal_nightly.dmg
           asset_content_type: application/octet-stream
           max_releases: 1 # optional, if there are more releases than this matching the asset_name, the oldest ones are going to be deleted
@@ -387,8 +387,8 @@ jobs:
           ubuntu-ver-str: ${{ (inputs.os == 'ubuntu-24.04' && '_Ubuntu2404') || '' }}
         run: |
           ./build_linux.sh -istr
-          mv -n ./build/LugowareOrcaSlicer_Linux_V${{ env.ver_pure }}.AppImage ./build/LugowareOrcaSlicer_Linux_AppImage${{ env.ubuntu-ver-str }}_${{ env.ver }}.AppImage
-          chmod +x ./build/LugowareOrcaSlicer_Linux_AppImage${{ env.ubuntu-ver-str }}_${{ env.ver }}.AppImage
+          mv -n ./build/Lugorca_slicer_Linux_V${{ env.ver_pure }}.AppImage ./build/Lugorca_slicer_Linux_AppImage${{ env.ubuntu-ver-str }}_${{ env.ver }}.AppImage
+          chmod +x ./build/Lugorca_slicer_Linux_AppImage${{ env.ubuntu-ver-str }}_${{ env.ver }}.AppImage
           tar -cvpf build_tests.tar build/tests
 
         # Use tar because upload-artifacts won't always preserve directory structure
@@ -420,7 +420,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: Lugorca_slicer_${{ env.ver }}_Linux_ubuntu_${{ env.ubuntu-ver }}
-          path: './build/LugowareOrcaSlicer_Linux_AppImage${{ env.ubuntu-ver-str }}_${{ env.ver }}.AppImage'
+          path: './build/Lugorca_slicer_Linux_AppImage${{ env.ubuntu-ver-str }}_${{ env.ver }}.AppImage'
 
       - name: Upload OrcaSlicer_profile_validator Ubuntu
         if: ${{ ! env.ACT && inputs.os == 'ubuntu-20.04' || inputs.os == 'ubuntu-24.04' }}
@@ -439,8 +439,8 @@ jobs:
         with:
           upload_url: https://uploads.github.com/repos/OrcaSlicer/OrcaSlicer/releases/137995723/assets{?name,label}
           release_id: 137995723
-          asset_path: ./build/LugowareOrcaSlicer_Linux_AppImage${{ env.ubuntu-ver-str }}_${{ env.ver }}.AppImage
-          asset_name: LugowareOrcaSlicer_Linux_AppImage${{ env.ubuntu-ver-str }}_nightly.AppImage
+          asset_path: ./build/Lugorca_slicer_Linux_AppImage${{ env.ubuntu-ver-str }}_${{ env.ver }}.AppImage
+          asset_name: Lugorca_slicer_Linux_AppImage${{ env.ubuntu-ver-str }}_nightly.AppImage
           asset_content_type: application/octet-stream
           max_releases: 1 # optional, if there are more releases than this matching the asset_name, the oldest ones are going to be deleted
       - name: Deploy Ubuntu release
